@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 
-export const themeInitScript = `(function(){try{var t=localStorage.getItem('chaos-theme')||'dark';document.documentElement.classList.toggle('dark',t==='dark');}catch(e){document.documentElement.classList.add('dark');}})();`;
+export const themeInitScript = `(function(){try{var t=localStorage.getItem('chaos-theme')||'light';document.documentElement.classList.toggle('dark',t==='dark');}catch(e){}})();`;
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   useEffect(() => {
-    const stored = (localStorage.getItem("chaos-theme") as "dark" | "light") || "dark";
+    const stored = (localStorage.getItem("chaos-theme") as "dark" | "light") || "light";
     setTheme(stored);
     document.documentElement.classList.toggle("dark", stored === "dark");
   }, []);
+
 
   const toggle = () => {
     const next = theme === "dark" ? "light" : "dark";
