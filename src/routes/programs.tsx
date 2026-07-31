@@ -29,9 +29,39 @@ export const Route = createFileRoute("/programs")({
   component: Programs,
 });
 
+type Draft = { id?: string; name: string; slug: string; color: string; website: string };
+
 function Programs() {
+  const qc = useQueryClient();
   const { data: platforms } = useQuery(platformsQuery);
   const list = platforms ?? [];
+  const [editing, setEditing] = useState<Draft | null>(null);
+  const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
+
+  const save = useServerFn(savePlatform);
+  const remove = useServerFn(deletePlatform);
+
+  const saveMutation = useMutation({
+    mutationFn: (draft: Draft) => save({ data: draft }),
+    onSuccess: (res) => {
+      toast.success(res.updated ? "Program updated" : "Program created");
+      setEditing(null);
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (v: { id: string; deleteDomains: boolean }) => remove({ data: v }),
+    onSuccess: () => {
+      toast.success("Program deleted");
+      setRemoving(null);
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
 
   const totals = list.reduce(
     (acc, p) => ({
