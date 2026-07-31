@@ -63,20 +63,23 @@ function Index() {
       <section className="mx-auto max-w-6xl px-5 pb-16">
         <div className="grid overflow-hidden rounded-lg border border-border md:grid-cols-2">
           <Feature
-            icon={<Globe className="size-4 text-brand" />}
+            icon={<Globe className="size-4 text-destructive" />}
+            tone="bg-destructive/10"
             title="What"
             body="A DNS dataset that assists security professionals with efficient reconnaissance and vulnerability assessment across every tracked root domain."
           />
           <Feature
             icon={<Boxes className="size-4 text-success" />}
+            tone="bg-success/10"
             title="Why"
             body="It empowers researchers with actionable data to enhance internet security and streamline vulnerability identification — with change tracking over time."
           />
           <div className="border-t border-border p-6 md:col-span-2">
             <div className="flex items-center gap-3">
-              <span className="grid size-8 place-items-center rounded-lg border border-border bg-background">
+              <span className="grid size-8 place-items-center rounded-lg border border-border bg-brand/10">
                 <Radar className="size-4 text-brand" />
               </span>
+
               <span className="label-mono">How</span>
             </div>
             <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
