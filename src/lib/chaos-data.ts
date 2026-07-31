@@ -224,7 +224,7 @@ export const recentSubdomainsQuery = (limit = 100) =>
       if (error) throw new Error(error.message);
       return (data ?? []) as unknown as RecentSubdomain[];
     },
-    refetchInterval: 30_000,
+    refetchInterval: 10_000,
   });
 
 export const domainQuery = (domain: string) =>
@@ -283,7 +283,7 @@ export const scansQuery = (domainId: string | undefined) =>
       if (error) throw new Error(error.message);
       return data ?? [];
     },
-    refetchInterval: 60_000,
+    refetchInterval: 10_000,
   });
 
 export const scanHealthQuery = queryOptions({
