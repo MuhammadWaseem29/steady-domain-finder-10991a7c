@@ -13,10 +13,17 @@ const NAV = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background">
+    <motion.header
+      initial={{ y: -16, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="sticky top-0 z-40 w-full border-b border-border bg-background/85 backdrop-blur"
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-5">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-xl font-extrabold tracking-tight">Chaos.</span>
+        <Link to="/" className="group flex items-center gap-2">
+          <span className="text-xl font-extrabold tracking-tight transition-transform duration-200 group-hover:-translate-y-0.5">
+            Chaos.
+          </span>
           <span className="label-mono rounded-md bg-muted px-1.5 py-0.5 text-muted-foreground">
             beta
           </span>
@@ -26,7 +33,7 @@ export function SiteHeader() {
             <Link
               key={item.to}
               to={item.to}
-              className="transition-colors hover:text-foreground"
+              className="story-link transition-colors hover:text-foreground"
               activeProps={{ className: "text-foreground" }}
             >
               {item.label}
@@ -37,13 +44,14 @@ export function SiteHeader() {
           <ThemeToggle />
           <Link
             to="/dashboard"
-            className="rounded-full border border-border px-4 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+            className="hover-lift rounded-full border border-border px-4 py-1.5 text-sm font-medium hover:bg-accent"
           >
             Get Started
           </Link>
         </div>
       </div>
-    </header>
+    </motion.header>
+
   );
 }
 
