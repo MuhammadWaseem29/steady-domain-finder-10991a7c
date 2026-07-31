@@ -165,20 +165,28 @@ export const newSubdomainsQuery = (range: RangeKey, limit = 500) =>
 export const windowCountsQuery = queryOptions({
   queryKey: ["window-counts"],
   queryFn: async () => {
-    const windows = { hour: 1, day: 24, week: 24 * 7, month: 24 * 30, halfYear: 24 * 182 };
-    const entries = await Promise.all(
-      Object.entries(windows).map(async ([key, hours]) => {
-        const { count } = await supabase
-          .from("subdomains")
-          .select("id", { count: "exact", head: true })
-          .gte("first_seen_at", sinceIso(hours));
-        return [key, count ?? 0] as const;
-      }),
-    );
-    return Object.fromEntries(entries) as Record<keyof typeof windows, number>;
+    const { data, error } = await supabase.rpc("new_subdomain_counts");
+    if (error) throw new Error(error.message);
+    const row = (data ?? [])[0] as
+      | {
+          last_hour: number;
+          last_day: number;
+          last_week: number;
+          last_month: number;
+          last_half_year: number;
+        }
+      | undefined;
+    return {
+      hour: Number(row?.last_hour ?? 0),
+      day: Number(row?.last_day ?? 0),
+      week: Number(row?.last_week ?? 0),
+      month: Number(row?.last_month ?? 0),
+      halfYear: Number(row?.last_half_year ?? 0),
+    };
   },
   refetchInterval: 60_000,
 });
+
 
 
 export const globalStatsQuery = queryOptions({
