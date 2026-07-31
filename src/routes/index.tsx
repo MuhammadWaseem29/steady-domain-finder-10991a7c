@@ -4,6 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Globe, Boxes, Radar, ArrowRight } from "lucide-react";
 import { SiteShell, Terminal, Stat, Reveal } from "@/components/site/chrome";
+import { AnimatePresence } from "framer-motion";
+import {
+  CountUp,
+  EASE_SIGNATURE,
+  Spotlight,
+  Typewriter,
+  springSnappy,
+} from "@/components/site/motion";
 import {
   globalStatsQuery,
   recentSubdomainsQuery,
@@ -38,7 +46,16 @@ function Index() {
 
   return (
     <SiteShell>
-      <section className="mx-auto max-w-6xl px-5 pt-20 pb-16 text-center sm:pt-28">
+      <section className="relative overflow-hidden">
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+          <div className="hero-grid absolute -inset-24 opacity-[0.35] [mask-image:radial-gradient(60%_55%_at_50%_35%,black,transparent)]" />
+          <div className="aurora-blob absolute -top-24 left-1/4 size-96 rounded-full bg-brand/20" />
+          <div
+            className="aurora-blob absolute -top-10 right-1/4 size-80 rounded-full bg-success/15"
+            style={{ animationDelay: "-6s" }}
+          />
+        </div>
+        <div className="mx-auto max-w-6xl px-5 pt-20 pb-16 text-center sm:pt-28">
         <motion.p
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -47,14 +64,20 @@ function Index() {
         >
           <span className="live-dot" /> live · rescanned every 30 minutes
         </motion.p>
-        <motion.h1
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mx-auto max-w-3xl text-5xl font-extrabold sm:text-7xl"
-        >
-          The Internet Database.
-        </motion.h1>
+        <h1 className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-4 text-5xl font-extrabold sm:text-7xl">
+          {"The Internet Database.".split(" ").map((word, i) => (
+            <span key={word} className="overflow-hidden py-1">
+              <motion.span
+                initial={{ y: "110%" }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.8, delay: 0.08 * i, ease: EASE_SIGNATURE }}
+                className="inline-block"
+              >
+                {word}
+              </motion.span>
+            </span>
+          ))}
+        </h1>
         <motion.p
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -84,6 +107,7 @@ function Index() {
             <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
           </Link>
         </motion.div>
+        </div>
       </section>
 
 
@@ -117,17 +141,21 @@ function Index() {
             </p>
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               <Terminal>
-                {`GET /dns/{domain}/subdomains
-Host: dns.projectdiscovery.io
-Authorization: API_KEY
-
-{"domain":"...","subdomains":[...],"count":N}`}
+                <Typewriter
+                  lines={[
+                    "$ curl -H 'Authorization: API_KEY' \\",
+                    "    https://dns.projectdiscovery.io/dns/lovable.app/subdomains",
+                    "",
+                    '{"domain":"lovable.app","count":6496,"subdomains":[',
+                    '  "api", "app", "cdn", "docs", "id-preview", ... ]}',
+                  ]}
+                />
               </Terminal>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Stat label="Root domains" value={(stats?.domains ?? 0).toLocaleString()} />
-                <Stat label="Domains scanned" value={(stats?.scanned ?? 0).toLocaleString()} />
-                <Stat label="Subdomains stored" value={(stats?.subdomains ?? 0).toLocaleString()} />
-                <Stat label="New (24h)" value={(stats?.newLast24h ?? 0).toLocaleString()} />
+                <Stat label="Root domains" value={stats?.domains ?? 0} index={0} />
+                <Stat label="Domains scanned" value={stats?.scanned ?? 0} index={1} />
+                <Stat label="Subdomains stored" value={stats?.subdomains ?? 0} index={2} />
+                <Stat label="New (24h)" value={stats?.newLast24h ?? 0} index={3} />
               </div>
             </div>
           </div>
@@ -143,17 +171,20 @@ Authorization: API_KEY
           </p>
         </Reveal>
         <div className="mt-6 grid gap-2 sm:grid-cols-2">
+          <AnimatePresence initial={false}>
           {(recent ?? []).map((s, i) => (
             <motion.div
               key={s.id}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: Math.min(i, 12) * 0.03 }}
+              layout
+              initial={{ opacity: 0, y: -12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ ...springSnappy, delay: Math.min(i, 12) * 0.025 }}
             >
               <Link
                 to="/domain/$domain"
                 params={{ domain: s.domains?.domain ?? "" }}
-                className="hover-lift flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 hover:bg-accent"
+                className="row-sweep flex items-center justify-between gap-4 overflow-hidden rounded-lg border border-border bg-card px-4 py-2.5 hover:bg-accent"
               >
                 <span className="truncate font-mono text-sm">{s.host}</span>
                 <span className="label-mono shrink-0 text-muted-foreground">
@@ -162,6 +193,7 @@ Authorization: API_KEY
               </Link>
             </motion.div>
           ))}
+          </AnimatePresence>
           {(recent ?? []).length === 0 && (
             <p className="text-sm text-muted-foreground">No subdomains discovered yet.</p>
           )}
@@ -191,10 +223,14 @@ Authorization: API_KEY
               </tr>
             </thead>
             <tbody>
-              {(top?.rows ?? []).slice(0, 15).map((d) => (
-                <tr
+              {(top?.rows ?? []).slice(0, 15).map((d, i) => (
+                <motion.tr
                   key={d.id}
-                  className="border-t border-border transition-colors hover:bg-accent/50"
+                  initial={{ opacity: 0, y: 6 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.3, delay: Math.min(i, 15) * 0.03, ease: EASE_SIGNATURE }}
+                  className="row-sweep border-t border-border hover:bg-accent/50"
                 >
 
                   <td className="px-5 py-3 font-mono">{d.domain}</td>
@@ -222,7 +258,7 @@ Authorization: API_KEY
                       Open
                     </Link>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
               {(top?.rows ?? []).length === 0 && (
                 <tr>
@@ -239,7 +275,7 @@ Authorization: API_KEY
             to="/dashboard"
             className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 transition-colors hover:bg-accent"
           >
-            See all {(stats?.domains ?? 0).toLocaleString()} domains <ArrowRight className="size-3" />
+            See all <CountUp value={stats?.domains ?? 0} /> domains <ArrowRight className="size-3" />
           </Link>
         </div>
       </section>
@@ -264,8 +300,9 @@ function Feature({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      className="group border-border bg-card p-6 transition-colors hover:bg-accent/40 md:not-last:border-r"
+      className="group border-border bg-card transition-colors hover:bg-accent/40 md:not-last:border-r"
     >
+      <Spotlight className="p-6">
       <div className="flex items-center gap-3">
         <span
           className={`grid size-8 place-items-center rounded-lg border border-border transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6 ${tone}`}
@@ -275,6 +312,7 @@ function Feature({
         <span className="label-mono">{title}</span>
       </div>
       <p className="mt-4 text-sm text-muted-foreground">{body}</p>
+      </Spotlight>
     </motion.div>
   );
 
