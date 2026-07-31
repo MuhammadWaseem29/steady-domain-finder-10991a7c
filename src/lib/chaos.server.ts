@@ -5,14 +5,14 @@ const CHAOS_BASE = "https://dns.projectdiscovery.io/dns";
 
 export type ScanResult = {
   domain: string;
-  status: "success" | "error";
+  status: "success" | "partial" | "error";
   total: number;
   newCount: number;
   removedCount: number;
   error?: string;
 };
 
-async function fetchChaosSubdomains(domain: string, timeoutMs = 15_000): Promise<string[]> {
+async function fetchChaosSubdomains(domain: string, timeoutMs = 45_000): Promise<string[]> {
   const key = process.env.CHAOS_API_KEY;
   if (!key) throw new Error("CHAOS_API_KEY is not configured");
 
@@ -43,6 +43,7 @@ async function fetchChaosSubdomains(domain: string, timeoutMs = 15_000): Promise
 }
 
 
+
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
@@ -52,13 +53,22 @@ function chunk<T>(arr: T[], size: number): T[][] {
 export async function scanDomain(
   domainRow: { id: string; domain: string },
   trigger: "manual" | "cron",
-  options: { recordStats?: boolean } = {},
+  options: {
+    recordStats?: boolean;
+    fetchTimeoutMs?: number;
+    /** Wall-clock budget for the DB write phase; leftover batches are skipped. */
+    writeBudgetMs?: number;
+    /** How many upsert batches run in parallel. */
+    writeConcurrency?: number;
+  } = {},
 ): Promise<ScanResult> {
   const recordStats = options.recordStats ?? true;
+  const writeBudgetMs = options.writeBudgetMs ?? 60_000;
+  const writeConcurrency = Math.min(Math.max(options.writeConcurrency ?? 6, 1), 12);
   const startedAt = new Date().toISOString();
 
   try {
-    const labels = await fetchChaosSubdomains(domainRow.domain);
+    const labels = await fetchChaosSubdomains(domainRow.domain, options.fetchTimeoutMs);
     const hosts = labels.map((label) => ({
       label,
       host: label === "" ? domainRow.domain : `${label}.${domainRow.domain}`,
@@ -66,29 +76,47 @@ export async function scanDomain(
 
     const stamp = new Date().toISOString();
     let freshCount = 0;
+    let skipped = 0;
+    const deadline = Date.now() + writeBudgetMs;
 
     // Upsert with ignoreDuplicates: the (domain_id, host) unique index does the
     // diffing in the database, so we never have to page through millions of
-    // existing rows. The returned rows are exactly the newly discovered hosts,
-    // and they get a fresh first_seen_at so they surface in "recently added".
-    for (const batch of chunk(hosts, 1000)) {
-      const { data: inserted, error } = await supabaseAdmin
-        .from("subdomains")
-        .upsert(
-          batch.map((h) => ({
-            domain_id: domainRow.id,
-            label: h.label,
-            host: h.host,
-            first_seen_at: stamp,
-            last_seen_at: stamp,
-            is_active: true,
-          })),
-          { onConflict: "domain_id,host", ignoreDuplicates: true },
-        )
-        .select("host");
-      if (error) throw new Error(error.message);
-      freshCount += inserted?.length ?? 0;
+    // existing rows. Batches run in parallel so 100k+ host programs finish
+    // inside the request budget instead of dying with a 500.
+    const batches = chunk(hosts, 1000);
+    let cursor = 0;
+
+    async function writer() {
+      while (cursor < batches.length) {
+        const batch = batches[cursor++];
+        if (!batch) return;
+        if (Date.now() > deadline) {
+          skipped += batch.length;
+          continue;
+        }
+        const { data: inserted, error } = await supabaseAdmin
+          .from("subdomains")
+          .upsert(
+            batch.map((h) => ({
+              domain_id: domainRow.id,
+              label: h.label,
+              host: h.host,
+              first_seen_at: stamp,
+              last_seen_at: stamp,
+              is_active: true,
+            })),
+            { onConflict: "domain_id,host", ignoreDuplicates: true },
+          )
+          .select("host");
+        if (error) throw new Error(error.message);
+        freshCount += inserted?.length ?? 0;
+      }
     }
+
+    await Promise.all(Array.from({ length: writeConcurrency }, writer));
+
+    const status = skipped > 0 ? ("partial" as const) : ("success" as const);
+    const finishedAt = new Date().toISOString();
 
     // One write per scan instead of insert+update.
     await Promise.all([
@@ -97,20 +125,23 @@ export async function scanDomain(
         trigger,
         status: "success",
         started_at: startedAt,
-        finished_at: stamp,
+        finished_at: finishedAt,
         total_returned: hosts.length,
         new_count: freshCount,
         removed_count: 0,
+        ...(skipped > 0
+          ? { error_message: `${skipped} hosts deferred to the next scan (time budget)` }
+          : {}),
       }),
       supabaseAdmin
         .from("domains")
         .update({
-          last_scanned_at: stamp,
-          claimed_at: stamp,
+          last_scanned_at: finishedAt,
+          claimed_at: finishedAt,
           last_scan_status: "success",
           total_subdomains: hosts.length,
           new_subdomains_last_scan: freshCount,
-          updated_at: stamp,
+          updated_at: finishedAt,
         })
         .eq("id", domainRow.id),
     ]);
@@ -121,12 +152,16 @@ export async function scanDomain(
 
     return {
       domain: domainRow.domain,
-      status: "success",
+      status,
       total: hosts.length,
       newCount: freshCount,
       removedCount: 0,
+      ...(skipped > 0
+        ? { error: `${skipped.toLocaleString()} hosts deferred to the next scan` }
+        : {}),
     };
   } catch (error) {
+
     const message = error instanceof Error ? error.message : String(error);
     const stamp = new Date().toISOString();
 
@@ -220,7 +255,14 @@ export async function scanAllEnabledDomains(
     while (queue.length > 0 && Date.now() < deadline) {
       const next = queue.shift();
       if (!next) return;
-      results.push(await scanDomain(next, trigger, { recordStats: false }));
+      results.push(
+        await scanDomain(next, trigger, {
+          recordStats: false,
+          fetchTimeoutMs: 15_000,
+          writeBudgetMs: Math.max(deadline - Date.now(), 2_000),
+          writeConcurrency: 4,
+        }),
+      );
     }
   }
 

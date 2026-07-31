@@ -13,9 +13,36 @@ export const runScanNow = createServerFn({ method: "POST" })
       .eq("id", data.domainId)
       .maybeSingle();
 
-    if (!domain) return { status: "error" as const, error: "Domain not found" };
-    return await scanDomain(domain, "manual");
+    if (!domain)
+      return {
+        domain: "",
+        status: "error" as const,
+        total: 0,
+        newCount: 0,
+        removedCount: 0,
+        error: "Domain not found",
+      };
+
+    try {
+      // Big programs (100k+ hosts) need a generous fetch window and parallel
+      // writes; never let a failure bubble up as a 500 to the browser.
+      return await scanDomain(domain, "manual", {
+        fetchTimeoutMs: 45_000,
+        writeBudgetMs: 90_000,
+        writeConcurrency: 10,
+      });
+    } catch (error) {
+      return {
+        domain: domain.domain,
+        status: "error" as const,
+        total: 0,
+        newCount: 0,
+        removedCount: 0,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   });
+
 
 export const addDomains = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
