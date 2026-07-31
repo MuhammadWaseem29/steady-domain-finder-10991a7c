@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DocsApiKeyRouteImport } from './routes/docs/api-key'
 import { Route as DocsFetchSubdomainsRouteImport } from './routes/docs/fetch-subdomains'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
@@ -17,6 +18,11 @@ import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hook
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsApiKeyRoute = DocsApiKeyRouteImport.update({
@@ -37,12 +43,14 @@ const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
@@ -50,6 +58,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
@@ -57,13 +66,22 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/docs/api-key' | '/docs/fetch-subdomains' | '/api/public/hooks/scan'
+    | '/'
+    | '/dashboard'
+    | '/docs/api-key'
+    | '/docs/fetch-subdomains'
+    | '/api/public/hooks/scan'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/docs/api-key' | '/docs/fetch-subdomains' | '/api/public/hooks/scan'
+    | '/'
+    | '/dashboard'
+    | '/docs/api-key'
+    | '/docs/fetch-subdomains'
+    | '/api/public/hooks/scan'
   id:
     | '__root__'
     | '/'
+    | '/dashboard'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/api/public/hooks/scan'
@@ -71,6 +89,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
   DocsApiKeyRoute: typeof DocsApiKeyRoute
   DocsFetchSubdomainsRoute: typeof DocsFetchSubdomainsRoute
   ApiPublicHooksScanRoute: typeof ApiPublicHooksScanRoute
@@ -83,6 +102,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs/api-key': {
@@ -111,6 +137,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
   DocsApiKeyRoute: DocsApiKeyRoute,
   DocsFetchSubdomainsRoute: DocsFetchSubdomainsRoute,
   ApiPublicHooksScanRoute: ApiPublicHooksScanRoute,
