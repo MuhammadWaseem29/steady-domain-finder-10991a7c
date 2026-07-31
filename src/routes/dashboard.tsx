@@ -31,7 +31,7 @@ import {
   timeAgo,
   PAGE_SIZE,
 } from "@/lib/chaos-data";
-import { runScanNow, addDomains } from "@/lib/chaos.functions";
+import { runScanNow, addDomains, updateDomain, deleteDomain } from "@/lib/chaos.functions";
 
 
 export const Route = createFileRoute("/dashboard")({
