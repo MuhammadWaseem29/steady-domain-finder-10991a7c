@@ -5,14 +5,14 @@ const CHAOS_BASE = "https://dns.projectdiscovery.io/dns";
 
 export type ScanResult = {
   domain: string;
-  status: "success" | "error";
+  status: "success" | "partial" | "error";
   total: number;
   newCount: number;
   removedCount: number;
   error?: string;
 };
 
-async function fetchChaosSubdomains(domain: string, timeoutMs = 15_000): Promise<string[]> {
+async function fetchChaosSubdomains(domain: string, timeoutMs = 45_000): Promise<string[]> {
   const key = process.env.CHAOS_API_KEY;
   if (!key) throw new Error("CHAOS_API_KEY is not configured");
 
@@ -41,6 +41,7 @@ async function fetchChaosSubdomains(domain: string, timeoutMs = 15_000): Promise
     clearTimeout(timer);
   }
 }
+
 
 
 function chunk<T>(arr: T[], size: number): T[][] {
