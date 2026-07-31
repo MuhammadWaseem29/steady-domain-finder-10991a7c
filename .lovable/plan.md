@@ -1,53 +1,48 @@
-## Verified first
+## Goal
 
-- Cron job `chaos-rolling-scan` exists and is **active**, schedule `* * * * *` (every minute, 200 domains per sweep → full 10.4k pass roughly hourly). No fix needed; I'll add a visible "scanner health" panel so you can see last run time, per-hour scan counts and any errors instead of guessing.
-- Current tables: `domains`, `subdomains`, `scans`. There is no platform column yet, and no daily/weekly rollup data — both get added.
+Make the app look like chaos.projectdiscovery.io: clean, light, near-monochrome, with mono uppercase micro-labels and flat bordered panels. Style only — no data, scan, or cron logic changes.
 
-## 1. Bug bounty platforms
+## What the reference actually looks like
 
-New `platforms` table seeded with 5 rows: HackerOne, Bugcrowd, Intigriti, YesWeHack, Self-hosted. `domains` gets a `platform_id` column (nullable → existing 10.4k domains stay under "Unassigned"/Self).
+- Light canvas (near-white `#fff`), soft gray panel fills, hairline `#e6e6e6` borders, black primary buttons with white text, pill-shaped secondary buttons with a thin border.
+- Huge tight-tracked bold hero headline in black, muted gray body copy, centered hero with two pill CTAs.
+- Bordered "grid" cards divided by hairlines (WHAT / WHY / HOW) rather than shadowed floating cards.
+- Small colored icon tiles (red/green/blue) as the only accent color.
+- Tiny uppercase monospace labels (`SOURCES (DNS, TLS, HTTP)`) inside gray pills.
+- Black terminal block with monospace green-ish/gray output as the one dark surface.
+- Dense, quiet data table with hairline row separators, no zebra striping, no heavy chrome.
+- Minimal motion: subtle fades, no bouncy animation.
 
-Each platform gets one placeholder root domain seeded so the page isn't empty; you add the real root domains later manually or by bulk paste.
+## Changes
 
-New pages:
-- `/platforms` — grid of the 5 platforms with domain count, total subdomains, new-subs-last-24h per platform.
-- `/platform/{slug}` — that platform's domain list (search + pagination), its stats, its recent subdomains feed, copy/export of **every subdomain across that whole platform**, and a "Scan all domains in this platform" button.
+**1. Theme tokens (`src/styles.css`)**
+- Make light mode the default and the "real" theme: white background, `oklch` neutrals for card/muted/border matching the reference grays, black `--primary` with white foreground.
+- Keep the existing dark palette as the toggle target but flatten it to near-black/neutral gray (drop the heavy green cast; keep a single restrained accent).
+- Reduce `--radius` for panels/tables (Chaos uses small radii on cards, full pills on buttons).
+- Add tokens for the terminal surface (always-dark block) and the pill-label chip so both themes render it identically.
 
-## 2. Copy / export everywhere
+**2. Shared chrome (`src/components/site/chrome.tsx`)**
+- Navbar: wordmark + `BETA` chip, plain text nav links, right-side pill "Get Started"-style CTA, hairline bottom border, no blur/gradient.
+- `Stat` cards: bordered grid cells sharing hairlines instead of separate rounded cards; mono uppercase label, large tabular number.
+- Footer: quiet single-row hairline footer.
+- Soften page-transition motion to short opacity/translate fades.
 
-- Copy-all + export (TXT / CSV / JSON) buttons at three scopes: single domain (already there), per platform, and **global — all subdomains of all programs**.
-- Separate "Copy new only" for last-24h / since-last-scan.
-- Big exports stream in 1000-row pages with a progress toast so a 500k-row copy doesn't freeze the tab.
+**3. Landing page (`src/routes/index.tsx`)**
+- Centered oversized hero headline + muted subtitle + two pill CTAs (solid black primary, outlined secondary).
+- WHAT / WHY / HOW bordered grid with small colored icon tiles.
+- Keep the live terminal block, restyled as the black monospace surface with the pill captions beneath the pipeline row.
 
-## 3. New-subs dashboard
+**4. App pages (`dashboard`, `new`, `stats`, `programs`, `program/$slug`, `domain/$domain`, docs)**
+- Apply the same panel/table/button/label vocabulary: hairline-bordered panels, pill buttons, mono uppercase section labels, tabular numerals, muted secondary text.
+- Inputs/selects: hairline border, subtle focus ring, mono text for domain fields.
 
-- Dedicated `/new` view: everything first seen in a selected window (last scan, 1h, 24h, 7d, 30d), grouped by root domain, with platform badge, copy/export, and live auto-refresh.
-- "Run scan" on any domain immediately re-checks and any newly discovered host lands in this feed with a NEW badge.
+**5. Charts (`src/components/site/charts.tsx`)**
+- Monochrome-leaning palette: single accent stroke, faint gridlines, mono tick labels, minimal tooltip chrome — so charts read as part of the same quiet system.
 
-## 4. Stats & graphs
+## Technical details
 
-New rollup so history is cheap to chart: a `daily_stats` table (per day, and per platform) filled by a small SQL aggregation the cron also touches, plus on-the-fly hourly aggregation for the last 48h.
-
-Charts (recharts, already installed):
-- Subdomains discovered over time — toggles for Hourly / Daily / Weekly / Monthly / 6 months / All time.
-- Scans run + errors per period.
-- Top domains by new subs in period.
-- Platform share (donut).
-- Scan health strip: success/error ratio per hour.
-
-Stat cards: total domains, total subdomains, new in last scan, new 24h/7d/30d, last scan time, next sweep countdown.
-
-## 5. Dark theme + animation
-
-- Dark is already the base; I'll add a proper theme toggle (dark default, light available) wired through tokens in `src/styles.css` so nothing hardcodes colors.
-- Motion: staggered fade/slide-in on cards and table rows, animated counters on stat numbers, shimmer skeletons while loading, pulse on the live "new sub" feed, smooth chart draw-in, hover lift on domain rows, subtle terminal-style scan progress animation.
-
-## 6. Adding domains
-
-Single-domain input **and** multi-paste/upload textarea, both with a platform selector, on the dashboard and on each platform page.
-
-## Technical notes
-
-- Migration: `platforms` table + seed, `domains.platform_id` FK + index, `daily_stats` table, indexes on `subdomains.first_seen_at` and `(domain_id, first_seen_at)` for fast window queries; public read policies + GRANTs matching the existing tables.
-- Aggregations run as SQL RPC functions (security definer, read-only) so charts don't pull hundreds of thousands of rows to the browser.
-- Scanner logic unchanged apart from writing a daily stats row after each sweep.
+- All colors stay semantic tokens in `src/styles.css` (`@theme inline` + `:root`/`.dark`); no hardcoded `text-white`/`bg-black` in components.
+- Theme toggle keeps working; default changes from dark to light (`chaos-theme` default and `themeInitScript` in `src/components/site/theme-toggle.tsx`).
+- Fonts stay Figtree + JetBrains Mono (already matching the reference pairing).
+- No changes to `chaos.server.ts`, `chaos.functions.ts`, API routes, migrations, or the cron job.
+- Verification: Playwright screenshots of `/`, `/dashboard`, `/stats`, `/new` in both light and dark.

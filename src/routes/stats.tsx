@@ -99,13 +99,13 @@ function Stats() {
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="rounded-lg border border-border bg-card p-5">
             <p className="label-mono text-muted-foreground">Subdomains discovered</p>
             <div className="mt-4">
               <DiscoveryAreaChart data={discoveryData} />
             </div>
           </div>
-          <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="rounded-lg border border-border bg-card p-5">
             <p className="label-mono text-muted-foreground">Scans run vs errors</p>
             <div className="mt-4">
               <ScanBarChart data={scanData} />
@@ -113,7 +113,7 @@ function Stats() {
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-border bg-card p-5">
+        <div className="mt-4 rounded-lg border border-border bg-card p-5">
           <p className="label-mono text-muted-foreground">
             Most active domains · {RANGES[range].label}
           </p>

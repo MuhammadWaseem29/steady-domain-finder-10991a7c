@@ -61,22 +61,25 @@ function Index() {
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
-        <div className="grid overflow-hidden rounded-2xl border border-border md:grid-cols-2">
+        <div className="grid overflow-hidden rounded-lg border border-border md:grid-cols-2">
           <Feature
-            icon={<Globe className="size-4 text-brand" />}
+            icon={<Globe className="size-4 text-destructive" />}
+            tone="bg-destructive/10"
             title="What"
             body="A DNS dataset that assists security professionals with efficient reconnaissance and vulnerability assessment across every tracked root domain."
           />
           <Feature
             icon={<Boxes className="size-4 text-success" />}
+            tone="bg-success/10"
             title="Why"
             body="It empowers researchers with actionable data to enhance internet security and streamline vulnerability identification — with change tracking over time."
           />
           <div className="border-t border-border p-6 md:col-span-2">
             <div className="flex items-center gap-3">
-              <span className="grid size-8 place-items-center rounded-lg border border-border bg-background">
+              <span className="grid size-8 place-items-center rounded-lg border border-border bg-brand/10">
                 <Radar className="size-4 text-brand" />
               </span>
+
               <span className="label-mono">How</span>
             </div>
             <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
@@ -116,7 +119,7 @@ Authorization: API_KEY
               key={s.id}
               to="/domain/$domain"
               params={{ domain: s.domains?.domain ?? "" }}
-              className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
+              className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
             >
               <span className="truncate font-mono text-sm">{s.host}</span>
               <span className="label-mono shrink-0 text-muted-foreground">
@@ -138,7 +141,7 @@ Authorization: API_KEY
           export its subdomains.
         </p>
 
-        <div className="mt-6 overflow-hidden rounded-2xl border border-border">
+        <div className="mt-6 overflow-hidden rounded-lg border border-border">
           <table className="w-full text-left text-sm">
             <thead className="bg-card">
               <tr className="label-mono text-muted-foreground">
@@ -206,15 +209,19 @@ function Feature({
   icon,
   title,
   body,
+  tone,
 }: {
   icon: React.ReactNode;
   title: string;
   body: string;
+  tone: string;
 }) {
   return (
     <div className="border-border bg-card p-6 md:not-last:border-r">
       <div className="flex items-center gap-3">
-        <span className="grid size-8 place-items-center rounded-lg border border-border bg-background">
+        <span
+          className={`grid size-8 place-items-center rounded-lg border border-border ${tone}`}
+        >
           {icon}
         </span>
         <span className="label-mono">{title}</span>
@@ -223,3 +230,4 @@ function Feature({
     </div>
   );
 }
+

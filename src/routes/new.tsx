@@ -113,7 +113,7 @@ function NewSubs() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mt-6 rounded-2xl border border-border bg-card p-5"
+          className="mt-6 rounded-lg border border-border bg-card p-5"
         >
           <p className="label-mono text-muted-foreground">{RANGES[range].label}</p>
           <div className="mt-4">
@@ -136,7 +136,7 @@ function NewSubs() {
               <Link
                 to="/domain/$domain"
                 params={{ domain: s.domains?.domain ?? "" }}
-                className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
+                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
               >
                 <span className="truncate font-mono text-sm">{s.host}</span>
                 <span className="label-mono shrink-0 text-muted-foreground">

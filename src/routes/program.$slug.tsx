@@ -87,7 +87,7 @@ function ProgramDetail() {
           <Stat label="New (24h)" value={Number(platform?.new_24h ?? 0).toLocaleString()} index={2} />
         </div>
 
-        <div className="mt-8 rounded-2xl border border-border bg-card p-5">
+        <div className="mt-8 rounded-lg border border-border bg-card p-5">
           <p className="label-mono text-muted-foreground">Add root domains to this program</p>
           <div className="mt-3 flex flex-col gap-3 sm:flex-row">
             <textarea
@@ -95,12 +95,12 @@ function ProgramDetail() {
               onChange={(e) => setInput(e.target.value)}
               rows={3}
               placeholder={"example.com\nanother.com"}
-              className="flex-1 rounded-xl border border-input bg-background px-4 py-2.5 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
             />
             <button
               onClick={() => addMutation.mutate(input)}
               disabled={!input.trim() || addMutation.isPending}
-              className="inline-flex h-fit items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-fit items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {addMutation.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -145,7 +145,7 @@ function ProgramDetail() {
           </div>
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-2xl border border-border">
+        <div className="mt-4 overflow-hidden rounded-lg border border-border">
           <table className="w-full text-left text-sm">
             <thead className="bg-card">
               <tr className="label-mono text-muted-foreground">
