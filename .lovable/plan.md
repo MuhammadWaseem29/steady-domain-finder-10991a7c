@@ -1,48 +1,40 @@
-## Goal
+## What I found (verified against the live database)
 
-Make the app look like chaos.projectdiscovery.io: clean, light, near-monochrome, with mono uppercase micro-labels and flat bordered panels. Style only — no data, scan, or cron logic changes.
+- The cron job `chaos-rolling-scan` runs every minute and fires correctly (30/30 runs succeeded in the last 30 min).
+- But the sweep is **stalling, not cycling**: each run *claims* 200 domains, yet only ~25 actually finish. In the last hour: 1,542 successful scans, **394 scans stuck/timed out** (auto-closed after ~25 min), 52 still hanging.
+- Root cause: the Chaos fetch has **no timeout**. A slow domain hangs a worker for the whole run, so the other claimed domains are skipped — but they were already stamped as "scanned", so they wait a full cycle. Oldest domain was last touched **3h 14m ago** instead of within 30 min.
+- Display: the UI only shows relative time (`timeAgo`), so a scan 3h 14m old reads as "3h ago" — that's the "3 hour / 1 hour" you're seeing.
+- New-subdomain detection itself is correct: it upserts on the unique `(domain_id, host)` index, so re-scans only record genuinely new hosts, which is what feeds "Recently added subdomains".
 
-## What the reference actually looks like
+## Plan
 
-- Light canvas (near-white `#fff`), soft gray panel fills, hairline `#e6e6e6` borders, black primary buttons with white text, pill-shaped secondary buttons with a thin border.
-- Huge tight-tracked bold hero headline in black, muted gray body copy, centered hero with two pill CTAs.
-- Bordered "grid" cards divided by hairlines (WHAT / WHY / HOW) rather than shadowed floating cards.
-- Small colored icon tiles (red/green/blue) as the only accent color.
-- Tiny uppercase monospace labels (`SOURCES (DNS, TLS, HTTP)`) inside gray pills.
-- Black terminal block with monospace green-ish/gray output as the one dark surface.
-- Dense, quiet data table with hairline row separators, no zebra striping, no heavy chrome.
-- Minimal motion: subtle fades, no bouncy animation.
+### 1. Make the scanner fast enough for a 30-minute full cycle
+Target: 10,461 domains / 30 min = **~350 domains per minute**.
 
-## Changes
+- Add a hard per-request timeout (AbortController, ~15s) on the Chaos API call so one slow domain can't block a worker.
+- Raise the concurrency ceiling from 12 to 64 and run the cron with `limit=400&concurrency=40&budgetMs=50000`.
+- Skip the extra `scans` row insert/update round-trips for the common path by writing the scan record once at completion (still recording start time, returned, new, removed, status).
+- Keep the orphan cleanup, but close stuck `running` scans after 3 minutes instead of 10.
 
-**1. Theme tokens (`src/styles.css`)**
-- Make light mode the default and the "real" theme: white background, `oklch` neutrals for card/muted/border matching the reference grays, black `--primary` with white foreground.
-- Keep the existing dark palette as the toggle target but flatten it to near-black/neutral gray (drop the heavy green cast; keep a single restrained accent).
-- Reduce `--radius` for panels/tables (Chaos uses small radii on cards, full pills on buttons).
-- Add tokens for the terminal surface (always-dark block) and the pill-label chip so both themes render it identically.
+### 2. Stop lying about `last_scanned_at`
+- Add a `claimed_at` column to `domains`. The sweep claims on `claimed_at`; `last_scanned_at` is only written when a scan actually finishes. Queue ordering uses `claimed_at`, so nothing is re-picked mid-run and the displayed "last scanned" is real.
 
-**2. Shared chrome (`src/components/site/chrome.tsx`)**
-- Navbar: wordmark + `BETA` chip, plain text nav links, right-side pill "Get Started"-style CTA, hairline bottom border, no blur/gradient.
-- `Stat` cards: bordered grid cells sharing hairlines instead of separate rounded cards; mono uppercase label, large tabular number.
-- Footer: quiet single-row hairline footer.
-- Soften page-transition motion to short opacity/translate fades.
+### 3. Cron job
+- Keep the every-minute rolling sweep (it gives a smooth full pass in ~30 min and survives worker time limits better than one giant 30-minute job).
+- Re-tune the job's URL parameters, and add a lightweight second job that reports cycle health.
+- Verify after deploy: confirm `max(now() - last_scanned_at)` across all enabled domains drops under 30 minutes, error count stays near zero, and `cron.job_run_details` shows clean runs.
 
-**3. Landing page (`src/routes/index.tsx`)**
-- Centered oversized hero headline + muted subtitle + two pill CTAs (solid black primary, outlined secondary).
-- WHAT / WHY / HOW bordered grid with small colored icon tiles.
-- Keep the live terminal block, restyled as the black monospace surface with the pill captions beneath the pipeline row.
+### 4. Exact, live timestamps in the UI
+- Add an `exactTime()` helper (e.g. `31 Jul 2026, 18:12:44`) and show it everywhere a scan time appears: scan history tables, domain detail header, dashboard root-domain table, program pages.
+- Format: exact timestamp as the primary value with the relative age as a muted suffix (`18:12:44 · 1m ago`), and full ISO on hover.
+- Make the relative part tick live (1s interval) and drop the scan-history/feed refetch interval to 10s so the page reflects the database in near real time.
+- Add a "next full sweep completes in ~X" / "oldest domain scanned Xm ago" indicator on the dashboard so cycle health is visible at a glance.
 
-**4. App pages (`dashboard`, `new`, `stats`, `programs`, `program/$slug`, `domain/$domain`, docs)**
-- Apply the same panel/table/button/label vocabulary: hairline-bordered panels, pill buttons, mono uppercase section labels, tabular numerals, muted secondary text.
-- Inputs/selects: hairline border, subtle focus ring, mono text for domain fields.
+### 5. New-subdomain flow (confirm + surface)
+- Behaviour stays: first scan stores everything, re-scans insert only hosts not already present, and those rows get a fresh `first_seen_at` so they appear in "Recently added subdomains".
+- Add the count of new subs found in the current 30-minute cycle to the dashboard header, alongside last-hour / 24h.
 
-**5. Charts (`src/components/site/charts.tsx`)**
-- Monochrome-leaning palette: single accent stroke, faint gridlines, mono tick labels, minimal tooltip chrome — so charts read as part of the same quiet system.
-
-## Technical details
-
-- All colors stay semantic tokens in `src/styles.css` (`@theme inline` + `:root`/`.dark`); no hardcoded `text-white`/`bg-black` in components.
-- Theme toggle keeps working; default changes from dark to light (`chaos-theme` default and `themeInitScript` in `src/components/site/theme-toggle.tsx`).
-- Fonts stay Figtree + JetBrains Mono (already matching the reference pairing).
-- No changes to `chaos.server.ts`, `chaos.functions.ts`, API routes, migrations, or the cron job.
-- Verification: Playwright screenshots of `/`, `/dashboard`, `/stats`, `/new` in both light and dark.
+### Technical notes
+- Files touched: `src/lib/chaos.server.ts` (timeout, concurrency, claim logic, single scan write), `src/routes/api/public/hooks/scan.ts` (param defaults), `src/lib/chaos-data.ts` (`exactTime`, faster refetch), `src/routes/domain.$domain.tsx`, `dashboard.tsx`, `index.tsx`, `new.tsx`, `program.$slug.tsx` (timestamp display).
+- One migration: `domains.claimed_at` + index on `(enabled, claimed_at)`.
+- Cron reschedule via a data statement (not a migration), then verified by querying `cron.job_run_details` and domain staleness.
