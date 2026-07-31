@@ -46,8 +46,12 @@
   --color-success-foreground: var(--success-foreground);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-terminal: var(--terminal);
+  --color-terminal-foreground: var(--terminal-foreground);
+  --color-terminal-muted: var(--terminal-muted);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
