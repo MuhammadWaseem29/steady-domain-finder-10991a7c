@@ -13,10 +13,17 @@ const NAV = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background">
+    <motion.header
+      initial={{ y: -16, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="sticky top-0 z-40 w-full border-b border-border bg-background/85 backdrop-blur"
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-5">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-xl font-extrabold tracking-tight">Chaos.</span>
+        <Link to="/" className="group flex items-center gap-2">
+          <span className="text-xl font-extrabold tracking-tight transition-transform duration-200 group-hover:-translate-y-0.5">
+            Chaos.
+          </span>
           <span className="label-mono rounded-md bg-muted px-1.5 py-0.5 text-muted-foreground">
             beta
           </span>
@@ -26,7 +33,7 @@ export function SiteHeader() {
             <Link
               key={item.to}
               to={item.to}
-              className="transition-colors hover:text-foreground"
+              className="story-link transition-colors hover:text-foreground"
               activeProps={{ className: "text-foreground" }}
             >
               {item.label}
@@ -37,13 +44,14 @@ export function SiteHeader() {
           <ThemeToggle />
           <Link
             to="/dashboard"
-            className="rounded-full border border-border px-4 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+            className="hover-lift rounded-full border border-border px-4 py-1.5 text-sm font-medium hover:bg-accent"
           >
             Get Started
           </Link>
         </div>
       </div>
-    </header>
+    </motion.header>
+
   );
 }
 
@@ -101,6 +109,28 @@ export function Terminal({ children }: { children: ReactNode }) {
   );
 }
 
+export function Reveal({
+  children,
+  delay = 0,
+  className,
+}: {
+  children: ReactNode;
+  delay?: number;
+  className?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 export function Stat({
   label,
   value,
@@ -114,19 +144,32 @@ export function Stat({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, delay: index * 0.04 }}
-      className="rounded-lg border border-border bg-card p-5 transition-colors hover:bg-accent/40"
+      initial={{ opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.35, delay: index * 0.05, ease: "easeOut" }}
+      whileHover={{ y: -3 }}
+      className="hover-lift rounded-lg border border-border bg-card p-5 hover:bg-accent/40"
     >
       <p className="label-mono text-muted-foreground">{label}</p>
-      <p className="mt-2 text-3xl font-bold tabular-nums">{value}</p>
+      <motion.p
+        key={String(value)}
+        initial={{ opacity: 0.4 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="mt-2 text-3xl font-bold tabular-nums"
+      >
+        {value}
+      </motion.p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </motion.div>
   );
 }
 
 export function SectionCard({ children }: { children: ReactNode }) {
-  return <div className="rounded-lg border border-border bg-card p-5">{children}</div>;
+  return (
+    <Reveal className="rounded-lg border border-border bg-card p-5">{children}</Reveal>
+  );
 }
+
 

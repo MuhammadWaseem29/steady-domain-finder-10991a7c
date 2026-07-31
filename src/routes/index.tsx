@@ -1,14 +1,15 @@
 import { LiveTime } from "@/components/site/live-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { Globe, Boxes, Radar, ArrowRight } from "lucide-react";
-import { SiteShell, Terminal, Stat } from "@/components/site/chrome";
+import { SiteShell, Terminal, Stat, Reveal } from "@/components/site/chrome";
 import {
   globalStatsQuery,
   recentSubdomainsQuery,
   domainsPageQuery,
-  timeAgo,
 } from "@/lib/chaos-data";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,28 +39,53 @@ function Index() {
   return (
     <SiteShell>
       <section className="mx-auto max-w-6xl px-5 pt-20 pb-16 text-center sm:pt-28">
-        <h1 className="mx-auto max-w-3xl text-5xl font-extrabold sm:text-7xl">
+        <motion.p
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="chip-mono mx-auto mb-6 w-fit"
+        >
+          <span className="live-dot" /> live · rescanned every 30 minutes
+        </motion.p>
+        <motion.h1
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="mx-auto max-w-3xl text-5xl font-extrabold sm:text-7xl"
+        >
           The Internet Database.
-        </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg"
+        >
           A live, continuously updated API providing comprehensive internet data, including
           real-time DNS entries across the entire web — rescanned every hour.
-        </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+          className="mt-8 flex flex-wrap items-center justify-center gap-3"
+        >
           <Link
             to="/dashboard"
-            className="rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
+            className="hover-lift rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium hover:bg-accent"
           >
             View Data
           </Link>
           <Link
             to="/docs/api-key"
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            className="group hover-lift inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
-            Get API Key <ArrowRight className="size-4" />
+            Get API Key{" "}
+            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
           </Link>
-        </div>
+        </motion.div>
       </section>
+
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
         <div className="grid overflow-hidden rounded-lg border border-border md:grid-cols-2">
@@ -109,38 +135,49 @@ Authorization: API_KEY
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
-        <p className="label-mono text-muted-foreground">Live feed</p>
-        <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Recently added subdomains</h2>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          The newest hosts discovered across every monitored root domain.
-        </p>
+        <Reveal>
+          <p className="label-mono text-muted-foreground">Live feed</p>
+          <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Recently added subdomains</h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            The newest hosts discovered across every monitored root domain.
+          </p>
+        </Reveal>
         <div className="mt-6 grid gap-2 sm:grid-cols-2">
-          {(recent ?? []).map((s) => (
-            <Link
+          {(recent ?? []).map((s, i) => (
+            <motion.div
               key={s.id}
-              to="/domain/$domain"
-              params={{ domain: s.domains?.domain ?? "" }}
-              className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: Math.min(i, 12) * 0.03 }}
             >
-              <span className="truncate font-mono text-sm">{s.host}</span>
-              <span className="label-mono shrink-0 text-muted-foreground">
-                <LiveTime iso={s.first_seen_at} />
-              </span>
-            </Link>
+              <Link
+                to="/domain/$domain"
+                params={{ domain: s.domains?.domain ?? "" }}
+                className="hover-lift flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 hover:bg-accent"
+              >
+                <span className="truncate font-mono text-sm">{s.host}</span>
+                <span className="label-mono shrink-0 text-muted-foreground">
+                  <LiveTime iso={s.first_seen_at} />
+                </span>
+              </Link>
+            </motion.div>
           ))}
           {(recent ?? []).length === 0 && (
             <p className="text-sm text-muted-foreground">No subdomains discovered yet.</p>
           )}
         </div>
+
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-24">
-        <p className="label-mono text-muted-foreground">Recon data</p>
-        <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Largest monitored domains</h2>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Every root domain is rescanned on a rolling hourly cycle. Open one to browse, copy or
-          export its subdomains.
-        </p>
+        <Reveal>
+          <p className="label-mono text-muted-foreground">Recon data</p>
+          <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Largest monitored domains</h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Every root domain is rescanned on a rolling hourly cycle. Open one to browse, copy or
+            export its subdomains.
+          </p>
+        </Reveal>
 
         <div className="mt-6 overflow-hidden rounded-lg border border-border">
           <table className="w-full text-left text-sm">
@@ -155,7 +192,11 @@ Authorization: API_KEY
             </thead>
             <tbody>
               {(top?.rows ?? []).slice(0, 15).map((d) => (
-                <tr key={d.id} className="border-t border-border">
+                <tr
+                  key={d.id}
+                  className="border-t border-border transition-colors hover:bg-accent/50"
+                >
+
                   <td className="px-5 py-3 font-mono">{d.domain}</td>
                   <td className="px-5 py-3 tabular-nums">
                     {d.total_subdomains.toLocaleString()}
@@ -218,17 +259,24 @@ function Feature({
   tone: string;
 }) {
   return (
-    <div className="border-border bg-card p-6 md:not-last:border-r">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="group border-border bg-card p-6 transition-colors hover:bg-accent/40 md:not-last:border-r"
+    >
       <div className="flex items-center gap-3">
         <span
-          className={`grid size-8 place-items-center rounded-lg border border-border ${tone}`}
+          className={`grid size-8 place-items-center rounded-lg border border-border transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6 ${tone}`}
         >
           {icon}
         </span>
         <span className="label-mono">{title}</span>
       </div>
       <p className="mt-4 text-sm text-muted-foreground">{body}</p>
-    </div>
+    </motion.div>
   );
+
 }
 
