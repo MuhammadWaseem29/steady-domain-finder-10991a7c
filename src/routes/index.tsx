@@ -39,28 +39,53 @@ function Index() {
   return (
     <SiteShell>
       <section className="mx-auto max-w-6xl px-5 pt-20 pb-16 text-center sm:pt-28">
-        <h1 className="mx-auto max-w-3xl text-5xl font-extrabold sm:text-7xl">
+        <motion.p
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="chip-mono mx-auto mb-6 w-fit"
+        >
+          <span className="live-dot" /> live · rescanned every 30 minutes
+        </motion.p>
+        <motion.h1
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="mx-auto max-w-3xl text-5xl font-extrabold sm:text-7xl"
+        >
           The Internet Database.
-        </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg"
+        >
           A live, continuously updated API providing comprehensive internet data, including
           real-time DNS entries across the entire web — rescanned every hour.
-        </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+          className="mt-8 flex flex-wrap items-center justify-center gap-3"
+        >
           <Link
             to="/dashboard"
-            className="rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
+            className="hover-lift rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium hover:bg-accent"
           >
             View Data
           </Link>
           <Link
             to="/docs/api-key"
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            className="group hover-lift inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
-            Get API Key <ArrowRight className="size-4" />
+            Get API Key{" "}
+            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
           </Link>
-        </div>
+        </motion.div>
       </section>
+
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
         <div className="grid overflow-hidden rounded-lg border border-border md:grid-cols-2">
