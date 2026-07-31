@@ -14,7 +14,127 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      domains: {
+        Row: {
+          created_at: string
+          domain: string
+          enabled: boolean
+          id: string
+          last_scan_status: string | null
+          last_scanned_at: string | null
+          new_subdomains_last_scan: number
+          total_subdomains: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          enabled?: boolean
+          id?: string
+          last_scan_status?: string | null
+          last_scanned_at?: string | null
+          new_subdomains_last_scan?: number
+          total_subdomains?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          enabled?: boolean
+          id?: string
+          last_scan_status?: string | null
+          last_scanned_at?: string | null
+          new_subdomains_last_scan?: number
+          total_subdomains?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      scans: {
+        Row: {
+          domain_id: string
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          new_count: number
+          removed_count: number
+          started_at: string
+          status: string
+          total_returned: number
+          trigger: string
+        }
+        Insert: {
+          domain_id: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          new_count?: number
+          removed_count?: number
+          started_at?: string
+          status?: string
+          total_returned?: number
+          trigger?: string
+        }
+        Update: {
+          domain_id?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          new_count?: number
+          removed_count?: number
+          started_at?: string
+          status?: string
+          total_returned?: number
+          trigger?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scans_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subdomains: {
+        Row: {
+          domain_id: string
+          first_seen_at: string
+          host: string
+          id: string
+          is_active: boolean
+          label: string
+          last_seen_at: string
+        }
+        Insert: {
+          domain_id: string
+          first_seen_at?: string
+          host: string
+          id?: string
+          is_active?: boolean
+          label: string
+          last_seen_at?: string
+        }
+        Update: {
+          domain_id?: string
+          first_seen_at?: string
+          host?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          last_seen_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subdomains_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
