@@ -21,6 +21,7 @@ import {
 
 import { AnimatePresence, motion } from "framer-motion";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { LiveScanActivity } from "@/components/site/live-scans";
 import { CountUp, EASE_SIGNATURE, Skeleton, springSnappy } from "@/components/site/motion";
 import { DiscoveryAreaChart } from "@/components/site/charts";
 import {
