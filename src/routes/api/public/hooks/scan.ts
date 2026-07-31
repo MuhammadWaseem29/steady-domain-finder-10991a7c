@@ -5,11 +5,13 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
     handlers: {
       POST: async ({ request }) => {
         const url = new URL(request.url);
-        const limit = Number(url.searchParams.get("limit") ?? 200);
+        const limit = Number(url.searchParams.get("limit") ?? 60);
         const concurrency = Number(url.searchParams.get("concurrency") ?? 6);
+        const budgetMs = Number(url.searchParams.get("budgetMs") ?? 40000);
 
         const { scanAllEnabledDomains } = await import("@/lib/chaos.server");
-        const results = await scanAllEnabledDomains("cron", { limit, concurrency });
+        const results = await scanAllEnabledDomains("cron", { limit, concurrency, budgetMs });
+
 
         const scanned = results.length;
         const newCount = results.reduce((a, r) => a + r.newCount, 0);
