@@ -161,7 +161,12 @@ export const updateDomain = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const patch: {
+      updated_at: string;
+      domain?: string;
+      platform_id?: string | null;
+      enabled?: boolean;
+    } = { updated_at: new Date().toISOString() };
     if (data.domain !== undefined) patch.domain = data.domain.trim().toLowerCase();
     if (data.platformId !== undefined) patch.platform_id = data.platformId;
     if (data.enabled !== undefined) patch.enabled = data.enabled;
