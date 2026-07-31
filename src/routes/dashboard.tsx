@@ -28,6 +28,7 @@ import {
   platformsQuery,
   discoveryTimeseriesQuery,
   windowCountsQuery,
+  scanHealthQuery,
   formatTick,
   timeAgo,
   PAGE_SIZE,
@@ -56,6 +57,7 @@ export const Route = createFileRoute("/dashboard")({
 
 function Dashboard() {
   const qc = useQueryClient();
+  const { data: health } = useQuery(scanHealthQuery);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [input, setInput] = useState("");
@@ -156,9 +158,50 @@ function Dashboard() {
         <p className="label-mono text-muted-foreground">Dashboard</p>
         <h1 className="mt-2 text-4xl font-extrabold">Subdomain monitor</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Every enabled root domain is rescanned on a rolling cycle that completes every hour. New
-          hosts are diffed against everything ever seen.
+          Every enabled root domain is re-scanned on a rolling cycle that completes every 30
+          minutes. New hosts are diffed against everything ever seen and only genuinely new
+          subdomains are recorded.
         </p>
+
+        <div className="mt-6 rounded-lg border border-border bg-card p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="label-mono text-muted-foreground">Scan cycle — live</p>
+            <span className="label-mono flex items-center gap-2 text-muted-foreground">
+              <span className="size-1.5 animate-pulse rounded-full bg-success" />
+              updating every 10s
+            </span>
+          </div>
+          <div className="mt-4 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="label-mono text-muted-foreground">Scanned in last 30m</p>
+              <p className="mt-1 font-mono text-lg tabular-nums">
+                {(health?.scanned30m ?? 0).toLocaleString()} /{" "}
+                {(health?.totalDomains ?? 0).toLocaleString()}
+              </p>
+            </div>
+            <div>
+              <p className="label-mono text-muted-foreground">Oldest domain scan</p>
+              <p className="mt-1 text-sm">
+                <LiveTime iso={health?.oldestScan ?? null} mode="full" />
+              </p>
+            </div>
+            <div>
+              <p className="label-mono text-muted-foreground">Newest domain scan</p>
+              <p className="mt-1 text-sm">
+                <LiveTime iso={health?.newestScan ?? null} mode="full" />
+              </p>
+            </div>
+            <div>
+              <p className="label-mono text-muted-foreground">New subs in last 30m</p>
+              <p className="mt-1 font-mono text-lg tabular-nums text-success">
+                +{(health?.newSubs30m ?? 0).toLocaleString()}
+                <span className="ml-2 font-sans text-xs text-muted-foreground">
+                  {(health?.errors1h ?? 0).toLocaleString()} errors / 1h
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Root domains" value={(stats?.domains ?? 0).toLocaleString()} index={0} />
