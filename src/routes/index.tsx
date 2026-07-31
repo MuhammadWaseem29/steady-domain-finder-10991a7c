@@ -1,3 +1,4 @@
+import { LiveTime } from "@/components/site/live-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Globe, Boxes, Radar, ArrowRight } from "lucide-react";
@@ -123,7 +124,7 @@ Authorization: API_KEY
             >
               <span className="truncate font-mono text-sm">{s.host}</span>
               <span className="label-mono shrink-0 text-muted-foreground">
-                {timeAgo(s.first_seen_at)}
+                <LiveTime iso={s.first_seen_at} />
               </span>
             </Link>
           ))}
@@ -169,7 +170,7 @@ Authorization: API_KEY
                     )}
                   </td>
                   <td className="px-5 py-3 text-muted-foreground">
-                    {timeAgo(d.last_scanned_at)}
+                    <LiveTime iso={d.last_scanned_at} />
                   </td>
                   <td className="px-5 py-3 text-right">
                     <Link

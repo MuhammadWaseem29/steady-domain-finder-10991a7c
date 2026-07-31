@@ -49,6 +49,7 @@ export type Database = {
       }
       domains: {
         Row: {
+          claimed_at: string | null
           created_at: string
           domain: string
           enabled: boolean
@@ -61,6 +62,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          claimed_at?: string | null
           created_at?: string
           domain: string
           enabled?: boolean
@@ -73,6 +75,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          claimed_at?: string | null
           created_at?: string
           domain?: string
           enabled?: boolean
@@ -242,6 +245,19 @@ export type Database = {
           platform_id: string
           slug: string
           subdomain_count: number
+        }[]
+      }
+      scan_cycle_health: {
+        Args: never
+        Returns: {
+          errors_1h: number
+          never_scanned: number
+          new_subs_30m: number
+          newest_scan: string
+          oldest_scan: string
+          running_scans: number
+          scanned_30m: number
+          total_domains: number
         }[]
       }
       scan_timeseries: {

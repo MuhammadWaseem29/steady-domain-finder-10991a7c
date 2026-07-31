@@ -1,3 +1,4 @@
+import { LiveTime } from "@/components/site/live-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -177,7 +178,7 @@ function ProgramDetail() {
                       <span className="text-muted-foreground">0</span>
                     )}
                   </td>
-                  <td className="px-5 py-3 text-muted-foreground">{timeAgo(d.last_scanned_at)}</td>
+                  <td className="px-5 py-3 text-muted-foreground"><LiveTime iso={d.last_scanned_at} /></td>
                 </tr>
               ))}
               {rows.length === 0 && (

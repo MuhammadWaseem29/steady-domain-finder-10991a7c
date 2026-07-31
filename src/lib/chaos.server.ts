@@ -12,23 +12,36 @@ export type ScanResult = {
   error?: string;
 };
 
-async function fetchChaosSubdomains(domain: string): Promise<string[]> {
+async function fetchChaosSubdomains(domain: string, timeoutMs = 15_000): Promise<string[]> {
   const key = process.env.CHAOS_API_KEY;
   if (!key) throw new Error("CHAOS_API_KEY is not configured");
 
-  const res = await fetch(`${CHAOS_BASE}/${encodeURIComponent(domain)}/subdomains`, {
-    headers: { Authorization: key, Connection: "close" },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${CHAOS_BASE}/${encodeURIComponent(domain)}/subdomains`, {
+      headers: { Authorization: key, Connection: "close" },
+      signal: controller.signal,
+    });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Chaos API failed [${res.status}]: ${body.slice(0, 300)}`);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Chaos API failed [${res.status}]: ${body.slice(0, 300)}`);
+    }
+
+    const json = (await res.json()) as { subdomains?: string[] | null };
+    const list = Array.isArray(json.subdomains) ? json.subdomains : [];
+    return Array.from(new Set(list.filter((s) => typeof s === "string")));
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Chaos API timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
   }
-
-  const json = (await res.json()) as { subdomains?: string[] | null };
-  const list = Array.isArray(json.subdomains) ? json.subdomains : [];
-  return Array.from(new Set(list.filter((s) => typeof s === "string")));
 }
+
 
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -39,16 +52,10 @@ function chunk<T>(arr: T[], size: number): T[][] {
 export async function scanDomain(
   domainRow: { id: string; domain: string },
   trigger: "manual" | "cron",
+  options: { recordStats?: boolean } = {},
 ): Promise<ScanResult> {
-  const now = new Date().toISOString();
-
-  const { data: scanRow } = await supabaseAdmin
-    .from("scans")
-    .insert({ domain_id: domainRow.id, trigger, status: "running", started_at: now })
-    .select("id")
-    .single();
-
-  const scanId = scanRow?.id;
+  const recordStats = options.recordStats ?? true;
+  const startedAt = new Date().toISOString();
 
   try {
     const labels = await fetchChaosSubdomains(domainRow.domain);
@@ -62,8 +69,9 @@ export async function scanDomain(
 
     // Upsert with ignoreDuplicates: the (domain_id, host) unique index does the
     // diffing in the database, so we never have to page through millions of
-    // existing rows. The returned rows are exactly the newly discovered hosts.
-    for (const batch of chunk(hosts, 500)) {
+    // existing rows. The returned rows are exactly the newly discovered hosts,
+    // and they get a fresh first_seen_at so they surface in "recently added".
+    for (const batch of chunk(hosts, 1000)) {
       const { data: inserted, error } = await supabaseAdmin
         .from("subdomains")
         .upsert(
@@ -82,31 +90,34 @@ export async function scanDomain(
       freshCount += inserted?.length ?? 0;
     }
 
-    await supabaseAdmin
-      .from("domains")
-      .update({
-        last_scanned_at: stamp,
-        last_scan_status: "success",
-        total_subdomains: hosts.length,
-        new_subdomains_last_scan: freshCount,
-        updated_at: stamp,
-      })
-      .eq("id", domainRow.id);
-
-    if (scanId) {
-      await supabaseAdmin
-        .from("scans")
+    // One write per scan instead of insert+update.
+    await Promise.all([
+      supabaseAdmin.from("scans").insert({
+        domain_id: domainRow.id,
+        trigger,
+        status: "success",
+        started_at: startedAt,
+        finished_at: stamp,
+        total_returned: hosts.length,
+        new_count: freshCount,
+        removed_count: 0,
+      }),
+      supabaseAdmin
+        .from("domains")
         .update({
-          status: "success",
-          finished_at: stamp,
-          total_returned: hosts.length,
-          new_count: freshCount,
-          removed_count: 0,
+          last_scanned_at: stamp,
+          claimed_at: stamp,
+          last_scan_status: "success",
+          total_subdomains: hosts.length,
+          new_subdomains_last_scan: freshCount,
+          updated_at: stamp,
         })
-        .eq("id", scanId);
-    }
+        .eq("id", domainRow.id),
+    ]);
 
-    await supabaseAdmin.rpc("bump_daily_stats", { _new: freshCount, _errors: 0 });
+    if (recordStats) {
+      await supabaseAdmin.rpc("bump_daily_stats", { _new: freshCount, _errors: 0 });
+    }
 
     return {
       domain: domainRow.domain,
@@ -119,20 +130,29 @@ export async function scanDomain(
     const message = error instanceof Error ? error.message : String(error);
     const stamp = new Date().toISOString();
 
-    if (scanId) {
-      await supabaseAdmin
-        .from("scans")
-        .update({ status: "error", finished_at: stamp, error_message: message })
-        .eq("id", scanId);
+    await Promise.all([
+      supabaseAdmin.from("scans").insert({
+        domain_id: domainRow.id,
+        trigger,
+        status: "error",
+        started_at: startedAt,
+        finished_at: stamp,
+        error_message: message,
+      }),
+      supabaseAdmin
+        .from("domains")
+        .update({
+          last_scanned_at: stamp,
+          claimed_at: stamp,
+          last_scan_status: "error",
+          updated_at: stamp,
+        })
+        .eq("id", domainRow.id),
+    ]);
+
+    if (recordStats) {
+      await supabaseAdmin.rpc("bump_daily_stats", { _new: 0, _errors: 1 });
     }
-    await supabaseAdmin
-      .from("domains")
-      .update({ last_scanned_at: stamp, last_scan_status: "error", updated_at: stamp })
-      .eq("id", domainRow.id);
-
-    await supabaseAdmin.rpc("bump_daily_stats", { _new: 0, _errors: 1 });
-
-    console.error(`[chaos] scan failed for ${domainRow.domain}: ${message}`);
 
     return {
       domain: domainRow.domain,
@@ -146,21 +166,22 @@ export async function scanDomain(
 }
 
 /**
- * Scans a batch of enabled domains, oldest-scanned first (never-scanned domains
- * come first). Domains are claimed up front so a run that gets cut short by the
- * request budget never makes the next run replay the same slice, and any scan
- * left "running" by an earlier truncated run is closed out as an error.
+ * Rolling sweep over every enabled root domain, oldest-claimed first.
+ *
+ * Domains are claimed on `claimed_at` up front so a run cut short by the time
+ * budget never makes the next tick replay the same slice, while
+ * `last_scanned_at` keeps reflecting a real, completed scan.
  */
 export async function scanAllEnabledDomains(
   trigger: "manual" | "cron",
   options: { limit?: number; concurrency?: number; budgetMs?: number } = {},
 ) {
-  const limit = Math.min(Math.max(options.limit ?? 60, 1), 1000);
-  const concurrency = Math.min(Math.max(options.concurrency ?? 6, 1), 12);
-  const budgetMs = Math.min(Math.max(options.budgetMs ?? 40_000, 5_000), 120_000);
+  const limit = Math.min(Math.max(options.limit ?? 400, 1), 2000);
+  const concurrency = Math.min(Math.max(options.concurrency ?? 40, 1), 64);
+  const budgetMs = Math.min(Math.max(options.budgetMs ?? 50_000, 5_000), 120_000);
   const deadline = Date.now() + budgetMs;
 
-  // Close out scans orphaned by a previous truncated run.
+  // Close out scans orphaned by an earlier truncated run.
   await supabaseAdmin
     .from("scans")
     .update({
@@ -169,13 +190,13 @@ export async function scanAllEnabledDomains(
       error_message: "scan run timed out",
     })
     .eq("status", "running")
-    .lt("started_at", new Date(Date.now() - 10 * 60_000).toISOString());
+    .lt("started_at", new Date(Date.now() - 3 * 60_000).toISOString());
 
   const { data: domains } = await supabaseAdmin
     .from("domains")
     .select("id, domain")
     .eq("enabled", true)
-    .order("last_scanned_at", { ascending: true, nullsFirst: true })
+    .order("claimed_at", { ascending: true, nullsFirst: true })
     .limit(limit);
 
   const picked = domains ?? [];
@@ -183,12 +204,14 @@ export async function scanAllEnabledDomains(
 
   // Claim immediately so the next cron tick advances to the next slice.
   const claimStamp = new Date().toISOString();
-  for (const batch of chunk(picked.map((d) => d.id), 200)) {
-    await supabaseAdmin
-      .from("domains")
-      .update({ last_scanned_at: claimStamp, updated_at: claimStamp })
-      .in("id", batch);
-  }
+  await Promise.all(
+    chunk(
+      picked.map((d) => d.id),
+      500,
+    ).map((batch) =>
+      supabaseAdmin.from("domains").update({ claimed_at: claimStamp }).in("id", batch),
+    ),
+  );
 
   const queue = [...picked];
   const results: ScanResult[] = [];
@@ -197,11 +220,18 @@ export async function scanAllEnabledDomains(
     while (queue.length > 0 && Date.now() < deadline) {
       const next = queue.shift();
       if (!next) return;
-      results.push(await scanDomain(next, trigger));
+      results.push(await scanDomain(next, trigger, { recordStats: false }));
     }
   }
 
   await Promise.all(Array.from({ length: concurrency }, worker));
+
+  // One aggregated stats write per sweep instead of one per domain.
+  const newTotal = results.reduce((a, r) => a + r.newCount, 0);
+  const errorTotal = results.filter((r) => r.status === "error").length;
+  await supabaseAdmin.rpc("bump_daily_stats", { _new: newTotal, _errors: errorTotal });
+
   return results;
 }
+
 

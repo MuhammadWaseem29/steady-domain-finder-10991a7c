@@ -1,3 +1,4 @@
+import { LiveTime } from "@/components/site/live-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -140,7 +141,7 @@ function NewSubs() {
               >
                 <span className="truncate font-mono text-sm">{s.host}</span>
                 <span className="label-mono shrink-0 text-muted-foreground">
-                  {timeAgo(s.first_seen_at)}
+                  <LiveTime iso={s.first_seen_at} />
                 </span>
               </Link>
             </motion.div>
