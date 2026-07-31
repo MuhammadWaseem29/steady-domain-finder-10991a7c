@@ -199,16 +199,14 @@ export const globalStatsQuery = queryOptions({
         .from("domains")
         .select("id", { count: "exact", head: true })
         .not("last_scanned_at", "is", null),
-      supabase
-        .from("subdomains")
-        .select("id", { count: "exact", head: true })
-        .gte("first_seen_at", new Date(Date.now() - 24 * 3600_000).toISOString()),
+      supabase.rpc("new_subdomain_counts"),
     ]);
     return {
       domains: domainCount.count ?? 0,
       subdomains: subCount.count ?? 0,
       scanned: scannedCount.count ?? 0,
-      newLast24h: recentNew.count ?? 0,
+      newLast24h: Number((recentNew.data as { last_day: number }[] | null)?.[0]?.last_day ?? 0),
+
     };
   },
   refetchInterval: 30_000,
