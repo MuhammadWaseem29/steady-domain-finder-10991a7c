@@ -135,29 +135,38 @@ Authorization: API_KEY
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
-        <p className="label-mono text-muted-foreground">Live feed</p>
-        <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Recently added subdomains</h2>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          The newest hosts discovered across every monitored root domain.
-        </p>
+        <Reveal>
+          <p className="label-mono text-muted-foreground">Live feed</p>
+          <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Recently added subdomains</h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            The newest hosts discovered across every monitored root domain.
+          </p>
+        </Reveal>
         <div className="mt-6 grid gap-2 sm:grid-cols-2">
-          {(recent ?? []).map((s) => (
-            <Link
+          {(recent ?? []).map((s, i) => (
+            <motion.div
               key={s.id}
-              to="/domain/$domain"
-              params={{ domain: s.domains?.domain ?? "" }}
-              className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: Math.min(i, 12) * 0.03 }}
             >
-              <span className="truncate font-mono text-sm">{s.host}</span>
-              <span className="label-mono shrink-0 text-muted-foreground">
-                <LiveTime iso={s.first_seen_at} />
-              </span>
-            </Link>
+              <Link
+                to="/domain/$domain"
+                params={{ domain: s.domains?.domain ?? "" }}
+                className="hover-lift flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 hover:bg-accent"
+              >
+                <span className="truncate font-mono text-sm">{s.host}</span>
+                <span className="label-mono shrink-0 text-muted-foreground">
+                  <LiveTime iso={s.first_seen_at} />
+                </span>
+              </Link>
+            </motion.div>
           ))}
           {(recent ?? []).length === 0 && (
             <p className="text-sm text-muted-foreground">No subdomains discovered yet.</p>
           )}
         </div>
+
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-24">
