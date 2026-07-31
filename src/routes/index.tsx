@@ -1,9 +1,9 @@
+import { LiveTime } from "@/components/site/live-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Globe, Boxes, Radar, ArrowRight } from "lucide-react";
 import { SiteShell, Terminal, Stat } from "@/components/site/chrome";
 import {
-import { LiveTime } from "@/components/site/live-time";
   globalStatsQuery,
   recentSubdomainsQuery,
   domainsPageQuery,

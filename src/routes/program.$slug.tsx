@@ -1,3 +1,4 @@
+import { LiveTime } from "@/components/site/live-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,7 +8,6 @@ import { ArrowLeft, Copy, Loader2, Plus, Search, ChevronLeft, ChevronRight } fro
 import { SiteShell, Stat } from "@/components/site/chrome";
 import { domainsPageQuery, platformsQuery, timeAgo, PAGE_SIZE } from "@/lib/chaos-data";
 import { addDomains } from "@/lib/chaos.functions";
-import { LiveTime } from "@/components/site/live-time";
 
 export const Route = createFileRoute("/program/$slug")({
   head: ({ params }) => ({

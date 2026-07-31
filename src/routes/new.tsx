@@ -1,3 +1,4 @@
+import { LiveTime } from "@/components/site/live-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -7,7 +8,6 @@ import { Copy, Download } from "lucide-react";
 import { SiteShell, Stat } from "@/components/site/chrome";
 import { DiscoveryAreaChart } from "@/components/site/charts";
 import {
-import { LiveTime } from "@/components/site/live-time";
   RANGES,
   discoveryTimeseriesQuery,
   newSubdomainsQuery,

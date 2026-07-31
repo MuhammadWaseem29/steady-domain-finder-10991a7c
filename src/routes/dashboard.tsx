@@ -1,3 +1,4 @@
+import { LiveTime } from "@/components/site/live-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -32,7 +33,6 @@ import {
   PAGE_SIZE,
 } from "@/lib/chaos-data";
 import { runScanNow, addDomains, updateDomain, deleteDomain } from "@/lib/chaos.functions";
-import { LiveTime } from "@/components/site/live-time";
 
 
 export const Route = createFileRoute("/dashboard")({
