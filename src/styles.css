@@ -296,3 +296,99 @@
     transform-origin: bottom left;
   }
 }
+
+/* ------------------------------------------------------------ motion kit */
+
+@keyframes chaos-caret {
+  0%, 45% { opacity: 1; }
+  55%, 100% { opacity: 0; }
+}
+
+@keyframes chaos-grid-drift {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-48px, -48px, 0); }
+}
+
+@keyframes chaos-aurora {
+  0%, 100% { transform: translate3d(-4%, 0, 0) scale(1); opacity: 0.55; }
+  50% { transform: translate3d(4%, -3%, 0) scale(1.08); opacity: 0.85; }
+}
+
+@keyframes chaos-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1200%); }
+}
+
+@keyframes chaos-flash {
+  0% { background-color: color-mix(in oklab, var(--color-success) 22%, transparent); }
+  100% { background-color: transparent; }
+}
+
+@utility caret-blink {
+  animation: chaos-caret 1s steps(1, end) infinite;
+}
+
+@utility skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-muted) 0%,
+    color-mix(in oklab, var(--color-muted) 55%, var(--color-background)) 50%,
+    var(--color-muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: chaos-shimmer 1.6s linear infinite;
+}
+
+@utility flash-new {
+  animation: chaos-flash 1.6s ease-out 1;
+}
+
+@utility hero-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-border) 70%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-border) 70%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  animation: chaos-grid-drift 24s linear infinite;
+}
+
+@utility aurora-blob {
+  filter: blur(70px);
+  animation: chaos-aurora 16s ease-in-out infinite;
+}
+
+@utility scanline {
+  animation: chaos-scanline 7s linear infinite;
+}
+
+@layer base {
+  .row-sweep {
+    position: relative;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
+  .row-sweep::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--color-foreground);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .row-sweep:hover::before {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-grid,
+    .aurora-blob,
+    .scanline,
+    .skeleton,
+    .caret-blink {
+      animation: none !important;
+    }
+  }
+}
