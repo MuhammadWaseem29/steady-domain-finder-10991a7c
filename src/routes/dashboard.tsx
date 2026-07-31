@@ -289,13 +289,39 @@ function Dashboard() {
               {rows.map((d) => (
                 <tr key={d.id} className="border-t border-border">
                   <td className="px-5 py-3">
-                    <Link
-                      to="/domain/$domain"
-                      params={{ domain: d.domain }}
-                      className="font-mono hover:underline"
-                    >
-                      {d.domain}
-                    </Link>
+                    {editRow?.id === d.id ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          value={editRow.domain}
+                          onChange={(e) =>
+                            setEditRow((r) => (r ? { ...r, domain: e.target.value } : r))
+                          }
+                          className="w-52 rounded-lg border border-input bg-background px-3 py-1.5 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <select
+                          value={editRow.platformId}
+                          onChange={(e) =>
+                            setEditRow((r) => (r ? { ...r, platformId: e.target.value } : r))
+                          }
+                          className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <option value="">No platform</option>
+                          {(platforms ?? []).map((p) => (
+                            <option key={p.platform_id} value={p.platform_id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <Link
+                        to="/domain/$domain"
+                        params={{ domain: d.domain }}
+                        className="font-mono hover:underline"
+                      >
+                        {d.domain}
+                      </Link>
+                    )}
                   </td>
                   <td className="px-5 py-3 tabular-nums">
                     {d.total_subdomains.toLocaleString()}
@@ -315,22 +341,89 @@ function Dashboard() {
                   <td className="px-5 py-3 text-muted-foreground">
                     {timeAgo(d.last_scanned_at)}
                   </td>
-                  <td className="px-5 py-3 text-right">
-                    <button
-                      onClick={() => scanMutation.mutate(d.id)}
-                      disabled={scanMutation.isPending}
-                      className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent disabled:opacity-50"
-                    >
-                      {scanMutation.isPending && scanMutation.variables === d.id ? (
-                        <Loader2 className="size-3 animate-spin" />
+                  <td className="px-5 py-3">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {editRow?.id === d.id ? (
+                        <>
+                          <button
+                            onClick={() =>
+                              updateMutation.mutate({
+                                id: d.id,
+                                domain: editRow.domain.trim().toLowerCase(),
+                                platformId: editRow.platformId || null,
+                              })
+                            }
+                            disabled={updateMutation.isPending}
+                            className="label-mono inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                          >
+                            {updateMutation.isPending ? (
+                              <Loader2 className="size-3 animate-spin" />
+                            ) : (
+                              <Check className="size-3" />
+                            )}
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditRow(null)}
+                            className="grid size-8 place-items-center rounded-full border border-border transition-colors hover:bg-accent"
+                            aria-label="Cancel edit"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        </>
                       ) : (
-                        <RefreshCw className="size-3" />
+                        <>
+                          <button
+                            onClick={() => scanMutation.mutate(d.id)}
+                            disabled={scanMutation.isPending}
+                            className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent disabled:opacity-50"
+                          >
+                            {scanMutation.isPending && scanMutation.variables === d.id ? (
+                              <Loader2 className="size-3 animate-spin" />
+                            ) : (
+                              <RefreshCw className="size-3" />
+                            )}
+                            Scan
+                          </button>
+                          <button
+                            onClick={() =>
+                              setEditRow({
+                                id: d.id,
+                                domain: d.domain,
+                                platformId: d.platform_id ?? "",
+                              })
+                            }
+                            aria-label={`Edit ${d.domain}`}
+                            className="grid size-8 place-items-center rounded-full border border-border transition-colors hover:bg-accent"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirmId === d.id) deleteMutation.mutate(d.id);
+                              else setConfirmId(d.id);
+                            }}
+                            aria-label={`Delete ${d.domain}`}
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 transition-colors ${
+                              confirmId === d.id
+                                ? "label-mono border-destructive bg-destructive/10 text-destructive"
+                                : "grid size-8 place-items-center border-border px-0 py-0 text-destructive hover:bg-destructive/10"
+                            }`}
+                          >
+                            {deleteMutation.isPending && deleteMutation.variables === d.id ? (
+                              <Loader2 className="size-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-3.5" />
+                            )}
+                            {confirmId === d.id && "Confirm"}
+                          </button>
+                        </>
                       )}
-                      Scan
-                    </button>
+                    </div>
                   </td>
                 </tr>
               ))}
+
               {rows.length === 0 && (
                 <tr>
                   <td className="px-5 py-8 text-center text-muted-foreground" colSpan={6}>
