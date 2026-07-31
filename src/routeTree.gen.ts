@@ -14,6 +14,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as StatsRouteImport } from './routes/stats'
+import { Route as UpdatesRouteImport } from './routes/updates'
 import { Route as DocsApiKeyRouteImport } from './routes/docs/api-key'
 import { Route as DocsFetchSubdomainsRouteImport } from './routes/docs/fetch-subdomains'
 import { Route as DomainDomainRouteImport } from './routes/domain.$domain'
@@ -44,6 +45,11 @@ const ProgramsRoute = ProgramsRouteImport.update({
 const StatsRoute = StatsRouteImport.update({
   id: '/stats',
   path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UpdatesRoute = UpdatesRouteImport.update({
+  id: '/updates',
+  path: '/updates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsApiKeyRoute = DocsApiKeyRouteImport.update({
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/new': typeof NewRoute
   '/programs': typeof ProgramsRoute
   '/stats': typeof StatsRoute
+  '/updates': typeof UpdatesRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/new': typeof NewRoute
   '/programs': typeof ProgramsRoute
   '/stats': typeof StatsRoute
+  '/updates': typeof UpdatesRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/new': typeof NewRoute
   '/programs': typeof ProgramsRoute
   '/stats': typeof StatsRoute
+  '/updates': typeof UpdatesRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/new'
     | '/programs'
     | '/stats'
+    | '/updates'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/new'
     | '/programs'
     | '/stats'
+    | '/updates'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/new'
     | '/programs'
     | '/stats'
+    | '/updates'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
@@ -165,6 +177,7 @@ export interface RootRouteChildren {
   NewRoute: typeof NewRoute
   ProgramsRoute: typeof ProgramsRoute
   StatsRoute: typeof StatsRoute
+  UpdatesRoute: typeof UpdatesRoute
   DocsApiKeyRoute: typeof DocsApiKeyRoute
   DocsFetchSubdomainsRoute: typeof DocsFetchSubdomainsRoute
   DomainDomainRoute: typeof DomainDomainRoute
@@ -208,6 +221,13 @@ declare module '@tanstack/react-router' {
       path: '/stats'
       fullPath: '/stats'
       preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/updates': {
+      id: '/updates'
+      path: '/updates'
+      fullPath: '/updates'
+      preLoaderRoute: typeof UpdatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs/api-key': {
@@ -261,6 +281,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewRoute: NewRoute,
   ProgramsRoute: ProgramsRoute,
   StatsRoute: StatsRoute,
+  UpdatesRoute: UpdatesRoute,
   DocsApiKeyRoute: DocsApiKeyRoute,
   DocsFetchSubdomainsRoute: DocsFetchSubdomainsRoute,
   DomainDomainRoute: DomainDomainRoute,

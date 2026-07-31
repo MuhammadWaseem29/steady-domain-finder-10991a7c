@@ -12,6 +12,7 @@ import {
 
 const NAV = [
   { to: "/programs", label: "Programs" },
+  { to: "/updates", label: "Updates" },
   { to: "/new", label: "New subs" },
   { to: "/stats", label: "Stats" },
   { to: "/dashboard", label: "Monitor" },
