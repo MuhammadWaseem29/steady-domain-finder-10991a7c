@@ -61,6 +61,13 @@ function Dashboard() {
   const [platformSlug, setPlatformSlug] = useState("");
   const [filterPlatform, setFilterPlatform] = useState("");
   const [copying, setCopying] = useState(false);
+  const [editRow, setEditRow] = useState<{
+    id: string;
+    domain: string;
+    platformId: string;
+  } | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
 
   const { data: stats } = useQuery(globalStatsQuery);
   const { data: counts } = useQuery(windowCountsQuery);
