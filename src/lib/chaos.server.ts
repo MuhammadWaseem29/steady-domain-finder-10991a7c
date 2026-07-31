@@ -161,15 +161,36 @@ export async function scanDomain(
   }
 }
 
-export async function scanAllEnabledDomains(trigger: "manual" | "cron") {
+/**
+ * Scans a batch of enabled domains, oldest-scanned first (never-scanned domains
+ * come first). Runs a few requests in parallel so a full sweep of a large
+ * root-domain list completes well inside an hour when called on a short cron.
+ */
+export async function scanAllEnabledDomains(
+  trigger: "manual" | "cron",
+  options: { limit?: number; concurrency?: number } = {},
+) {
+  const limit = Math.min(Math.max(options.limit ?? 200, 1), 1000);
+  const concurrency = Math.min(Math.max(options.concurrency ?? 6, 1), 12);
+
   const { data: domains } = await supabaseAdmin
     .from("domains")
     .select("id, domain")
-    .eq("enabled", true);
+    .eq("enabled", true)
+    .order("last_scanned_at", { ascending: true, nullsFirst: true })
+    .limit(limit);
 
+  const queue = [...(domains ?? [])];
   const results: ScanResult[] = [];
-  for (const d of domains ?? []) {
-    results.push(await scanDomain(d, trigger));
+
+  async function worker() {
+    while (queue.length > 0) {
+      const next = queue.shift();
+      if (!next) return;
+      results.push(await scanDomain(next, trigger));
+    }
   }
+
+  await Promise.all(Array.from({ length: concurrency }, worker));
   return results;
 }
