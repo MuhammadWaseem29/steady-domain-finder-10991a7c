@@ -177,7 +177,7 @@ function DomainDetail() {
           Showing {filtered.length.toLocaleString()} of {all.length.toLocaleString()} hosts
         </p>
 
-        <div className="mt-3 overflow-hidden rounded-2xl border border-border">
+        <div className="mt-3 overflow-hidden rounded-lg border border-border">
           <table className="w-full text-left text-sm">
             <thead className="bg-card">
               <tr className="label-mono text-muted-foreground">
@@ -235,7 +235,7 @@ function DomainDetail() {
         )}
 
         <h2 className="mt-12 text-2xl font-bold">Scan history</h2>
-        <div className="mt-4 overflow-hidden rounded-2xl border border-border">
+        <div className="mt-4 overflow-hidden rounded-lg border border-border">
           <table className="w-full text-left text-sm">
             <thead className="bg-card">
               <tr className="label-mono text-muted-foreground">

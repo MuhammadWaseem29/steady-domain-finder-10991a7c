@@ -61,7 +61,7 @@ function Programs() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: i * 0.05 }}
-              className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/50"
+              className="rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/50"
             >
               <div className="flex items-center justify-between gap-3">
                 <div>

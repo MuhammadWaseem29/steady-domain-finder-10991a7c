@@ -91,7 +91,7 @@ export function Param({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex flex-wrap items-center gap-2">
         <code className="font-mono text-sm font-semibold text-foreground">{name}</code>
         <span className="label-mono text-muted-foreground">{type}</span>
@@ -108,7 +108,7 @@ export function Param({
 
 export function Code({ children }: { children: string }) {
   return (
-    <pre className="overflow-x-auto rounded-xl bg-primary p-4 font-mono text-[13px] leading-6 text-primary-foreground">
+    <pre className="overflow-x-auto rounded-lg bg-primary p-4 font-mono text-[13px] leading-6 text-primary-foreground">
       {children}
     </pre>
   );

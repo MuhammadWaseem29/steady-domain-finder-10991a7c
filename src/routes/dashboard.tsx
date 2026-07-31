@@ -139,7 +139,7 @@ function Dashboard() {
           />
         </div>
 
-        <div className="mt-4 rounded-2xl border border-border bg-card p-5">
+        <div className="mt-4 rounded-lg border border-border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="label-mono text-muted-foreground">Discovery — last 7 days</p>
             <div className="flex flex-wrap gap-2">
@@ -170,7 +170,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-border bg-card p-5">
+        <div className="mt-8 rounded-lg border border-border bg-card p-5">
           <p className="label-mono text-muted-foreground">Add root domains</p>
           <div className="mt-3 flex flex-col gap-3 lg:flex-row">
             <textarea
@@ -178,13 +178,13 @@ function Dashboard() {
               onChange={(e) => setInput(e.target.value)}
               rows={3}
               placeholder={"example.com\nanother.com"}
-              className="flex-1 rounded-xl border border-input bg-background px-4 py-2.5 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
             />
             <div className="flex gap-3">
               <select
                 value={platformSlug}
                 onChange={(e) => setPlatformSlug(e.target.value)}
-                className="h-fit rounded-xl border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="h-fit rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">No platform</option>
                 {(platforms ?? []).map((p) => (
@@ -196,7 +196,7 @@ function Dashboard() {
               <button
                 onClick={() => addMutation.mutate(input)}
                 disabled={!input.trim() || addMutation.isPending}
-                className="inline-flex h-fit items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-fit items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {addMutation.isPending ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -225,7 +225,7 @@ function Dashboard() {
                 key={s.id}
                 to="/domain/$domain"
                 params={{ domain: s.domains?.domain ?? "" }}
-                className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
+                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
               >
                 <span className="truncate font-mono text-sm">{s.host}</span>
                 <span className="label-mono shrink-0 text-muted-foreground">
@@ -273,7 +273,7 @@ function Dashboard() {
 
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-2xl border border-border">
+        <div className="mt-4 overflow-hidden rounded-lg border border-border">
           <table className="w-full text-left text-sm">
             <thead className="bg-card">
               <tr className="label-mono text-muted-foreground">

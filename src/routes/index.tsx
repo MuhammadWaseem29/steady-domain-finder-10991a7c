@@ -61,7 +61,7 @@ function Index() {
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
-        <div className="grid overflow-hidden rounded-2xl border border-border md:grid-cols-2">
+        <div className="grid overflow-hidden rounded-lg border border-border md:grid-cols-2">
           <Feature
             icon={<Globe className="size-4 text-brand" />}
             title="What"
@@ -116,7 +116,7 @@ Authorization: API_KEY
               key={s.id}
               to="/domain/$domain"
               params={{ domain: s.domains?.domain ?? "" }}
-              className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
+              className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
             >
               <span className="truncate font-mono text-sm">{s.host}</span>
               <span className="label-mono shrink-0 text-muted-foreground">
@@ -138,7 +138,7 @@ Authorization: API_KEY
           export its subdomains.
         </p>
 
-        <div className="mt-6 overflow-hidden rounded-2xl border border-border">
+        <div className="mt-6 overflow-hidden rounded-lg border border-border">
           <table className="w-full text-left text-sm">
             <thead className="bg-card">
               <tr className="label-mono text-muted-foreground">
