@@ -72,14 +72,39 @@ function Programs() {
                   <h2 className="text-xl font-bold">{p.name}</h2>
                   <p className="label-mono text-muted-foreground">{p.slug}</p>
                 </div>
-                <Link
-                  to="/program/$slug"
-                  params={{ slug: p.slug }}
-                  className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
-                >
-                  Open <ArrowRight className="size-3" />
-                </Link>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() =>
+                      setEditing({
+                        id: p.platform_id,
+                        name: p.name,
+                        slug: p.slug,
+                        color: p.color ?? "",
+                        website: "",
+                      })
+                    }
+                    aria-label={`Edit ${p.name}`}
+                    className="grid size-8 place-items-center rounded-full border border-border transition-colors hover:bg-accent"
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setRemoving({ id: p.platform_id, name: p.name })}
+                    aria-label={`Delete ${p.name}`}
+                    className="grid size-8 place-items-center rounded-full border border-border text-destructive transition-colors hover:bg-destructive/10"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                  <Link
+                    to="/program/$slug"
+                    params={{ slug: p.slug }}
+                    className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
+                  >
+                    Open <ArrowRight className="size-3" />
+                  </Link>
+                </div>
               </div>
+
               <div className="mt-5 grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <p className="label-mono text-muted-foreground">Domains</p>
