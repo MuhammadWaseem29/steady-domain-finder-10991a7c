@@ -12,7 +12,12 @@ import {
   ChevronRight,
   Copy,
   Download,
+  Pencil,
+  Trash2,
+  Check,
+  X,
 } from "lucide-react";
+
 import { SiteShell, Stat } from "@/components/site/chrome";
 import { DiscoveryAreaChart } from "@/components/site/charts";
 import {
