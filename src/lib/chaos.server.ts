@@ -255,7 +255,14 @@ export async function scanAllEnabledDomains(
     while (queue.length > 0 && Date.now() < deadline) {
       const next = queue.shift();
       if (!next) return;
-      results.push(await scanDomain(next, trigger, { recordStats: false }));
+      results.push(
+        await scanDomain(next, trigger, {
+          recordStats: false,
+          fetchTimeoutMs: 15_000,
+          writeBudgetMs: Math.max(deadline - Date.now(), 2_000),
+          writeConcurrency: 4,
+        }),
+      );
     }
   }
 
