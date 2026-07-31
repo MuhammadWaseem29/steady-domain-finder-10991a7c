@@ -285,8 +285,8 @@ export function Press({
       title={title}
       onClick={onClick}
       disabled={disabled}
-      whileHover={disabled ? undefined : { y: -2 }}
-      whileTap={disabled ? undefined : { scale: 0.96 }}
+      whileHover={disabled ? {} : { y: -2 }}
+      whileTap={disabled ? {} : { scale: 0.96 }}
       transition={springSnappy}
       className={className}
     >
