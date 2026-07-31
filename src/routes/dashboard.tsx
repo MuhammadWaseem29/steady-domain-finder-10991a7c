@@ -208,6 +208,12 @@ function Dashboard() {
           </div>
         </div>
 
+        <div className="mt-4">
+          <LiveScanActivity />
+        </div>
+
+
+
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Root domains" value={stats?.domains ?? 0} index={0} />
           <Stat label="Domains scanned" value={stats?.scanned ?? 0} index={1} />
