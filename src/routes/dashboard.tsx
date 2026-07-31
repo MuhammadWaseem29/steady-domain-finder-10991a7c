@@ -80,6 +80,30 @@ function Dashboard() {
 
   const scan = useServerFn(runScanNow);
   const add = useServerFn(addDomains);
+  const editDomainFn = useServerFn(updateDomain);
+  const removeDomainFn = useServerFn(deleteDomain);
+
+  const updateMutation = useMutation({
+    mutationFn: (v: { id: string; domain: string; platformId: string | null }) =>
+      editDomainFn({ data: v }),
+    onSuccess: () => {
+      toast.success("Domain updated");
+      setEditRow(null);
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => removeDomainFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Domain deleted");
+      setConfirmId(null);
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const scanMutation = useMutation({
     mutationFn: (domainId: string) => scan({ data: { domainId } }),
