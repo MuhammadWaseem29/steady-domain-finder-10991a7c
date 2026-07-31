@@ -48,8 +48,8 @@ function Index() {
     <SiteShell>
       <section className="relative overflow-hidden">
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-          <div className="hero-grid absolute -inset-24 opacity-[0.35] [mask-image:radial-gradient(60%_55%_at_50%_35%,black,transparent)]" />
-          <div className="aurora-blob absolute -top-24 left-1/4 size-96 rounded-full bg-brand/20" />
+          <div className="hero-grid absolute -inset-24 opacity-70 [mask-image:radial-gradient(60%_55%_at_50%_35%,black,transparent)]" />
+          <div className="aurora-blob absolute -top-24 left-1/4 size-96 rounded-full bg-brand/25" />
           <div
             className="aurora-blob absolute -top-10 right-1/4 size-80 rounded-full bg-success/15"
             style={{ animationDelay: "-6s" }}
