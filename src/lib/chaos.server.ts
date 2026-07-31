@@ -12,23 +12,36 @@ export type ScanResult = {
   error?: string;
 };
 
-async function fetchChaosSubdomains(domain: string): Promise<string[]> {
+async function fetchChaosSubdomains(domain: string, timeoutMs = 15_000): Promise<string[]> {
   const key = process.env.CHAOS_API_KEY;
   if (!key) throw new Error("CHAOS_API_KEY is not configured");
 
-  const res = await fetch(`${CHAOS_BASE}/${encodeURIComponent(domain)}/subdomains`, {
-    headers: { Authorization: key, Connection: "close" },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${CHAOS_BASE}/${encodeURIComponent(domain)}/subdomains`, {
+      headers: { Authorization: key, Connection: "close" },
+      signal: controller.signal,
+    });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Chaos API failed [${res.status}]: ${body.slice(0, 300)}`);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Chaos API failed [${res.status}]: ${body.slice(0, 300)}`);
+    }
+
+    const json = (await res.json()) as { subdomains?: string[] | null };
+    const list = Array.isArray(json.subdomains) ? json.subdomains : [];
+    return Array.from(new Set(list.filter((s) => typeof s === "string")));
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Chaos API timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
   }
-
-  const json = (await res.json()) as { subdomains?: string[] | null };
-  const list = Array.isArray(json.subdomains) ? json.subdomains : [];
-  return Array.from(new Set(list.filter((s) => typeof s === "string")));
 }
+
 
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
