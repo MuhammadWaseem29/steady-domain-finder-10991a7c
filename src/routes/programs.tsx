@@ -84,8 +84,8 @@ function Programs() {
 
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
           <Stat label="Platforms" value={list.length} index={0} />
-          <Stat label="Domains assigned" value={totals.domains.toLocaleString()} index={1} />
-          <Stat label="New (24h)" value={totals.new24.toLocaleString()} index={2} />
+          <Stat label="Domains assigned" value={totals.domains} index={1} />
+          <Stat label="New (24h)" value={totals.new24} index={2} />
         </div>
 
         <div className="mt-4 rounded-lg border border-border bg-card p-5">
