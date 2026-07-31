@@ -2,7 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Globe, Boxes, Radar, ArrowRight } from "lucide-react";
 import { SiteShell, Terminal, Stat } from "@/components/site/chrome";
-import { domainsQuery, timeAgo } from "@/lib/chaos-data";
+import {
+  globalStatsQuery,
+  recentSubdomainsQuery,
+  domainsPageQuery,
+  timeAgo,
+} from "@/lib/chaos-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,9 +30,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { data: domains } = useQuery(domainsQuery);
-  const totalSubs = (domains ?? []).reduce((acc, d) => acc + d.total_subdomains, 0);
-  const newSubs = (domains ?? []).reduce((acc, d) => acc + d.new_subdomains_last_scan, 0);
+  const { data: stats } = useQuery(globalStatsQuery);
+  const { data: recent } = useQuery(recentSubdomainsQuery(20));
+  const { data: top } = useQuery(domainsPageQuery("", 0));
 
   return (
     <SiteShell>
@@ -77,32 +82,59 @@ function Index() {
             <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
               Chaos ingests live certificate streams and uses techniques like DNS PTR lookups, TLS
               grabs, HTTP header collection and IPv4 scanning. This monitor pulls that dataset for
-              each tracked root domain every hour, stores every host it has ever seen, and diffs
-              each run so newly appearing subdomains stand out immediately.
+              every tracked root domain, stores each host it has ever seen, and diffs every run so
+              newly appearing subdomains stand out immediately.
             </p>
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               <Terminal>
-                {`GET /dns/lovable.app/subdomains
+                {`GET /dns/{domain}/subdomains
 Host: dns.projectdiscovery.io
 Authorization: API_KEY
 
-{"domain":"lovable.app","subdomains":[...],"count":${totalSubs || 0}}`}
+{"domain":"...","subdomains":[...],"count":N}`}
               </Terminal>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Stat label="Domains tracked" value={(domains ?? []).length} />
-                <Stat label="Subdomains stored" value={totalSubs.toLocaleString()} />
-                <Stat label="New last scan" value={newSubs.toLocaleString()} />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Stat label="Root domains" value={(stats?.domains ?? 0).toLocaleString()} />
+                <Stat label="Domains scanned" value={(stats?.scanned ?? 0).toLocaleString()} />
+                <Stat label="Subdomains stored" value={(stats?.subdomains ?? 0).toLocaleString()} />
+                <Stat label="New (24h)" value={(stats?.newLast24h ?? 0).toLocaleString()} />
               </div>
             </div>
           </div>
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-5 pb-16">
+        <p className="label-mono text-muted-foreground">Live feed</p>
+        <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Recently added subdomains</h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          The newest hosts discovered across every monitored root domain.
+        </p>
+        <div className="mt-6 grid gap-2 sm:grid-cols-2">
+          {(recent ?? []).map((s) => (
+            <Link
+              key={s.id}
+              to="/domain/$domain"
+              params={{ domain: s.domains?.domain ?? "" }}
+              className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
+            >
+              <span className="truncate font-mono text-sm">{s.host}</span>
+              <span className="label-mono shrink-0 text-muted-foreground">
+                {timeAgo(s.first_seen_at)}
+              </span>
+            </Link>
+          ))}
+          {(recent ?? []).length === 0 && (
+            <p className="text-sm text-muted-foreground">No subdomains discovered yet.</p>
+          )}
+        </div>
+      </section>
+
       <section className="mx-auto max-w-6xl px-5 pb-24">
         <p className="label-mono text-muted-foreground">Recon data</p>
-        <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Monitored root domains</h2>
+        <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Largest monitored domains</h2>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Every domain below is rescanned automatically each hour. Open one to browse, copy or
+          Every root domain is rescanned on a rolling hourly cycle. Open one to browse, copy or
           export its subdomains.
         </p>
 
@@ -118,7 +150,7 @@ Authorization: API_KEY
               </tr>
             </thead>
             <tbody>
-              {(domains ?? []).map((d) => (
+              {(top?.rows ?? []).slice(0, 15).map((d) => (
                 <tr key={d.id} className="border-t border-border">
                   <td className="px-5 py-3 font-mono">{d.domain}</td>
                   <td className="px-5 py-3 tabular-nums">
@@ -147,7 +179,7 @@ Authorization: API_KEY
                   </td>
                 </tr>
               ))}
-              {(domains ?? []).length === 0 && (
+              {(top?.rows ?? []).length === 0 && (
                 <tr>
                   <td className="px-5 py-8 text-center text-muted-foreground" colSpan={5}>
                     No domains tracked yet.
@@ -156,6 +188,14 @@ Authorization: API_KEY
               )}
             </tbody>
           </table>
+        </div>
+        <div className="mt-4 text-center">
+          <Link
+            to="/dashboard"
+            className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 transition-colors hover:bg-accent"
+          >
+            See all {(stats?.domains ?? 0).toLocaleString()} domains <ArrowRight className="size-3" />
+          </Link>
         </div>
       </section>
     </SiteShell>

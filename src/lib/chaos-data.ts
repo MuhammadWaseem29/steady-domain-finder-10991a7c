@@ -33,20 +33,75 @@ export type ScanRow = {
   error_message: string | null;
 };
 
-export const domainsQuery = queryOptions({
-  queryKey: ["domains"],
-  queryFn: async (): Promise<DomainRow[]> => {
-    const { data, error } = await supabase
-      .from("domains")
-      .select(
-        "id, domain, enabled, last_scanned_at, last_scan_status, total_subdomains, new_subdomains_last_scan, created_at",
-      )
-      .order("total_subdomains", { ascending: false });
-    if (error) throw new Error(error.message);
-    return data ?? [];
+export type RecentSubdomain = {
+  id: string;
+  host: string;
+  first_seen_at: string;
+  domains: { domain: string } | null;
+};
+
+const DOMAIN_COLS =
+  "id, domain, enabled, last_scanned_at, last_scan_status, total_subdomains, new_subdomains_last_scan, created_at";
+
+export const PAGE_SIZE = 50;
+
+export const domainsPageQuery = (search: string, page: number) =>
+  queryOptions({
+    queryKey: ["domains", search, page],
+    queryFn: async (): Promise<{ rows: DomainRow[]; total: number }> => {
+      let q = supabase
+        .from("domains")
+        .select(DOMAIN_COLS, { count: "exact" })
+        .order("total_subdomains", { ascending: false })
+        .order("domain", { ascending: true })
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      if (search.trim()) q = q.ilike("domain", `%${search.trim()}%`);
+      const { data, error, count } = await q;
+      if (error) throw new Error(error.message);
+      return { rows: data ?? [], total: count ?? 0 };
+    },
+    refetchInterval: 60_000,
+  });
+
+export const globalStatsQuery = queryOptions({
+  queryKey: ["global-stats"],
+  queryFn: async () => {
+    const [domainCount, subCount, scannedCount, recentNew] = await Promise.all([
+      supabase.from("domains").select("id", { count: "exact", head: true }),
+      supabase.from("subdomains").select("id", { count: "exact", head: true }),
+      supabase
+        .from("domains")
+        .select("id", { count: "exact", head: true })
+        .not("last_scanned_at", "is", null),
+      supabase
+        .from("subdomains")
+        .select("id", { count: "exact", head: true })
+        .gte("first_seen_at", new Date(Date.now() - 24 * 3600_000).toISOString()),
+    ]);
+    return {
+      domains: domainCount.count ?? 0,
+      subdomains: subCount.count ?? 0,
+      scanned: scannedCount.count ?? 0,
+      newLast24h: recentNew.count ?? 0,
+    };
   },
-  refetchInterval: 60_000,
+  refetchInterval: 30_000,
 });
+
+export const recentSubdomainsQuery = (limit = 100) =>
+  queryOptions({
+    queryKey: ["recent-subdomains", limit],
+    queryFn: async (): Promise<RecentSubdomain[]> => {
+      const { data, error } = await supabase
+        .from("subdomains")
+        .select("id, host, first_seen_at, domains(domain)")
+        .order("first_seen_at", { ascending: false })
+        .limit(limit);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as RecentSubdomain[];
+    },
+    refetchInterval: 30_000,
+  });
 
 export const domainQuery = (domain: string) =>
   queryOptions({
