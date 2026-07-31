@@ -1,45 +1,38 @@
 ## Goal
 
-Level up the existing motion (scroll reveals, hover lift, live dot) into a cohesive, high-end animation system — the kind of polish you'd see on a top product site — without slowing down the heavy data pages.
+1. Show, live, which domains/programs are being scanned right now.
+2. Add a new `/updates` page listing programs with newly discovered subdomains.
 
-## What gets added
+## 1. Live scan activity
 
-**1. Global motion language**
-- Shared easing + duration tokens (one "signature" spring and one snappy ease) in `src/styles.css`, used by every animation so the site feels like one product.
-- Route transitions: fade + slight rise on route change via an animated wrapper in `src/routes/__root.tsx`, so navigating between Home / Dashboard / Programs feels continuous.
-- All new motion stays inside the existing `prefers-reduced-motion` guard.
+New database function `running_scans_detail()` returning, for each scan with `status = 'running'`:
+domain, platform name/slug/color, trigger, `started_at`, elapsed seconds — ordered oldest first.
+A second function `scan_activity_summary()` returns: running count, domains claimed in the last 5 minutes, scans finished in the last 5 minutes, and new subdomains found in the last 5 minutes.
 
-**2. Hero (home page)**
-- Animated ambient background: slow-drifting grid/gradient mesh with a subtle scanline, pure CSS so it costs nothing.
-- Headline reveal word-by-word with a mask-up effect, followed by staggered subtext and buttons.
-- Terminal mock gets a typewriter effect that types the chaos command and streams a few subdomain lines, then loops on a long interval.
+UI: a "Live scan activity" section on `/dashboard` (below the existing scan-cycle health panel):
+- Header with pulsing live dot and the summary counters.
+- A rolling list of in-flight domains, each with its program badge and a ticking elapsed timer (reuse `live-time.tsx`).
+- Rows animate in/out with `AnimatePresence`; refetch every 5s.
+- Empty state: "No scans in flight — next sweep starts within a minute."
 
-**3. Numbers that feel alive**
-- Count-up animation for all stat cards (total domains, subdomains, new this hour/day) — animates on first view, and smoothly tweens to the new value when live data refreshes instead of snapping.
-- New-subdomain badges get a brief highlight flash when a value increases during a live refetch.
+## 2. `/updates` page (Program updates)
 
-**4. Data surfaces**
-- Recently-added subdomains feed: new rows slide in from the top with a highlight sweep, existing rows shift down using layout animation (`AnimatePresence` + `layout`).
-- Tables (dashboard, domain detail, programs): staggered row entrance capped to the first ~20 rows so 6k-row lists stay fast; row hover gets an accent left-edge and background wipe.
-- Charts: draw-on animation for lines/areas, animated tooltip, and a shimmer skeleton while loading instead of a blank box.
+New route `src/routes/updates.tsx`, linked in the navbar next to Programs.
 
-**5. Micro-interactions**
-- Buttons: press-scale, hover glow on primary, and a spinner→checkmark morph for "Run scan" so scan feedback is visual.
-- Copy buttons: icon morphs to a check with a ripple.
-- Nav: animated underline that slides between active links (shared layout id), plus mobile menu spring.
-- Cards: pointer-tracked highlight on hover (subtle spotlight following the cursor).
-- Skeleton shimmer replaces plain "Loading…" text everywhere.
-- Scroll progress bar under the sticky header.
+New database function `platform_updates(since timestamptz)` returning per platform:
+platform id/slug/name/color, count of new subdomains since `since`, number of distinct domains affected, and the timestamp of the most recent discovery.
+Plus `platform_recent_subdomains(_platform_id uuid, lim int)` for the drill-down list.
 
-**6. Performance guardrails**
-- Only `transform`/`opacity` animated; no layout-thrashing properties.
-- Stagger caps and `viewport={{ once: true }}` on reveals.
-- No motion added to the 6k+ row virtualized/paginated body beyond the first page.
+Page layout:
+- Range selector (1h / 24h / 7d / 30d) reusing the existing `RANGES` keys.
+- Cards per program sorted by new-subdomain count, showing count-up numbers, affected-domain count, last-activity time, and a colored program accent.
+- Each card expands to show the newest hosts (host, root domain, first-seen time) with copy-all and export buttons for that program's new subs.
+- A combined "All new subdomains in range" list at the bottom with copy/export, reusing the existing export endpoint.
+- Auto-refresh every 15s so new finds appear without a reload.
 
 ## Technical notes
 
-- Uses the already-installed `framer-motion` plus CSS keyframes in `src/styles.css`; no new dependencies.
-- New small components: `src/components/site/motion.tsx` (variants, `Reveal`, `Stagger`, `CountUp`, `Typewriter`, `Spotlight`, `ScrollProgress`), reused across routes rather than duplicating motion code per page.
-- Touched routes: `__root.tsx`, `index.tsx`, `dashboard.tsx`, `domain.$domain.tsx`, `programs.tsx`, `program.$slug.tsx`, `stats.tsx`, plus `chrome.tsx` and `charts.tsx`.
-- Purely presentational — no changes to the scanner, cron schedule, database, or server functions.
-- Verified with Playwright screenshots at desktop and mobile widths after implementation.
+- All new SQL functions are `STABLE`, `SECURITY INVOKER`, `SET search_path = public`, with `GRANT EXECUTE` to `anon` and `authenticated` (matching existing read-only public policies).
+- Query helpers added to `src/lib/chaos-data.ts` (`runningScansQuery`, `scanActivityQuery`, `platformUpdatesQuery`, `platformRecentSubsQuery`).
+- `/updates` gets its own `head()` metadata (title, description, og tags).
+- Queries stay index-friendly: the new-subdomain aggregations use the existing `subdomains(first_seen_at DESC)` and `subdomains(domain_id, first_seen_at DESC)` indexes.
