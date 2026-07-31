@@ -127,6 +127,10 @@ export async function scanDomain(
         .eq("id", scanId);
     }
 
+    await supabaseAdmin.rpc("bump_daily_stats", { _new: fresh.length, _errors: 0 });
+
+
+
     return {
       domain: domainRow.domain,
       status: "success",
@@ -149,7 +153,10 @@ export async function scanDomain(
       .update({ last_scanned_at: stamp, last_scan_status: "error", updated_at: stamp })
       .eq("id", domainRow.id);
 
+    await supabaseAdmin.rpc("bump_daily_stats", { _new: 0, _errors: 1 });
+
     console.error(`[chaos] scan failed for ${domainRow.domain}: ${message}`);
+
     return {
       domain: domainRow.domain,
       status: "error",

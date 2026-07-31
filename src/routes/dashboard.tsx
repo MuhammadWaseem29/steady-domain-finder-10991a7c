@@ -3,16 +3,31 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { RefreshCw, Plus, Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  RefreshCw,
+  Plus,
+  Loader2,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Download,
+} from "lucide-react";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { DiscoveryAreaChart } from "@/components/site/charts";
 import {
   domainsPageQuery,
   globalStatsQuery,
   recentSubdomainsQuery,
+  platformsQuery,
+  discoveryTimeseriesQuery,
+  windowCountsQuery,
+  formatTick,
   timeAgo,
   PAGE_SIZE,
 } from "@/lib/chaos-data";
 import { runScanNow, addDomains } from "@/lib/chaos.functions";
+
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -38,9 +53,17 @@ function Dashboard() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [input, setInput] = useState("");
+  const [platformSlug, setPlatformSlug] = useState("");
+  const [filterPlatform, setFilterPlatform] = useState("");
+  const [copying, setCopying] = useState(false);
 
   const { data: stats } = useQuery(globalStatsQuery);
-  const { data: pageData, isLoading } = useQuery(domainsPageQuery(search, page));
+  const { data: counts } = useQuery(windowCountsQuery);
+  const { data: platforms } = useQuery(platformsQuery);
+  const { data: series } = useQuery(discoveryTimeseriesQuery("7d"));
+  const { data: pageData, isLoading } = useQuery(
+    domainsPageQuery(search, page, filterPlatform || undefined),
+  );
   const { data: recent } = useQuery(recentSubdomainsQuery(40));
 
   const scan = useServerFn(runScanNow);
@@ -57,7 +80,8 @@ function Dashboard() {
   });
 
   const addMutation = useMutation({
-    mutationFn: (domains: string) => add({ data: { domains } }),
+    mutationFn: (domains: string) =>
+      add({ data: { domains, platformSlug: platformSlug || undefined } }),
     onSuccess: (res) => {
       toast.success(`${res.added} domain(s) queued for scanning`);
       setInput("");
@@ -70,6 +94,25 @@ function Dashboard() {
   const total = pageData?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  const chart = (series ?? []).map((p) => ({
+    label: formatTick(p.ts, "day"),
+    value: Number(p.new_subdomains),
+  }));
+
+  const copyEverything = async () => {
+    setCopying(true);
+    try {
+      const res = await fetch("/api/public/export?scope=all");
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      toast.success(`Copied ${text.trim() ? text.trim().split("\n").length : 0} subdomains`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Copy failed");
+    } finally {
+      setCopying(false);
+    }
+  };
+
   return (
     <SiteShell>
       <div className="mx-auto max-w-6xl px-5 py-12">
@@ -81,39 +124,95 @@ function Dashboard() {
         </p>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Root domains" value={(stats?.domains ?? 0).toLocaleString()} />
-          <Stat label="Domains scanned" value={(stats?.scanned ?? 0).toLocaleString()} />
-          <Stat label="Subdomains stored" value={(stats?.subdomains ?? 0).toLocaleString()} />
-          <Stat label="New (24h)" value={(stats?.newLast24h ?? 0).toLocaleString()} />
+          <Stat label="Root domains" value={(stats?.domains ?? 0).toLocaleString()} index={0} />
+          <Stat label="Domains scanned" value={(stats?.scanned ?? 0).toLocaleString()} index={1} />
+          <Stat
+            label="Subdomains stored"
+            value={(stats?.subdomains ?? 0).toLocaleString()}
+            index={2}
+          />
+          <Stat
+            label="New (24h)"
+            value={(stats?.newLast24h ?? 0).toLocaleString()}
+            hint={`${(counts?.hour ?? 0).toLocaleString()} in the last hour`}
+            index={3}
+          />
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-border bg-card p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="label-mono text-muted-foreground">Discovery — last 7 days</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={copyEverything}
+                disabled={copying}
+                className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent disabled:opacity-50"
+              >
+                {copying ? <Loader2 className="size-3 animate-spin" /> : <Copy className="size-3" />}
+                Copy ALL subdomains
+              </button>
+              <a
+                href="/api/public/export?scope=all"
+                className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
+              >
+                <Download className="size-3" /> Download all .txt
+              </a>
+              <a
+                href="/api/public/export?scope=new&hours=24"
+                className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
+              >
+                <Download className="size-3" /> New 24h .txt
+              </a>
+            </div>
+          </div>
+          <div className="mt-4">
+            <DiscoveryAreaChart data={chart} />
+          </div>
         </div>
 
         <div className="mt-8 rounded-2xl border border-border bg-card p-5">
           <p className="label-mono text-muted-foreground">Add root domains</p>
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-            <input
+          <div className="mt-3 flex flex-col gap-3 lg:flex-row">
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="example.com, another.com"
+              rows={3}
+              placeholder={"example.com\nanother.com"}
               className="flex-1 rounded-xl border border-input bg-background px-4 py-2.5 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
             />
-            <button
-              onClick={() => addMutation.mutate(input)}
-              disabled={!input.trim() || addMutation.isPending}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {addMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Plus className="size-4" />
-              )}
-              Add
-            </button>
+            <div className="flex gap-3">
+              <select
+                value={platformSlug}
+                onChange={(e) => setPlatformSlug(e.target.value)}
+                className="h-fit rounded-xl border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">No platform</option>
+                {(platforms ?? []).map((p) => (
+                  <option key={p.platform_id} value={p.slug}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => addMutation.mutate(input)}
+                disabled={!input.trim() || addMutation.isPending}
+                className="inline-flex h-fit items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {addMutation.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                Add
+              </button>
+            </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Paste the contents of a root_domains.txt file — separated by spaces, commas or new
-            lines.
+            One domain or a whole root_domains.txt paste — separated by spaces, commas or new
+            lines. Pick a platform to file them under that program.
           </p>
         </div>
+
 
         <section className="mt-10">
           <h2 className="text-2xl font-bold">Recently added subdomains</h2>
@@ -142,18 +241,36 @@ function Dashboard() {
 
         <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-bold">Root domains</h2>
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={search}
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={filterPlatform}
               onChange={(e) => {
-                setSearch(e.target.value);
+                setFilterPlatform(e.target.value);
                 setPage(0);
               }}
-              placeholder="search domains…"
-              className="w-64 rounded-full border border-input bg-background py-2 pr-4 pl-9 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
+              className="rounded-full border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">All platforms</option>
+              {(platforms ?? []).map((p) => (
+                <option key={p.platform_id} value={p.platform_id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <div className="relative">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(0);
+                }}
+                placeholder="search domains…"
+                className="w-64 rounded-full border border-input bg-background py-2 pr-4 pl-9 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
           </div>
+
         </div>
 
         <div className="mt-4 overflow-hidden rounded-2xl border border-border">

@@ -19,7 +19,12 @@ export const runScanNow = createServerFn({ method: "POST" })
 
 export const addDomains = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
-    z.object({ domains: z.string().min(1).max(20000) }).parse(data),
+    z
+      .object({
+        domains: z.string().min(1).max(200000),
+        platformSlug: z.string().min(1).max(40).optional(),
+      })
+      .parse(data),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -31,17 +36,30 @@ export const addDomains = createServerFn({ method: "POST" })
           .map((d) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, ""))
           .filter((d) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)),
       ),
-    ).slice(0, 500);
+    ).slice(0, 5000);
 
     if (list.length === 0) return { added: 0 };
 
-    const { error } = await supabaseAdmin
-      .from("domains")
-      .upsert(
-        list.map((domain) => ({ domain })),
-        { onConflict: "domain", ignoreDuplicates: true },
-      );
+    let platformId: string | null = null;
+    if (data.platformSlug) {
+      const { data: platform } = await supabaseAdmin
+        .from("platforms")
+        .select("id")
+        .eq("slug", data.platformSlug)
+        .maybeSingle();
+      platformId = platform?.id ?? null;
+    }
 
-    if (error) throw new Error(error.message);
+    for (let i = 0; i < list.length; i += 500) {
+      const batch = list.slice(i, i + 500);
+      const { error } = await supabaseAdmin
+        .from("domains")
+        .upsert(
+          batch.map((domain) => ({ domain, platform_id: platformId })),
+          { onConflict: "domain", ignoreDuplicates: !platformId },
+        );
+      if (error) throw new Error(error.message);
+    }
+
     return { added: list.length };
   });

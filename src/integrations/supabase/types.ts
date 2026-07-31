@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_stats: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          new_subdomains: number
+          scan_errors: number
+          scans_run: number
+          total_subdomains: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          new_subdomains?: number
+          scan_errors?: number
+          scans_run?: number
+          total_subdomains?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          new_subdomains?: number
+          scan_errors?: number
+          scans_run?: number
+          total_subdomains?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       domains: {
         Row: {
           created_at: string
@@ -23,6 +56,7 @@ export type Database = {
           last_scan_status: string | null
           last_scanned_at: string | null
           new_subdomains_last_scan: number
+          platform_id: string | null
           total_subdomains: number
           updated_at: string
         }
@@ -34,6 +68,7 @@ export type Database = {
           last_scan_status?: string | null
           last_scanned_at?: string | null
           new_subdomains_last_scan?: number
+          platform_id?: string | null
           total_subdomains?: number
           updated_at?: string
         }
@@ -45,8 +80,44 @@ export type Database = {
           last_scan_status?: string | null
           last_scanned_at?: string | null
           new_subdomains_last_scan?: number
+          platform_id?: string | null
           total_subdomains?: number
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domains_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platforms: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          website: string | null
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          website?: string | null
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -140,7 +211,55 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      bump_daily_stats: {
+        Args: { _errors: number; _new: number }
+        Returns: undefined
+      }
+      discovery_timeseries: {
+        Args: { bucket: string; since: string }
+        Returns: {
+          new_subdomains: number
+          ts: string
+        }[]
+      }
+      new_subdomain_counts: {
+        Args: never
+        Returns: {
+          last_day: number
+          last_half_year: number
+          last_hour: number
+          last_month: number
+          last_week: number
+        }[]
+      }
+      platform_stats: {
+        Args: never
+        Returns: {
+          color: string
+          domain_count: number
+          name: string
+          new_24h: number
+          platform_id: string
+          slug: string
+          subdomain_count: number
+        }[]
+      }
+      scan_timeseries: {
+        Args: { bucket: string; since: string }
+        Returns: {
+          errors: number
+          new_found: number
+          scans: number
+          ts: string
+        }[]
+      }
+      top_domains_by_new: {
+        Args: { lim: number; since: string }
+        Returns: {
+          domain: string
+          new_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
