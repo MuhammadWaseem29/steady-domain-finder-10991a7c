@@ -206,15 +206,19 @@ function Feature({
   icon,
   title,
   body,
+  tone,
 }: {
   icon: React.ReactNode;
   title: string;
   body: string;
+  tone: string;
 }) {
   return (
     <div className="border-border bg-card p-6 md:not-last:border-r">
       <div className="flex items-center gap-3">
-        <span className="grid size-8 place-items-center rounded-lg border border-border bg-background">
+        <span
+          className={`grid size-8 place-items-center rounded-lg border border-border ${tone}`}
+        >
           {icon}
         </span>
         <span className="label-mono">{title}</span>
@@ -223,3 +227,4 @@ function Feature({
     </div>
   );
 }
+
