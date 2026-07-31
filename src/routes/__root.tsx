@@ -82,11 +82,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Continuous subdomain discovery powered by the Chaos DNS dataset. Hourly rescans, new-subdomain alerts, and instant exports.",
+          "A live, continuously updated subdomain dataset. Chaos rescans every tracked root domain hourly and surfaces newly discovered hosts instantly.",
       },
       { name: "author", content: "Chaos" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "Chaos — The Internet Database" },
+      { name: "twitter:title", content: "Chaos — The Internet Database" },
+      { property: "og:description", content: "A live, continuously updated subdomain dataset. Chaos rescans every tracked root domain hourly and surfaces newly discovered hosts instantly." },
+      { name: "twitter:description", content: "A live, continuously updated subdomain dataset. Chaos rescans every tracked root domain hourly and surfaces newly discovered hosts instantly." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/45eb0d02-7471-4e99-a456-7708883e06bc/id-preview-f4e04279--52925200-8fb8-442c-88e1-e747035fac35.lovable.app-1785509328566.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/45eb0d02-7471-4e99-a456-7708883e06bc/id-preview-f4e04279--52925200-8fb8-442c-88e1-e747035fac35.lovable.app-1785509328566.png" },
     ],
     links: [
       {

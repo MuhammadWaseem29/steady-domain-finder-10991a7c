@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Hourly subdomain monitoring built on the Chaos DNS dataset. Track new hosts, copy and export results.",
+          "A live, continuously updated subdomain dataset. Chaos rescans every tracked root domain hourly and surfaces newly discovered hosts instantly.",
       },
     ],
   }),
