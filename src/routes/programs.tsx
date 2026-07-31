@@ -1,10 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Copy } from "lucide-react";
+import { ArrowRight, Copy, Plus, Pencil, Trash2, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { SiteShell, Stat } from "@/components/site/chrome";
 import { platformsQuery } from "@/lib/chaos-data";
+import { savePlatform, deletePlatform } from "@/lib/chaos.functions";
+
 
 export const Route = createFileRoute("/programs")({
   head: () => ({
