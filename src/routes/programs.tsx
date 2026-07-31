@@ -88,6 +88,120 @@ function Programs() {
           <Stat label="New (24h)" value={totals.new24.toLocaleString()} index={2} />
         </div>
 
+        <div className="mt-4 rounded-lg border border-border bg-card p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="label-mono text-muted-foreground">
+              {editing ? (editing.id ? "Edit program" : "New program") : "Manage programs"}
+            </p>
+            {editing ? (
+              <button
+                onClick={() => setEditing(null)}
+                className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
+              >
+                <X className="size-3" /> Cancel
+              </button>
+            ) : (
+              <button
+                onClick={() => setEditing({ name: "", slug: "", color: "", website: "" })}
+                className="label-mono inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                <Plus className="size-3" /> New program
+              </button>
+            )}
+          </div>
+
+          {editing && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveMutation.mutate(editing);
+              }}
+              className="mt-4 grid gap-3 md:grid-cols-4"
+            >
+              <input
+                value={editing.name}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setEditing((d) =>
+                    d
+                      ? {
+                          ...d,
+                          name,
+                          slug: d.id
+                            ? d.slug
+                            : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+                        }
+                      : d,
+                  );
+                }}
+                placeholder="Program name"
+                required
+                className="rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+              <input
+                value={editing.slug}
+                onChange={(e) => setEditing((d) => (d ? { ...d, slug: e.target.value } : d))}
+                placeholder="slug"
+                required
+                className="rounded-lg border border-input bg-background px-4 py-2.5 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+              <input
+                value={editing.website}
+                onChange={(e) => setEditing((d) => (d ? { ...d, website: e.target.value } : d))}
+                placeholder="https://program.site (optional)"
+                className="rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="submit"
+                disabled={saveMutation.isPending}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {saveMutation.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                {editing.id ? "Save changes" : "Create program"}
+              </button>
+            </form>
+          )}
+
+          {removing && (
+            <div className="mt-4 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+              <p className="text-sm">
+                Delete <span className="font-mono font-semibold">{removing.name}</span>? Choose what
+                happens to its root domains.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  onClick={() =>
+                    removeMutation.mutate({ id: removing.id, deleteDomains: false })
+                  }
+                  disabled={removeMutation.isPending}
+                  className="label-mono rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent disabled:opacity-50"
+                >
+                  Delete program, keep domains
+                </button>
+                <button
+                  onClick={() => removeMutation.mutate({ id: removing.id, deleteDomains: true })}
+                  disabled={removeMutation.isPending}
+                  className="label-mono rounded-full bg-destructive px-3 py-1.5 text-destructive-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  Delete program + all its domains
+                </button>
+                <button
+                  onClick={() => setRemoving(null)}
+                  className="label-mono rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+
+
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {list.map((p, i) => (
             <motion.div
