@@ -235,6 +235,14 @@ export type Database = {
           last_week: number
         }[]
       }
+      platform_recent_subdomains: {
+        Args: { _platform_id: string; lim?: number; since: string }
+        Returns: {
+          domain: string
+          first_seen_at: string
+          host: string
+        }[]
+      }
       platform_stats: {
         Args: never
         Returns: {
@@ -245,6 +253,41 @@ export type Database = {
           platform_id: string
           slug: string
           subdomain_count: number
+        }[]
+      }
+      platform_updates: {
+        Args: { since: string }
+        Returns: {
+          color: string
+          domains_affected: number
+          last_seen: string
+          name: string
+          new_count: number
+          platform_id: string
+          slug: string
+        }[]
+      }
+      running_scans_detail: {
+        Args: { lim?: number }
+        Returns: {
+          domain: string
+          elapsed_seconds: number
+          platform_color: string
+          platform_name: string
+          platform_slug: string
+          scan_id: string
+          started_at: string
+          trigger: string
+        }[]
+      }
+      scan_activity_summary: {
+        Args: never
+        Returns: {
+          claimed_5m: number
+          finished_5m: number
+          new_subs_1h: number
+          new_subs_5m: number
+          running: number
         }[]
       }
       scan_cycle_health: {

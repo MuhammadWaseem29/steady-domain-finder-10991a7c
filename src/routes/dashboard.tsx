@@ -21,6 +21,7 @@ import {
 
 import { AnimatePresence, motion } from "framer-motion";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { LiveScanActivity } from "@/components/site/live-scans";
 import { CountUp, EASE_SIGNATURE, Skeleton, springSnappy } from "@/components/site/motion";
 import { DiscoveryAreaChart } from "@/components/site/charts";
 import {
@@ -207,6 +208,12 @@ function Dashboard() {
             </div>
           </div>
         </div>
+
+        <div className="mt-4">
+          <LiveScanActivity />
+        </div>
+
+
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Root domains" value={stats?.domains ?? 0} index={0} />

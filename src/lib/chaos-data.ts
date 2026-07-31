@@ -377,3 +377,128 @@ export function formatTick(iso: string, bucket: string) {
     return d.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
+
+/* ---------------- Live scan activity ---------------- */
+
+export type RunningScan = {
+  scan_id: string;
+  domain: string;
+  platform_name: string | null;
+  platform_slug: string | null;
+  platform_color: string | null;
+  trigger: string;
+  started_at: string;
+  elapsed_seconds: number;
+};
+
+export const runningScansQuery = (limit = 60) =>
+  queryOptions({
+    queryKey: ["running-scans", limit],
+    queryFn: async (): Promise<RunningScan[]> => {
+      const { data, error } = await supabase.rpc("running_scans_detail", { lim: limit });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as RunningScan[];
+    },
+    refetchInterval: 5_000,
+  });
+
+export const scanActivityQuery = queryOptions({
+  queryKey: ["scan-activity"],
+  queryFn: async () => {
+    const { data, error } = await supabase.rpc("scan_activity_summary");
+    if (error) throw new Error(error.message);
+    const row = (data ?? [])[0] as
+      | {
+          running: number;
+          claimed_5m: number;
+          finished_5m: number;
+          new_subs_5m: number;
+          new_subs_1h: number;
+        }
+      | undefined;
+    return {
+      running: Number(row?.running ?? 0),
+      claimed5m: Number(row?.claimed_5m ?? 0),
+      finished5m: Number(row?.finished_5m ?? 0),
+      newSubs5m: Number(row?.new_subs_5m ?? 0),
+      newSubs1h: Number(row?.new_subs_1h ?? 0),
+    };
+  },
+  refetchInterval: 5_000,
+});
+
+/* ---------------- Program updates ---------------- */
+
+export type PlatformUpdate = {
+  platform_id: string;
+  slug: string;
+  name: string;
+  color: string | null;
+  new_count: number;
+  domains_affected: number;
+  last_seen: string | null;
+};
+
+export const UPDATE_RANGES = {
+  "1h": { hours: 1, label: "Last hour" },
+  "24h": { hours: 24, label: "Last 24 hours" },
+  "7d": { hours: 24 * 7, label: "Last 7 days" },
+  "30d": { hours: 24 * 30, label: "Last 30 days" },
+};
+
+export type UpdateRangeKey = keyof typeof UPDATE_RANGES;
+
+export const platformUpdatesQuery = (range: UpdateRangeKey) =>
+  queryOptions({
+    queryKey: ["platform-updates", range],
+    queryFn: async (): Promise<PlatformUpdate[]> => {
+      const { data, error } = await supabase.rpc("platform_updates", {
+        since: sinceIso(UPDATE_RANGES[range].hours),
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as PlatformUpdate[];
+    },
+    refetchInterval: 15_000,
+  });
+
+export type PlatformRecentSub = {
+  host: string;
+  domain: string;
+  first_seen_at: string;
+};
+
+export const platformRecentSubsQuery = (
+  platformId: string | undefined,
+  range: UpdateRangeKey,
+  limit = 200,
+) =>
+  queryOptions({
+    queryKey: ["platform-recent-subs", platformId, range, limit],
+    enabled: Boolean(platformId),
+    queryFn: async (): Promise<PlatformRecentSub[]> => {
+      const { data, error } = await supabase.rpc("platform_recent_subdomains", {
+        _platform_id: platformId!,
+        since: sinceIso(UPDATE_RANGES[range].hours),
+        lim: limit,
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as PlatformRecentSub[];
+    },
+    refetchInterval: 15_000,
+  });
+
+export const recentNewSubsQuery = (range: UpdateRangeKey, limit = 300) =>
+  queryOptions({
+    queryKey: ["updates-new-subs", range, limit],
+    queryFn: async (): Promise<RecentSubdomain[]> => {
+      const { data, error } = await supabase
+        .from("subdomains")
+        .select("id, host, first_seen_at, domains(domain)")
+        .gte("first_seen_at", sinceIso(UPDATE_RANGES[range].hours))
+        .order("first_seen_at", { ascending: false })
+        .limit(limit);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as RecentSubdomain[];
+    },
+    refetchInterval: 15_000,
+  });
