@@ -286,16 +286,74 @@ export const scansQuery = (domainId: string | undefined) =>
     refetchInterval: 60_000,
   });
 
+export const scanHealthQuery = queryOptions({
+  queryKey: ["scan-health"],
+  queryFn: async () => {
+    const { data, error } = await supabase.rpc("scan_cycle_health");
+    if (error) throw new Error(error.message);
+    const row = (data ?? [])[0] as
+      | {
+          total_domains: number;
+          scanned_30m: number;
+          never_scanned: number;
+          oldest_scan: string | null;
+          newest_scan: string | null;
+          running_scans: number;
+          errors_1h: number;
+          new_subs_30m: number;
+        }
+      | undefined;
+    return {
+      totalDomains: Number(row?.total_domains ?? 0),
+      scanned30m: Number(row?.scanned_30m ?? 0),
+      neverScanned: Number(row?.never_scanned ?? 0),
+      oldestScan: row?.oldest_scan ?? null,
+      newestScan: row?.newest_scan ?? null,
+      runningScans: Number(row?.running_scans ?? 0),
+      errors1h: Number(row?.errors_1h ?? 0),
+      newSubs30m: Number(row?.new_subs_30m ?? 0),
+    };
+  },
+  refetchInterval: 10_000,
+});
+
 export function timeAgo(iso: string | null): string {
   if (!iso) return "never";
   const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  const secs = Math.floor(diff / 1000);
+  if (secs < 60) return `${Math.max(secs, 0)}s ago`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ${secs % 60}s ago`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return `${hours}h ${mins % 60}m ago`;
+  return `${Math.floor(hours / 24)}d ${hours % 24}h ago`;
 }
+
+/** Exact wall-clock timestamp, e.g. "31 Jul 2026, 18:12:44". */
+export function exactTime(iso: string | null): string {
+  if (!iso) return "never";
+  return new Date(iso).toLocaleString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
+
+/** Exact clock time only, e.g. "18:12:44". */
+export function clockTime(iso: string | null): string {
+  if (!iso) return "never";
+  return new Date(iso).toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
+
 
 export function isNew(iso: string, withinHours = 24): boolean {
   return Date.now() - new Date(iso).getTime() < withinHours * 3600_000;
