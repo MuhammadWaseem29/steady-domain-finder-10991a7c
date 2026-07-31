@@ -259,17 +259,24 @@ function Feature({
   tone: string;
 }) {
   return (
-    <div className="border-border bg-card p-6 md:not-last:border-r">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="group border-border bg-card p-6 transition-colors hover:bg-accent/40 md:not-last:border-r"
+    >
       <div className="flex items-center gap-3">
         <span
-          className={`grid size-8 place-items-center rounded-lg border border-border ${tone}`}
+          className={`grid size-8 place-items-center rounded-lg border border-border transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6 ${tone}`}
         >
           {icon}
         </span>
         <span className="label-mono">{title}</span>
       </div>
       <p className="mt-4 text-sm text-muted-foreground">{body}</p>
-    </div>
+    </motion.div>
   );
+
 }
 
