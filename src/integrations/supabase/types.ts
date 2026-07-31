@@ -222,6 +222,16 @@ export type Database = {
           ts: string
         }[]
       }
+      new_subdomain_counts: {
+        Args: never
+        Returns: {
+          last_day: number
+          last_half_year: number
+          last_hour: number
+          last_month: number
+          last_week: number
+        }[]
+      }
       platform_stats: {
         Args: never
         Returns: {
