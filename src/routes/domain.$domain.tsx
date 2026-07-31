@@ -51,6 +51,8 @@ function DomainDetail() {
     mutationFn: () => scan({ data: { domainId: row!.id } }),
     onSuccess: (res) => {
       if (res.status === "error") toast.error(res.error ?? "Scan failed");
+      else if (res.status === "partial")
+        toast.warning(`${res.newCount.toLocaleString()} new — ${res.error}`);
       else toast.success(`Scan complete — ${res.newCount} new subdomains`);
       qc.invalidateQueries();
     },
