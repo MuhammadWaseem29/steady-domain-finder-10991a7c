@@ -14,6 +14,7 @@ import {
   download,
 } from "@/lib/chaos-data";
 import { runScanNow } from "@/lib/chaos.functions";
+import { LiveTime } from "@/components/site/live-time";
 
 export const Route = createFileRoute("/domain/$domain")({
   head: ({ params }) => ({
@@ -107,7 +108,7 @@ function DomainDetail() {
           <div>
             <h1 className="font-mono text-4xl font-extrabold">{domain}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Last scanned {timeAgo(row?.last_scanned_at ?? null)} · rescans hourly
+              Last scanned <LiveTime iso={row?.last_scanned_at ?? null} mode="full" /> · full re-scan sweep every 30 minutes
             </p>
           </div>
           <button
@@ -199,10 +200,10 @@ function DomainDetail() {
                     )}
                   </td>
                   <td className="px-5 py-2.5 text-muted-foreground">
-                    {timeAgo(s.first_seen_at)}
+                    <LiveTime iso={s.first_seen_at} />
                   </td>
                   <td className="px-5 py-2.5 text-muted-foreground">
-                    {timeAgo(s.last_seen_at)}
+                    <LiveTime iso={s.last_seen_at} />
                   </td>
                   <td className="px-5 py-2.5">
                     <span
@@ -250,7 +251,7 @@ function DomainDetail() {
             <tbody>
               {(scans ?? []).map((s) => (
                 <tr key={s.id} className="border-t border-border">
-                  <td className="px-5 py-2.5 text-muted-foreground">{timeAgo(s.started_at)}</td>
+                  <td className="px-5 py-2.5 text-muted-foreground"><LiveTime iso={s.started_at} mode="full" /></td>
                   <td className="px-5 py-2.5 font-mono">{s.trigger}</td>
                   <td className="px-5 py-2.5 tabular-nums">{s.total_returned}</td>
                   <td className="px-5 py-2.5 tabular-nums text-success">+{s.new_count}</td>

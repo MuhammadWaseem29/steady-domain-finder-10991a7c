@@ -7,6 +7,7 @@ import { Copy, Download } from "lucide-react";
 import { SiteShell, Stat } from "@/components/site/chrome";
 import { DiscoveryAreaChart } from "@/components/site/charts";
 import {
+import { LiveTime } from "@/components/site/live-time";
   RANGES,
   discoveryTimeseriesQuery,
   newSubdomainsQuery,
@@ -140,7 +141,7 @@ function NewSubs() {
               >
                 <span className="truncate font-mono text-sm">{s.host}</span>
                 <span className="label-mono shrink-0 text-muted-foreground">
-                  {timeAgo(s.first_seen_at)}
+                  <LiveTime iso={s.first_seen_at} />
                 </span>
               </Link>
             </motion.div>

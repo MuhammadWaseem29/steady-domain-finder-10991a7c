@@ -32,6 +32,7 @@ import {
   PAGE_SIZE,
 } from "@/lib/chaos-data";
 import { runScanNow, addDomains, updateDomain, deleteDomain } from "@/lib/chaos.functions";
+import { LiveTime } from "@/components/site/live-time";
 
 
 export const Route = createFileRoute("/dashboard")({
@@ -265,7 +266,7 @@ function Dashboard() {
               >
                 <span className="truncate font-mono text-sm">{s.host}</span>
                 <span className="label-mono shrink-0 text-muted-foreground">
-                  {timeAgo(s.first_seen_at)}
+                  <LiveTime iso={s.first_seen_at} />
                 </span>
               </Link>
             ))}
@@ -375,7 +376,7 @@ function Dashboard() {
                     <StatusPill status={d.last_scan_status} />
                   </td>
                   <td className="px-5 py-3 text-muted-foreground">
-                    {timeAgo(d.last_scanned_at)}
+                    <LiveTime iso={d.last_scanned_at} />
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-1.5">
