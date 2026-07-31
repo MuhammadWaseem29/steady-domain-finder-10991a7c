@@ -57,50 +57,29 @@ export async function scanDomain(
       host: label === "" ? domainRow.domain : `${label}.${domainRow.domain}`,
     }));
 
-    const { data: existingRows } = await supabaseAdmin
-      .from("subdomains")
-      .select("host, is_active")
-      .eq("domain_id", domainRow.id);
-
-    const existing = new Map((existingRows ?? []).map((r) => [r.host, r.is_active]));
-    const seen = new Set(hosts.map((h) => h.host));
-
-    const fresh = hosts.filter((h) => !existing.has(h.host));
     const stamp = new Date().toISOString();
+    let freshCount = 0;
 
-    for (const batch of chunk(fresh, 500)) {
-      await supabaseAdmin.from("subdomains").insert(
-        batch.map((h) => ({
-          domain_id: domainRow.id,
-          label: h.label,
-          host: h.host,
-          first_seen_at: stamp,
-          last_seen_at: stamp,
-          is_active: true,
-        })),
-      );
-    }
-
-    // Refresh last_seen for hosts still present.
-    const stillPresent = hosts.filter((h) => existing.has(h.host)).map((h) => h.host);
-    for (const batch of chunk(stillPresent, 500)) {
-      await supabaseAdmin
+    // Upsert with ignoreDuplicates: the (domain_id, host) unique index does the
+    // diffing in the database, so we never have to page through millions of
+    // existing rows. The returned rows are exactly the newly discovered hosts.
+    for (const batch of chunk(hosts, 500)) {
+      const { data: inserted, error } = await supabaseAdmin
         .from("subdomains")
-        .update({ last_seen_at: stamp, is_active: true })
-        .eq("domain_id", domainRow.id)
-        .in("host", batch);
-    }
-
-    // Flag hosts that disappeared from the feed.
-    const gone = (existingRows ?? [])
-      .filter((r) => r.is_active && !seen.has(r.host))
-      .map((r) => r.host);
-    for (const batch of chunk(gone, 500)) {
-      await supabaseAdmin
-        .from("subdomains")
-        .update({ is_active: false })
-        .eq("domain_id", domainRow.id)
-        .in("host", batch);
+        .upsert(
+          batch.map((h) => ({
+            domain_id: domainRow.id,
+            label: h.label,
+            host: h.host,
+            first_seen_at: stamp,
+            last_seen_at: stamp,
+            is_active: true,
+          })),
+          { onConflict: "domain_id,host", ignoreDuplicates: true },
+        )
+        .select("host");
+      if (error) throw new Error(error.message);
+      freshCount += inserted?.length ?? 0;
     }
 
     await supabaseAdmin
@@ -109,7 +88,7 @@ export async function scanDomain(
         last_scanned_at: stamp,
         last_scan_status: "success",
         total_subdomains: hosts.length,
-        new_subdomains_last_scan: fresh.length,
+        new_subdomains_last_scan: freshCount,
         updated_at: stamp,
       })
       .eq("id", domainRow.id);
@@ -121,22 +100,20 @@ export async function scanDomain(
           status: "success",
           finished_at: stamp,
           total_returned: hosts.length,
-          new_count: fresh.length,
-          removed_count: gone.length,
+          new_count: freshCount,
+          removed_count: 0,
         })
         .eq("id", scanId);
     }
 
-    await supabaseAdmin.rpc("bump_daily_stats", { _new: fresh.length, _errors: 0 });
-
-
+    await supabaseAdmin.rpc("bump_daily_stats", { _new: freshCount, _errors: 0 });
 
     return {
       domain: domainRow.domain,
       status: "success",
       total: hosts.length,
-      newCount: fresh.length,
-      removedCount: gone.length,
+      newCount: freshCount,
+      removedCount: 0,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -170,15 +147,29 @@ export async function scanDomain(
 
 /**
  * Scans a batch of enabled domains, oldest-scanned first (never-scanned domains
- * come first). Runs a few requests in parallel so a full sweep of a large
- * root-domain list completes well inside an hour when called on a short cron.
+ * come first). Domains are claimed up front so a run that gets cut short by the
+ * request budget never makes the next run replay the same slice, and any scan
+ * left "running" by an earlier truncated run is closed out as an error.
  */
 export async function scanAllEnabledDomains(
   trigger: "manual" | "cron",
-  options: { limit?: number; concurrency?: number } = {},
+  options: { limit?: number; concurrency?: number; budgetMs?: number } = {},
 ) {
-  const limit = Math.min(Math.max(options.limit ?? 200, 1), 1000);
+  const limit = Math.min(Math.max(options.limit ?? 60, 1), 1000);
   const concurrency = Math.min(Math.max(options.concurrency ?? 6, 1), 12);
+  const budgetMs = Math.min(Math.max(options.budgetMs ?? 40_000, 5_000), 120_000);
+  const deadline = Date.now() + budgetMs;
+
+  // Close out scans orphaned by a previous truncated run.
+  await supabaseAdmin
+    .from("scans")
+    .update({
+      status: "error",
+      finished_at: new Date().toISOString(),
+      error_message: "scan run timed out",
+    })
+    .eq("status", "running")
+    .lt("started_at", new Date(Date.now() - 10 * 60_000).toISOString());
 
   const { data: domains } = await supabaseAdmin
     .from("domains")
@@ -187,11 +178,23 @@ export async function scanAllEnabledDomains(
     .order("last_scanned_at", { ascending: true, nullsFirst: true })
     .limit(limit);
 
-  const queue = [...(domains ?? [])];
+  const picked = domains ?? [];
+  if (picked.length === 0) return [];
+
+  // Claim immediately so the next cron tick advances to the next slice.
+  const claimStamp = new Date().toISOString();
+  for (const batch of chunk(picked.map((d) => d.id), 200)) {
+    await supabaseAdmin
+      .from("domains")
+      .update({ last_scanned_at: claimStamp, updated_at: claimStamp })
+      .in("id", batch);
+  }
+
+  const queue = [...picked];
   const results: ScanResult[] = [];
 
   async function worker() {
-    while (queue.length > 0) {
+    while (queue.length > 0 && Date.now() < deadline) {
       const next = queue.shift();
       if (!next) return;
       results.push(await scanDomain(next, trigger));
@@ -201,3 +204,4 @@ export async function scanAllEnabledDomains(
   await Promise.all(Array.from({ length: concurrency }, worker));
   return results;
 }
+
