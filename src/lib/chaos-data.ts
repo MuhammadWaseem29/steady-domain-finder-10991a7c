@@ -186,7 +186,7 @@ export const globalStatsQuery = queryOptions({
   queryFn: async () => {
     const [domainCount, subCount, scannedCount, recentNew] = await Promise.all([
       supabase.from("domains").select("id", { count: "exact", head: true }),
-      supabase.from("subdomains").select("id", { count: "exact", head: true }),
+      supabase.from("subdomains").select("id", { count: "planned", head: true }),
       supabase
         .from("domains")
         .select("id", { count: "exact", head: true })
