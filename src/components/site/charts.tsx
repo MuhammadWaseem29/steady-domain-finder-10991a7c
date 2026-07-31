@@ -20,6 +20,7 @@ const axisProps = {
 };
 
 const tooltipStyle = {
+  boxShadow: "0 12px 30px -12px color-mix(in oklab, var(--color-foreground) 30%, transparent)",
   background: "var(--color-popover)",
   border: "1px solid var(--color-border)",
   borderRadius: 12,
@@ -49,6 +50,9 @@ export function DiscoveryAreaChart({ data }: { data: Point[] }) {
           strokeWidth={2}
           fill="url(#gNew)"
           isAnimationActive
+          animationDuration={1100}
+          animationEasing="ease-out"
+          activeDot={{ r: 4, strokeWidth: 2 }}
         />
       </AreaChart>
     </ResponsiveContainer>
@@ -67,8 +71,8 @@ export function ScanBarChart({
         <XAxis dataKey="label" {...axisProps} />
         <YAxis {...axisProps} width={52} />
         <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--color-accent)" }} />
-        <Bar dataKey="scans" name="Scans" fill="var(--color-chart-2)" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="errors" name="Errors" fill="var(--color-chart-4)" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="scans" name="Scans" fill="var(--color-chart-2)" radius={[4, 4, 0, 0]} animationDuration={900} animationEasing="ease-out" />
+        <Bar dataKey="errors" name="Errors" fill="var(--color-chart-4)" radius={[4, 4, 0, 0]} animationDuration={900} animationBegin={150} animationEasing="ease-out" />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -82,7 +86,7 @@ export function HorizontalBars({ data }: { data: Point[] }) {
         <XAxis type="number" {...axisProps} />
         <YAxis type="category" dataKey="label" width={150} {...axisProps} />
         <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--color-accent)" }} />
-        <Bar dataKey="value" name="New subdomains" fill="var(--color-chart-1)" radius={4} />
+        <Bar dataKey="value" name="New subdomains" fill="var(--color-chart-1)" radius={4} animationDuration={900} animationEasing="ease-out" />
       </BarChart>
     </ResponsiveContainer>
   );

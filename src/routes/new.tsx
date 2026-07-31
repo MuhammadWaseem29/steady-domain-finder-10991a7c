@@ -5,7 +5,9 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Copy, Download } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { springSnappy } from "@/components/site/motion";
 import { DiscoveryAreaChart } from "@/components/site/charts";
 import {
   RANGES,
@@ -65,26 +67,36 @@ function NewSubs() {
         </p>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Stat label="Last hour" value={(counts?.hour ?? 0).toLocaleString()} index={0} />
-          <Stat label="Last 24h" value={(counts?.day ?? 0).toLocaleString()} index={1} />
-          <Stat label="Last 7 days" value={(counts?.week ?? 0).toLocaleString()} index={2} />
-          <Stat label="Last 30 days" value={(counts?.month ?? 0).toLocaleString()} index={3} />
-          <Stat label="Last 6 months" value={(counts?.halfYear ?? 0).toLocaleString()} index={4} />
+          <Stat label="Last hour" value={counts?.hour ?? 0} index={0} />
+          <Stat label="Last 24h" value={counts?.day ?? 0} index={1} />
+          <Stat label="Last 7 days" value={counts?.week ?? 0} index={2} />
+          <Stat label="Last 30 days" value={counts?.month ?? 0} index={3} />
+          <Stat label="Last 6 months" value={counts?.halfYear ?? 0} index={4} />
         </div>
 
         <div className="mt-8 flex flex-wrap items-center gap-2">
           {(Object.keys(RANGES) as RangeKey[]).map((k) => (
-            <button
+            <motion.button
               key={k}
               onClick={() => setRange(k)}
-              className={`label-mono rounded-full border px-3 py-1.5 transition-colors ${
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.94 }}
+              transition={springSnappy}
+              className={`label-mono relative rounded-full border px-3 py-1.5 transition-colors ${
                 range === k
-                  ? "border-primary bg-primary text-primary-foreground"
+                  ? "border-primary text-primary-foreground"
                   : "border-border hover:bg-accent"
               }`}
             >
+              {range === k && (
+                <motion.span
+                  layoutId="new-range-pill"
+                  transition={springSnappy}
+                  className="absolute inset-0 -z-10 rounded-full bg-primary"
+                />
+              )}
               {k}
-            </button>
+            </motion.button>
           ))}
           <div className="ml-auto flex flex-wrap gap-2">
             <button
@@ -127,17 +139,20 @@ function NewSubs() {
           Showing the newest {list.length.toLocaleString()} hosts for this window.
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <AnimatePresence initial={false}>
           {list.map((s, i) => (
             <motion.div
               key={s.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: Math.min(i, 20) * 0.015 }}
+              layout
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ ...springSnappy, delay: Math.min(i, 20) * 0.015 }}
             >
               <Link
                 to="/domain/$domain"
                 params={{ domain: s.domains?.domain ?? "" }}
-                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
+                className="row-sweep flex items-center justify-between gap-4 overflow-hidden rounded-lg border border-border bg-card px-4 py-2.5 hover:bg-accent"
               >
                 <span className="truncate font-mono text-sm">{s.host}</span>
                 <span className="label-mono shrink-0 text-muted-foreground">
@@ -146,6 +161,7 @@ function NewSubs() {
               </Link>
             </motion.div>
           ))}
+          </AnimatePresence>
           {list.length === 0 && (
             <p className="text-sm text-muted-foreground">
               Nothing new discovered in this window yet.

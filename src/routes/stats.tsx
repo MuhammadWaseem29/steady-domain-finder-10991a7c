@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { SiteShell, Stat } from "@/components/site/chrome";
+import { motion } from "framer-motion";
+import { SiteShell, Stat, Reveal } from "@/components/site/chrome";
+import { springSnappy } from "@/components/site/motion";
 import { DiscoveryAreaChart, ScanBarChart, HorizontalBars } from "@/components/site/charts";
 import {
   RANGES,
@@ -64,56 +66,66 @@ function Stats() {
         </p>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Root domains" value={(stats?.domains ?? 0).toLocaleString()} index={0} />
-          <Stat label="Domains scanned" value={(stats?.scanned ?? 0).toLocaleString()} index={1} />
+          <Stat label="Root domains" value={stats?.domains ?? 0} index={0} />
+          <Stat label="Domains scanned" value={stats?.scanned ?? 0} index={1} />
           <Stat
             label="Subdomains stored"
-            value={(stats?.subdomains ?? 0).toLocaleString()}
+            value={stats?.subdomains ?? 0}
             index={2}
           />
-          <Stat label="New (24h)" value={(stats?.newLast24h ?? 0).toLocaleString()} index={3} />
+          <Stat label="New (24h)" value={stats?.newLast24h ?? 0} index={3} />
         </div>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Stat label="New last hour" value={(counts?.hour ?? 0).toLocaleString()} />
-          <Stat label="New last day" value={(counts?.day ?? 0).toLocaleString()} />
-          <Stat label="New last week" value={(counts?.week ?? 0).toLocaleString()} />
-          <Stat label="New last month" value={(counts?.month ?? 0).toLocaleString()} />
-          <Stat label="New last 6 months" value={(counts?.halfYear ?? 0).toLocaleString()} />
+          <Stat label="New last hour" value={counts?.hour ?? 0} />
+          <Stat label="New last day" value={counts?.day ?? 0} />
+          <Stat label="New last week" value={counts?.week ?? 0} />
+          <Stat label="New last month" value={counts?.month ?? 0} />
+          <Stat label="New last 6 months" value={counts?.halfYear ?? 0} />
         </div>
 
         <div className="mt-8 flex flex-wrap items-center gap-2">
           {(Object.keys(RANGES) as RangeKey[]).map((k) => (
-            <button
+            <motion.button
               key={k}
               onClick={() => setRange(k)}
-              className={`label-mono rounded-full border px-3 py-1.5 transition-colors ${
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.94 }}
+              transition={springSnappy}
+              className={`label-mono relative rounded-full border px-3 py-1.5 transition-colors ${
                 range === k
-                  ? "border-primary bg-primary text-primary-foreground"
+                  ? "border-primary text-primary-foreground"
                   : "border-border hover:bg-accent"
               }`}
             >
+              {range === k && (
+                <motion.span
+                  layoutId="range-pill"
+                  transition={springSnappy}
+                  className="absolute inset-0 -z-10 rounded-full bg-primary"
+                />
+              )}
               {k}
-            </button>
+            </motion.button>
           ))}
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-lg border border-border bg-card p-5">
+          <Reveal className="rounded-lg border border-border bg-card p-5">
             <p className="label-mono text-muted-foreground">Subdomains discovered</p>
             <div className="mt-4">
               <DiscoveryAreaChart data={discoveryData} />
             </div>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-5">
+          </Reveal>
+          <Reveal delay={0.08} className="rounded-lg border border-border bg-card p-5">
             <p className="label-mono text-muted-foreground">Scans run vs errors</p>
             <div className="mt-4">
               <ScanBarChart data={scanData} />
             </div>
-          </div>
+          </Reveal>
         </div>
 
-        <div className="mt-4 rounded-lg border border-border bg-card p-5">
+        <Reveal className="mt-4 rounded-lg border border-border bg-card p-5">
           <p className="label-mono text-muted-foreground">
             Most active domains · {RANGES[range].label}
           </p>
@@ -126,7 +138,7 @@ function Stats() {
               </p>
             )}
           </div>
-        </div>
+        </Reveal>
       </div>
     </SiteShell>
   );

@@ -19,7 +19,9 @@ import {
   X,
 } from "lucide-react";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { CountUp, EASE_SIGNATURE, Skeleton, springSnappy } from "@/components/site/motion";
 import { DiscoveryAreaChart } from "@/components/site/charts";
 import {
   domainsPageQuery,
@@ -64,6 +66,7 @@ function Dashboard() {
   const [platformSlug, setPlatformSlug] = useState("");
   const [filterPlatform, setFilterPlatform] = useState("");
   const [copying, setCopying] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [editRow, setEditRow] = useState<{
     id: string;
     domain: string;
@@ -145,6 +148,8 @@ function Dashboard() {
       const text = await res.text();
       await navigator.clipboard.writeText(text);
       toast.success(`Copied ${text.trim() ? text.trim().split("\n").length : 0} subdomains`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Copy failed");
     } finally {
@@ -175,8 +180,8 @@ function Dashboard() {
             <div>
               <p className="label-mono text-muted-foreground">Scanned in last 30m</p>
               <p className="mt-1 font-mono text-lg tabular-nums">
-                {(health?.scanned30m ?? 0).toLocaleString()} /{" "}
-                {(health?.totalDomains ?? 0).toLocaleString()}
+                <CountUp value={health?.scanned30m ?? 0} /> /{" "}
+                <CountUp value={health?.totalDomains ?? 0} />
               </p>
             </div>
             <div>
@@ -194,7 +199,7 @@ function Dashboard() {
             <div>
               <p className="label-mono text-muted-foreground">New subs in last 30m</p>
               <p className="mt-1 font-mono text-lg tabular-nums text-success">
-                +{(health?.newSubs30m ?? 0).toLocaleString()}
+                +<CountUp value={health?.newSubs30m ?? 0} />
                 <span className="ml-2 font-sans text-xs text-muted-foreground">
                   {(health?.errors1h ?? 0).toLocaleString()} errors / 1h
                 </span>
@@ -204,16 +209,16 @@ function Dashboard() {
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Root domains" value={(stats?.domains ?? 0).toLocaleString()} index={0} />
-          <Stat label="Domains scanned" value={(stats?.scanned ?? 0).toLocaleString()} index={1} />
+          <Stat label="Root domains" value={stats?.domains ?? 0} index={0} />
+          <Stat label="Domains scanned" value={stats?.scanned ?? 0} index={1} />
           <Stat
             label="Subdomains stored"
-            value={(stats?.subdomains ?? 0).toLocaleString()}
+            value={stats?.subdomains ?? 0}
             index={2}
           />
           <Stat
             label="New (24h)"
-            value={(stats?.newLast24h ?? 0).toLocaleString()}
+            value={stats?.newLast24h ?? 0}
             hint={`${(counts?.hour ?? 0).toLocaleString()} in the last hour`}
             index={3}
           />
@@ -223,26 +228,52 @@ function Dashboard() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="label-mono text-muted-foreground">Discovery — last 7 days</p>
             <div className="flex flex-wrap gap-2">
-              <button
+              <motion.button
                 onClick={copyEverything}
                 disabled={copying}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                transition={springSnappy}
                 className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent disabled:opacity-50"
               >
-                {copying ? <Loader2 className="size-3 animate-spin" /> : <Copy className="size-3" />}
-                Copy ALL subdomains
-              </button>
-              <a
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={copying ? "load" : copied ? "done" : "idle"}
+                    initial={{ scale: 0.5, opacity: 0, rotate: -30 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                    exit={{ scale: 0.5, opacity: 0, rotate: 30 }}
+                    transition={springSnappy}
+                    className="inline-flex"
+                  >
+                    {copying ? (
+                      <Loader2 className="size-3 animate-spin" />
+                    ) : copied ? (
+                      <Check className="size-3 text-success" />
+                    ) : (
+                      <Copy className="size-3" />
+                    )}
+                  </motion.span>
+                </AnimatePresence>
+                {copied ? "Copied!" : "Copy ALL subdomains"}
+              </motion.button>
+              <motion.a
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                transition={springSnappy}
                 href="/api/public/export?scope=all"
                 className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
               >
                 <Download className="size-3" /> Download all .txt
-              </a>
-              <a
+              </motion.a>
+              <motion.a
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                transition={springSnappy}
                 href="/api/public/export?scope=new&hours=24"
                 className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
               >
                 <Download className="size-3" /> New 24h .txt
-              </a>
+              </motion.a>
             </div>
           </div>
           <div className="mt-4">
@@ -300,19 +331,29 @@ function Dashboard() {
             Newest hosts discovered across every monitored root domain.
           </p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {(recent ?? []).map((s) => (
-              <Link
-                key={s.id}
-                to="/domain/$domain"
-                params={{ domain: s.domains?.domain ?? "" }}
-                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent"
-              >
-                <span className="truncate font-mono text-sm">{s.host}</span>
-                <span className="label-mono shrink-0 text-muted-foreground">
-                  <LiveTime iso={s.first_seen_at} />
-                </span>
-              </Link>
-            ))}
+            <AnimatePresence initial={false}>
+              {(recent ?? []).map((s, i) => (
+                <motion.div
+                  key={s.id}
+                  layout
+                  initial={{ opacity: 0, y: -12, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ ...springSnappy, delay: Math.min(i, 14) * 0.02 }}
+                >
+                  <Link
+                    to="/domain/$domain"
+                    params={{ domain: s.domains?.domain ?? "" }}
+                    className="row-sweep flex items-center justify-between gap-4 overflow-hidden rounded-lg border border-border bg-card px-4 py-2.5 hover:bg-accent"
+                  >
+                    <span className="truncate font-mono text-sm">{s.host}</span>
+                    <span className="label-mono shrink-0 text-muted-foreground">
+                      <LiveTime iso={s.first_seen_at} />
+                    </span>
+                  </Link>
+                </motion.div>
+              ))}
+            </AnimatePresence>
             {(recent ?? []).length === 0 && (
               <p className="text-sm text-muted-foreground">No subdomains discovered yet.</p>
             )}
@@ -366,8 +407,14 @@ function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((d) => (
-                <tr key={d.id} className="border-t border-border">
+              {rows.map((d, i) => (
+                <motion.tr
+                  key={d.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28, delay: Math.min(i, 20) * 0.025, ease: EASE_SIGNATURE }}
+                  className="row-sweep border-t border-border hover:bg-accent/40"
+                >
                   <td className="px-5 py-3">
                     {editRow?.id === d.id ? (
                       <div className="flex flex-wrap items-center gap-2">
@@ -501,16 +548,25 @@ function Dashboard() {
                       )}
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
 
-              {rows.length === 0 && (
-                <tr>
-                  <td className="px-5 py-8 text-center text-muted-foreground" colSpan={6}>
-                    {isLoading ? "Loading…" : "No domains match."}
-                  </td>
-                </tr>
-              )}
+              {rows.length === 0 &&
+                (isLoading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={`sk-${i}`} className="border-t border-border">
+                      <td className="px-5 py-3" colSpan={6}>
+                        <Skeleton className="h-5 w-full" />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-5 py-8 text-center text-muted-foreground" colSpan={6}>
+                      No domains match.
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>

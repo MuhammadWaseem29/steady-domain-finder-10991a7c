@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Copy, Plus, Pencil, Trash2, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { CountUp, EASE_SIGNATURE, Spotlight } from "@/components/site/motion";
 import { platformsQuery } from "@/lib/chaos-data";
 import { savePlatform, deletePlatform } from "@/lib/chaos.functions";
 
@@ -84,8 +85,8 @@ function Programs() {
 
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
           <Stat label="Platforms" value={list.length} index={0} />
-          <Stat label="Domains assigned" value={totals.domains.toLocaleString()} index={1} />
-          <Stat label="New (24h)" value={totals.new24.toLocaleString()} index={2} />
+          <Stat label="Domains assigned" value={totals.domains} index={1} />
+          <Stat label="New (24h)" value={totals.new24} index={2} />
         </div>
 
         <div className="mt-4 rounded-lg border border-border bg-card p-5">
@@ -206,11 +207,13 @@ function Programs() {
           {list.map((p, i) => (
             <motion.div
               key={p.platform_id}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-              className="rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/50"
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.4, delay: i * 0.06, ease: EASE_SIGNATURE }}
+              className="rounded-lg border border-border bg-card transition-colors hover:border-primary/50 hover:shadow-lg hover:shadow-foreground/5"
             >
+              <Spotlight className="rounded-lg p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-bold">{p.name}</h2>
@@ -253,19 +256,19 @@ function Programs() {
                 <div>
                   <p className="label-mono text-muted-foreground">Domains</p>
                   <p className="mt-1 text-lg font-bold tabular-nums">
-                    {Number(p.domain_count).toLocaleString()}
+                    <CountUp value={Number(p.domain_count)} />
                   </p>
                 </div>
                 <div>
                   <p className="label-mono text-muted-foreground">Subdomains</p>
                   <p className="mt-1 text-lg font-bold tabular-nums">
-                    {Number(p.subdomain_count).toLocaleString()}
+                    <CountUp value={Number(p.subdomain_count)} />
                   </p>
                 </div>
                 <div>
                   <p className="label-mono text-muted-foreground">New 24h</p>
                   <p className="mt-1 text-lg font-bold tabular-nums text-success">
-                    +{Number(p.new_24h).toLocaleString()}
+                    +<CountUp value={Number(p.new_24h)} />
                   </p>
                 </div>
               </div>
@@ -294,6 +297,7 @@ function Programs() {
                   <Copy className="size-3" /> Copy new
                 </button>
               </div>
+              </Spotlight>
             </motion.div>
           ))}
         </div>
