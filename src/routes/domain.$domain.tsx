@@ -1,0 +1,288 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { RefreshCw, Copy, Download, Loader2, ArrowLeft, Search } from "lucide-react";
+import { SiteShell, Stat } from "@/components/site/chrome";
+import {
+  domainQuery,
+  subdomainsQuery,
+  scansQuery,
+  timeAgo,
+  isNew,
+  download,
+} from "@/lib/chaos-data";
+import { runScanNow } from "@/lib/chaos.functions";
+
+export const Route = createFileRoute("/domain/$domain")({
+  head: ({ params }) => ({
+    meta: [
+      { title: `${params.domain} subdomains — Chaos` },
+      {
+        name: "description",
+        content: `Every subdomain discovered for ${params.domain}, refreshed hourly with new-host diffing, copy and export.`,
+      },
+      { property: "og:title", content: `${params.domain} subdomains — Chaos` },
+      {
+        property: "og:description",
+        content: `Hourly Chaos subdomain monitoring for ${params.domain}.`,
+      },
+    ],
+  }),
+  component: DomainDetail,
+});
+
+type Filter = "all" | "new" | "inactive";
+
+function DomainDetail() {
+  const { domain } = Route.useParams();
+  const qc = useQueryClient();
+  const { data: row } = useQuery(domainQuery(domain));
+  const { data: subs, isLoading } = useQuery(subdomainsQuery(row?.id));
+  const { data: scans } = useQuery(scansQuery(row?.id));
+  const scan = useServerFn(runScanNow);
+
+  const [filter, setFilter] = useState<Filter>("all");
+  const [q, setQ] = useState("");
+
+  const scanMutation = useMutation({
+    mutationFn: () => scan({ data: { domainId: row!.id } }),
+    onSuccess: (res) => {
+      if (res.status === "error") toast.error(res.error ?? "Scan failed");
+      else toast.success(`Scan complete — ${res.newCount} new subdomains`);
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const all = subs ?? [];
+  const filtered = useMemo(() => {
+    let list = all;
+    if (filter === "new") list = list.filter((s) => isNew(s.first_seen_at));
+    if (filter === "inactive") list = list.filter((s) => !s.is_active);
+    if (q.trim()) {
+      const needle = q.trim().toLowerCase();
+      list = list.filter((s) => s.host.includes(needle));
+    }
+    return list;
+  }, [all, filter, q]);
+
+  const newCount = all.filter((s) => isNew(s.first_seen_at)).length;
+
+  const copy = () => {
+    navigator.clipboard.writeText(filtered.map((s) => s.host).join("\n"));
+    toast.success(`Copied ${filtered.length} hosts`);
+  };
+
+  const exportAs = (format: "txt" | "csv" | "json") => {
+    const base = `${domain}-subdomains`;
+    if (format === "txt") {
+      download(`${base}.txt`, filtered.map((s) => s.host).join("\n"));
+    } else if (format === "csv") {
+      const rows = [
+        "host,first_seen_at,last_seen_at,is_active",
+        ...filtered.map(
+          (s) => `${s.host},${s.first_seen_at},${s.last_seen_at},${s.is_active}`,
+        ),
+      ];
+      download(`${base}.csv`, rows.join("\n"), "text/csv");
+    } else {
+      download(`${base}.json`, JSON.stringify(filtered, null, 2), "application/json");
+    }
+    toast.success(`Exported ${filtered.length} hosts`);
+  };
+
+  return (
+    <SiteShell>
+      <div className="mx-auto max-w-6xl px-5 py-12">
+        <Link
+          to="/dashboard"
+          className="label-mono inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-3" /> Back to monitor
+        </Link>
+
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-mono text-4xl font-extrabold">{domain}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Last scanned {timeAgo(row?.last_scanned_at ?? null)} · rescans hourly
+            </p>
+          </div>
+          <button
+            onClick={() => scanMutation.mutate()}
+            disabled={!row || scanMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {scanMutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <RefreshCw className="size-4" />
+            )}
+            Scan now
+          </button>
+        </div>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+          <Stat label="Total subdomains" value={all.length.toLocaleString()} />
+          <Stat label="New (24h)" value={newCount.toLocaleString()} />
+          <Stat
+            label="New last scan"
+            value={(row?.new_subdomains_last_scan ?? 0).toLocaleString()}
+          />
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center gap-2">
+          {(["all", "new", "inactive"] as Filter[]).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`label-mono rounded-full border px-3 py-1.5 transition-colors ${
+                filter === f
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border hover:bg-accent"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+          <div className="relative ml-auto">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="filter hosts…"
+              className="w-56 rounded-full border border-input bg-background py-2 pr-4 pl-9 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <button
+            onClick={copy}
+            className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
+          >
+            <Copy className="size-3" /> Copy all
+          </button>
+          {(["txt", "csv", "json"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => exportAs(f)}
+              className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
+            >
+              <Download className="size-3" /> {f}
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-3 text-xs text-muted-foreground">
+          Showing {filtered.length.toLocaleString()} of {all.length.toLocaleString()} hosts
+        </p>
+
+        <div className="mt-3 overflow-hidden rounded-2xl border border-border">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-card">
+              <tr className="label-mono text-muted-foreground">
+                <th className="px-5 py-3 font-medium">Host</th>
+                <th className="px-5 py-3 font-medium">First seen</th>
+                <th className="px-5 py-3 font-medium">Last seen</th>
+                <th className="px-5 py-3 font-medium">State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.slice(0, 500).map((s) => (
+                <tr key={s.id} className="border-t border-border">
+                  <td className="px-5 py-2.5 font-mono">
+                    {s.host}
+                    {isNew(s.first_seen_at) && (
+                      <span className="label-mono ml-2 rounded-full bg-success/10 px-2 py-0.5 text-success">
+                        new
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-2.5 text-muted-foreground">
+                    {timeAgo(s.first_seen_at)}
+                  </td>
+                  <td className="px-5 py-2.5 text-muted-foreground">
+                    {timeAgo(s.last_seen_at)}
+                  </td>
+                  <td className="px-5 py-2.5">
+                    <span
+                      className={`label-mono rounded-full px-2 py-0.5 ${
+                        s.is_active
+                          ? "bg-success/10 text-success"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {s.is_active ? "active" : "gone"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td className="px-5 py-8 text-center text-muted-foreground" colSpan={4}>
+                    {isLoading ? "Loading…" : "No subdomains match this filter."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {filtered.length > 500 && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Table preview limited to 500 rows — copy or export to get all{" "}
+            {filtered.length.toLocaleString()}.
+          </p>
+        )}
+
+        <h2 className="mt-12 text-2xl font-bold">Scan history</h2>
+        <div className="mt-4 overflow-hidden rounded-2xl border border-border">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-card">
+              <tr className="label-mono text-muted-foreground">
+                <th className="px-5 py-3 font-medium">Started</th>
+                <th className="px-5 py-3 font-medium">Trigger</th>
+                <th className="px-5 py-3 font-medium">Returned</th>
+                <th className="px-5 py-3 font-medium">New</th>
+                <th className="px-5 py-3 font-medium">Removed</th>
+                <th className="px-5 py-3 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(scans ?? []).map((s) => (
+                <tr key={s.id} className="border-t border-border">
+                  <td className="px-5 py-2.5 text-muted-foreground">{timeAgo(s.started_at)}</td>
+                  <td className="px-5 py-2.5 font-mono">{s.trigger}</td>
+                  <td className="px-5 py-2.5 tabular-nums">{s.total_returned}</td>
+                  <td className="px-5 py-2.5 tabular-nums text-success">+{s.new_count}</td>
+                  <td className="px-5 py-2.5 tabular-nums text-muted-foreground">
+                    -{s.removed_count}
+                  </td>
+                  <td className="px-5 py-2.5">
+                    <span
+                      className={`label-mono rounded-full px-2 py-0.5 ${
+                        s.status === "success"
+                          ? "bg-success/10 text-success"
+                          : s.status === "error"
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {s.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {(scans ?? []).length === 0 && (
+                <tr>
+                  <td className="px-5 py-8 text-center text-muted-foreground" colSpan={6}>
+                    No scans recorded yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </SiteShell>
+  );
+}
