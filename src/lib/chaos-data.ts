@@ -10,6 +10,8 @@ export type DomainRow = {
   total_subdomains: number;
   new_subdomains_last_scan: number;
   created_at: string;
+  platform_id?: string | null;
+
 };
 
 export type SubdomainRow = {
@@ -40,14 +42,24 @@ export type RecentSubdomain = {
   domains: { domain: string } | null;
 };
 
+export type PlatformStat = {
+  platform_id: string;
+  slug: string;
+  name: string;
+  color: string | null;
+  domain_count: number;
+  subdomain_count: number;
+  new_24h: number;
+};
+
 const DOMAIN_COLS =
-  "id, domain, enabled, last_scanned_at, last_scan_status, total_subdomains, new_subdomains_last_scan, created_at";
+  "id, domain, enabled, last_scanned_at, last_scan_status, total_subdomains, new_subdomains_last_scan, created_at, platform_id";
 
 export const PAGE_SIZE = 50;
 
-export const domainsPageQuery = (search: string, page: number) =>
+export const domainsPageQuery = (search: string, page: number, platformId?: string) =>
   queryOptions({
-    queryKey: ["domains", search, page],
+    queryKey: ["domains", search, page, platformId ?? "all"],
     queryFn: async (): Promise<{ rows: DomainRow[]; total: number }> => {
       let q = supabase
         .from("domains")
@@ -56,12 +68,118 @@ export const domainsPageQuery = (search: string, page: number) =>
         .order("domain", { ascending: true })
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
       if (search.trim()) q = q.ilike("domain", `%${search.trim()}%`);
+      if (platformId) q = q.eq("platform_id", platformId);
       const { data, error, count } = await q;
       if (error) throw new Error(error.message);
-      return { rows: data ?? [], total: count ?? 0 };
+      return { rows: (data ?? []) as DomainRow[], total: count ?? 0 };
     },
     refetchInterval: 60_000,
   });
+
+export const platformsQuery = queryOptions({
+  queryKey: ["platform-stats"],
+  queryFn: async (): Promise<PlatformStat[]> => {
+    const { data, error } = await supabase.rpc("platform_stats");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as PlatformStat[];
+  },
+  refetchInterval: 60_000,
+});
+
+export type Bucket = "hour" | "day" | "week" | "month";
+
+export const RANGES = {
+  "24h": { hours: 24, bucket: "hour" as Bucket, label: "Last 24 hours" },
+  "7d": { hours: 24 * 7, bucket: "day" as Bucket, label: "Last 7 days" },
+  "30d": { hours: 24 * 30, bucket: "day" as Bucket, label: "Last 30 days" },
+  "6m": { hours: 24 * 182, bucket: "week" as Bucket, label: "Last 6 months" },
+  "1y": { hours: 24 * 365, bucket: "month" as Bucket, label: "Last year" },
+};
+
+export type RangeKey = keyof typeof RANGES;
+
+const sinceIso = (hours: number) => new Date(Date.now() - hours * 3600_000).toISOString();
+
+export const discoveryTimeseriesQuery = (range: RangeKey) =>
+  queryOptions({
+    queryKey: ["discovery-ts", range],
+    queryFn: async (): Promise<{ ts: string; new_subdomains: number }[]> => {
+      const { hours, bucket } = RANGES[range];
+      const { data, error } = await supabase.rpc("discovery_timeseries", {
+        bucket,
+        since: sinceIso(hours),
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { ts: string; new_subdomains: number }[];
+    },
+    refetchInterval: 60_000,
+  });
+
+export const scanTimeseriesQuery = (range: RangeKey) =>
+  queryOptions({
+    queryKey: ["scan-ts", range],
+    queryFn: async (): Promise<
+      { ts: string; scans: number; errors: number; new_found: number }[]
+    > => {
+      const { hours, bucket } = RANGES[range];
+      const { data, error } = await supabase.rpc("scan_timeseries", {
+        bucket,
+        since: sinceIso(hours),
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { ts: string; scans: number; errors: number; new_found: number }[];
+    },
+    refetchInterval: 60_000,
+  });
+
+export const topDomainsQuery = (range: RangeKey, limit = 12) =>
+  queryOptions({
+    queryKey: ["top-domains", range, limit],
+    queryFn: async (): Promise<{ domain: string; new_count: number }[]> => {
+      const { data, error } = await supabase.rpc("top_domains_by_new", {
+        since: sinceIso(RANGES[range].hours),
+        lim: limit,
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { domain: string; new_count: number }[];
+    },
+    refetchInterval: 60_000,
+  });
+
+export const newSubdomainsQuery = (range: RangeKey, limit = 500) =>
+  queryOptions({
+    queryKey: ["new-subs", range, limit],
+    queryFn: async (): Promise<RecentSubdomain[]> => {
+      const { data, error } = await supabase
+        .from("subdomains")
+        .select("id, host, first_seen_at, domains(domain)")
+        .gte("first_seen_at", sinceIso(RANGES[range].hours))
+        .order("first_seen_at", { ascending: false })
+        .limit(limit);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as RecentSubdomain[];
+    },
+    refetchInterval: 30_000,
+  });
+
+export const windowCountsQuery = queryOptions({
+  queryKey: ["window-counts"],
+  queryFn: async () => {
+    const windows = { hour: 1, day: 24, week: 24 * 7, month: 24 * 30, halfYear: 24 * 182 };
+    const entries = await Promise.all(
+      Object.entries(windows).map(async ([key, hours]) => {
+        const { count } = await supabase
+          .from("subdomains")
+          .select("id", { count: "exact", head: true })
+          .gte("first_seen_at", sinceIso(hours));
+        return [key, count ?? 0] as const;
+      }),
+    );
+    return Object.fromEntries(entries) as Record<keyof typeof windows, number>;
+  },
+  refetchInterval: 60_000,
+});
+
 
 export const globalStatsQuery = queryOptions({
   queryKey: ["global-stats"],
@@ -185,4 +303,13 @@ export function download(filename: string, content: string, type = "text/plain")
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export function formatTick(iso: string, bucket: string) {
+  const d = new Date(iso);
+  if (bucket === "hour")
+    return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  if (bucket === "month")
+    return d.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

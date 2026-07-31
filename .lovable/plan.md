@@ -1,53 +1,53 @@
-## Goal
+## Verified first
 
-A clone of chaos.projectdiscovery.io that continuously monitors domains with the Chaos DNS API, stores every subdomain in a database, re-scans automatically every hour, and highlights newly discovered subdomains with copy/export tools. First tracked domain: `lovable.app`.
+- Cron job `chaos-rolling-scan` exists and is **active**, schedule `* * * * *` (every minute, 200 domains per sweep → full 10.4k pass roughly hourly). No fix needed; I'll add a visible "scanner health" panel so you can see last run time, per-hour scan counts and any errors instead of guessing.
+- Current tables: `domains`, `subdomains`, `scans`. There is no platform column yet, and no daily/weekly rollup data — both get added.
 
-## Verified facts
+## 1. Bug bounty platforms
 
-- Chaos endpoint: `GET https://dns.projectdiscovery.io/dns/{domain}/subdomains` with header `Authorization: <API_KEY>`.
-- Response: `{"domain":"lovable.app","subdomains":["www","connect","yt",...],"count":N}` — labels are relative, full host = `label + "." + domain`.
-- Tested the provided key against `lovable.app`: it works and returns thousands of labels.
+New `platforms` table seeded with 5 rows: HackerOne, Bugcrowd, Intigriti, YesWeHack, Self-hosted. `domains` gets a `platform_id` column (nullable → existing 10.4k domains stay under "Unassigned"/Self).
 
-## What gets built
+Each platform gets one placeholder root domain seeded so the page isn't empty; you add the real root domains later manually or by bulk paste.
 
-### 1. Backend (Lovable Cloud)
+New pages:
+- `/platforms` — grid of the 5 platforms with domain count, total subdomains, new-subs-last-24h per platform.
+- `/platform/{slug}` — that platform's domain list (search + pagination), its stats, its recent subdomains feed, copy/export of **every subdomain across that whole platform**, and a "Scan all domains in this platform" button.
 
-Tables:
-- `domains` — root domain, enabled flag, last_scanned_at, subdomain counts.
-- `subdomains` — domain_id, label, full host, first_seen_at, last_seen_at, is_active. Unique on (domain_id, host).
-- `scans` — scan run log: domain, started/finished, total returned, new count, removed count, status, error message.
+## 2. Copy / export everywhere
 
-Scan logic (server function + public API route):
-- Fetch Chaos for a domain, diff against stored rows.
-- Insert unseen hosts (marked new, timestamped), refresh `last_seen_at` on existing, flag missing ones inactive.
-- Write a `scans` row with the new-subdomain delta.
+- Copy-all + export (TXT / CSV / JSON) buttons at three scopes: single domain (already there), per platform, and **global — all subdomains of all programs**.
+- Separate "Copy new only" for last-24h / since-last-scan.
+- Big exports stream in 1000-row pages with a progress toast so a 500k-row copy doesn't freeze the tab.
 
-Scheduling:
-- `pg_cron` job running hourly, calling a secured `/api/public/cron/scan` route with a shared cron secret; the route scans every enabled domain.
-- Manual "Run scan now" button triggers the same logic on demand.
+## 3. New-subs dashboard
 
-The Chaos API key is stored as a backend secret (never shipped to the browser). All Chaos calls happen server-side.
+- Dedicated `/new` view: everything first seen in a selected window (last scan, 1h, 24h, 7d, 30d), grouped by root domain, with platform badge, copy/export, and live auto-refresh.
+- "Run scan" on any domain immediately re-checks and any newly discovered host lands in this feed with a NEW badge.
 
-### 2. Frontend — Chaos site clone
+## 4. Stats & graphs
 
-Public marketing pages styled like chaos.projectdiscovery.io (dark ProjectDiscovery aesthetic, monospace accents, terminal-style code blocks):
-- Home: hero, live stats (domains tracked, total subdomains, new in last 24h), search box, feature grid, footer.
-- Docs pages mirroring "Fetch Subdomains" and "API Key" layout with sidebar + on-this-page nav.
+New rollup so history is cheap to chart: a `daily_stats` table (per day, and per platform) filled by a small SQL aggregation the cron also touches, plus on-the-fly hourly aggregation for the last 48h.
 
-Dashboard (the working part):
-- Domain list with counts, last scan time, next scan countdown.
-- Domain detail: full subdomain table with search/filter, "New" badges, tabs for All / New (last 24h / since last scan) / Removed.
-- Scan history timeline with per-run new-subdomain deltas.
-- Copy all, copy new only, export as TXT / CSV / JSON.
-- Manual rescan button with live status.
+Charts (recharts, already installed):
+- Subdomains discovered over time — toggles for Hourly / Daily / Weekly / Monthly / 6 months / All time.
+- Scans run + errors per period.
+- Top domains by new subs in period.
+- Platform share (donut).
+- Scan health strip: success/error ratio per hour.
 
-### 3. Multi-domain support
+Stat cards: total domains, total subdomains, new in last scan, new 24h/7d/30d, last scan time, next sweep countdown.
 
-The schema and scanner are domain-agnostic from day one, so later you can paste or upload `root_domains.txt` to bulk-add domains and they all get scanned on the same hourly cycle. Initially seeded with `lovable.app` only.
+## 5. Dark theme + animation
+
+- Dark is already the base; I'll add a proper theme toggle (dark default, light available) wired through tokens in `src/styles.css` so nothing hardcodes colors.
+- Motion: staggered fade/slide-in on cards and table rows, animated counters on stat numbers, shimmer skeletons while loading, pulse on the live "new sub" feed, smooth chart draw-in, hover lift on domain rows, subtle terminal-style scan progress animation.
+
+## 6. Adding domains
+
+Single-domain input **and** multi-paste/upload textarea, both with a platform selector, on the dashboard and on each platform page.
 
 ## Technical notes
 
-- Scanner is one server function reused by both cron and manual triggers; concurrency-guarded per domain so overlapping runs can't double-insert.
-- Chaos responses for large domains (10k+ labels) are inserted in chunked batches to stay within request limits.
-- Row Level Security: public read on domains/subdomains/scans (this is public recon data), writes restricted to the server role.
-- Cron secret and Chaos key both stored as backend secrets; you'll be prompted to confirm the Chaos key gets saved securely rather than hardcoded.
+- Migration: `platforms` table + seed, `domains.platform_id` FK + index, `daily_stats` table, indexes on `subdomains.first_seen_at` and `(domain_id, first_seen_at)` for fast window queries; public read policies + GRANTs matching the existing tables.
+- Aggregations run as SQL RPC functions (security definer, read-only) so charts don't pull hundreds of thousands of rows to the browser.
+- Scanner logic unchanged apart from writing a daily stats row after each sweep.

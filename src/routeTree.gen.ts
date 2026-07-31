@@ -11,9 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as NewRouteImport } from './routes/new'
+import { Route as ProgramsRouteImport } from './routes/programs'
+import { Route as StatsRouteImport } from './routes/stats'
 import { Route as DocsApiKeyRouteImport } from './routes/docs/api-key'
 import { Route as DocsFetchSubdomainsRouteImport } from './routes/docs/fetch-subdomains'
 import { Route as DomainDomainRouteImport } from './routes/domain.$domain'
+import { Route as ProgramSlugRouteImport } from './routes/program.$slug'
+import { Route as ApiPublicExportRouteImport } from './routes/api/public/export'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
 
 const IndexRoute = IndexRouteImport.update({
@@ -24,6 +29,21 @@ const IndexRoute = IndexRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewRoute = NewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgramsRoute = ProgramsRouteImport.update({
+  id: '/programs',
+  path: '/programs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsApiKeyRoute = DocsApiKeyRouteImport.update({
@@ -41,6 +61,16 @@ const DomainDomainRoute = DomainDomainRouteImport.update({
   path: '/domain/$domain',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProgramSlugRoute = ProgramSlugRouteImport.update({
+  id: '/program/$slug',
+  path: '/program/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicExportRoute = ApiPublicExportRouteImport.update({
+  id: '/api/public/export',
+  path: '/api/public/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
   id: '/api/public/hooks/scan',
   path: '/api/public/hooks/scan',
@@ -50,26 +80,41 @@ const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/new': typeof NewRoute
+  '/programs': typeof ProgramsRoute
+  '/stats': typeof StatsRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
+  '/program/$slug': typeof ProgramSlugRoute
+  '/api/public/export': typeof ApiPublicExportRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/new': typeof NewRoute
+  '/programs': typeof ProgramsRoute
+  '/stats': typeof StatsRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
+  '/program/$slug': typeof ProgramSlugRoute
+  '/api/public/export': typeof ApiPublicExportRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/new': typeof NewRoute
+  '/programs': typeof ProgramsRoute
+  '/stats': typeof StatsRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
+  '/program/$slug': typeof ProgramSlugRoute
+  '/api/public/export': typeof ApiPublicExportRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
 }
 export interface FileRouteTypes {
@@ -77,34 +122,54 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/new'
+    | '/programs'
+    | '/stats'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
+    | '/program/$slug'
+    | '/api/public/export'
     | '/api/public/hooks/scan'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
+    | '/new'
+    | '/programs'
+    | '/stats'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
+    | '/program/$slug'
+    | '/api/public/export'
     | '/api/public/hooks/scan'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/new'
+    | '/programs'
+    | '/stats'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
+    | '/program/$slug'
+    | '/api/public/export'
     | '/api/public/hooks/scan'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  NewRoute: typeof NewRoute
+  ProgramsRoute: typeof ProgramsRoute
+  StatsRoute: typeof StatsRoute
   DocsApiKeyRoute: typeof DocsApiKeyRoute
   DocsFetchSubdomainsRoute: typeof DocsFetchSubdomainsRoute
   DomainDomainRoute: typeof DomainDomainRoute
+  ProgramSlugRoute: typeof ProgramSlugRoute
+  ApiPublicExportRoute: typeof ApiPublicExportRoute
   ApiPublicHooksScanRoute: typeof ApiPublicHooksScanRoute
 }
 
@@ -122,6 +187,27 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/new': {
+      id: '/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/programs': {
+      id: '/programs'
+      path: '/programs'
+      fullPath: '/programs'
+      preLoaderRoute: typeof ProgramsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs/api-key': {
@@ -145,6 +231,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DomainDomainRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/program/$slug': {
+      id: '/program/$slug'
+      path: '/program/$slug'
+      fullPath: '/program/$slug'
+      preLoaderRoute: typeof ProgramSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/export': {
+      id: '/api/public/export'
+      path: '/api/public/export'
+      fullPath: '/api/public/export'
+      preLoaderRoute: typeof ApiPublicExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/scan': {
       id: '/api/public/hooks/scan'
       path: '/api/public/hooks/scan'
@@ -158,9 +258,14 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  NewRoute: NewRoute,
+  ProgramsRoute: ProgramsRoute,
+  StatsRoute: StatsRoute,
   DocsApiKeyRoute: DocsApiKeyRoute,
   DocsFetchSubdomainsRoute: DocsFetchSubdomainsRoute,
   DomainDomainRoute: DomainDomainRoute,
+  ProgramSlugRoute: ProgramSlugRoute,
+  ApiPublicExportRoute: ApiPublicExportRoute,
   ApiPublicHooksScanRoute: ApiPublicHooksScanRoute,
 }
 export const routeTree = rootRouteImport
