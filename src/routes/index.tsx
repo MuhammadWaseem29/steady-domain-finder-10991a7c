@@ -170,12 +170,14 @@ Authorization: API_KEY
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-24">
-        <p className="label-mono text-muted-foreground">Recon data</p>
-        <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Largest monitored domains</h2>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Every root domain is rescanned on a rolling hourly cycle. Open one to browse, copy or
-          export its subdomains.
-        </p>
+        <Reveal>
+          <p className="label-mono text-muted-foreground">Recon data</p>
+          <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Largest monitored domains</h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Every root domain is rescanned on a rolling hourly cycle. Open one to browse, copy or
+            export its subdomains.
+          </p>
+        </Reveal>
 
         <div className="mt-6 overflow-hidden rounded-lg border border-border">
           <table className="w-full text-left text-sm">
@@ -190,7 +192,11 @@ Authorization: API_KEY
             </thead>
             <tbody>
               {(top?.rows ?? []).slice(0, 15).map((d) => (
-                <tr key={d.id} className="border-t border-border">
+                <tr
+                  key={d.id}
+                  className="border-t border-border transition-colors hover:bg-accent/50"
+                >
+
                   <td className="px-5 py-3 font-mono">{d.domain}</td>
                   <td className="px-5 py-3 tabular-nums">
                     {d.total_subdomains.toLocaleString()}
