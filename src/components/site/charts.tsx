@@ -4,11 +4,16 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+
 
 type Point = { label: string; value: number };
 
@@ -88,6 +93,40 @@ export function HorizontalBars({ data }: { data: Point[] }) {
         <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--color-accent)" }} />
         <Bar dataKey="value" name="New subdomains" fill="var(--color-chart-1)" radius={4} animationDuration={900} animationEasing="ease-out" />
       </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function ShareDonut({ data }: { data: { label: string; value: number; color?: string }[] }) {
+  const palette = [
+    "var(--color-chart-1)",
+    "var(--color-chart-2)",
+    "var(--color-chart-3)",
+    "var(--color-chart-4)",
+    "var(--color-chart-5)",
+  ];
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <PieChart>
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="label"
+          innerRadius={62}
+          outerRadius={98}
+          paddingAngle={3}
+          stroke="var(--color-background)"
+          strokeWidth={2}
+          animationDuration={1000}
+          animationEasing="ease-out"
+        >
+          {data.map((d, i) => (
+            <Cell key={d.label} fill={d.color || palette[i % palette.length]} />
+          ))}
+        </Pie>
+        <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+        <Tooltip contentStyle={tooltipStyle} />
+      </PieChart>
     </ResponsiveContainer>
   );
 }
