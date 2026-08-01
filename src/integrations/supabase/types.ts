@@ -281,6 +281,16 @@ export type Database = {
           ts: string
         }[]
       }
+      ingest_chunk_with_scan: {
+        Args: {
+          _domain_id: string
+          _hosts: Json
+          _scan_id: string
+          _stamp: string
+          _total_returned?: number
+        }
+        Returns: number
+      }
       ingest_subdomain_chunk: {
         Args: { _domain_id: string; _hosts: Json; _stamp: string }
         Returns: number
@@ -327,6 +337,17 @@ export type Database = {
           slug: string
         }[]
       }
+      recent_subs_overview: {
+        Args: { since: string }
+        Returns: {
+          domains_active: number
+          latest_at: string
+          per_hour: number
+          programs_active: number
+          total_new: number
+        }[]
+      }
+      reconcile_scan_counts: { Args: { _since?: string }; Returns: number }
       running_scans_detail: {
         Args: { lim?: number }
         Returns: {
