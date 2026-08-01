@@ -68,12 +68,13 @@ async function ingestChunk(
   totalReturned?: number,
 ) {
   const { data, error } = await supabaseAdmin.rpc("ingest_chunk_with_scan", {
-    _scan_id: scanId ?? null,
     _domain_id: domainId,
     _hosts: hosts,
     _stamp: stamp,
-    _total_returned: totalReturned ?? null,
+    ...(scanId ? { _scan_id: scanId } : {}),
+    ...(typeof totalReturned === "number" ? { _total_returned: totalReturned } : {}),
   });
+
   if (error) throw new Error(error.message);
   return Number(data ?? 0);
 }
