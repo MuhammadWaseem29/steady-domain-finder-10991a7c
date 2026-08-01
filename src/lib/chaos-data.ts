@@ -530,3 +530,127 @@ export const recentNewSubsQuery = (range: UpdateRangeKey, limit = 300) =>
     },
     refetchInterval: 15_000,
   });
+
+// ---------------------------------------------------------------------------
+// Recent-subs analytics (unlimited feed + extra breakdowns)
+// ---------------------------------------------------------------------------
+
+export type NewSubRow = {
+  id: string;
+  host: string;
+  domain: string;
+  first_seen_at: string;
+};
+
+export const NEW_SUBS_PAGE = 500;
+
+export const newSubsCountQuery = (hours: number) =>
+  queryOptions({
+    queryKey: ["new-subs-count", hours],
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc("count_new_subs", { since: sinceIso(hours) });
+      if (error) throw new Error(error.message);
+      return Number(data ?? 0);
+    },
+    refetchInterval: 30_000,
+  });
+
+export const newSubsPreviousCountQuery = (hours: number) =>
+  queryOptions({
+    queryKey: ["new-subs-count-prev", hours],
+    queryFn: async (): Promise<number> => {
+      const now = Date.now();
+      const start = new Date(now - hours * 2 * 3600_000).toISOString();
+      const end = new Date(now - hours * 3600_000).toISOString();
+      const { count, error } = await supabase
+        .from("subdomains")
+        .select("id", { count: "estimated", head: true })
+        .gte("first_seen_at", start)
+        .lt("first_seen_at", end);
+      if (error) throw new Error(error.message);
+      return count ?? 0;
+    },
+    refetchInterval: 120_000,
+  });
+
+export const newSubsInfiniteOptions = (hours: number) => ({
+  queryKey: ["new-subs-infinite", hours] as const,
+  initialPageParam: null as { ts: string; id: string } | null,
+  queryFn: async ({
+    pageParam,
+  }: {
+    pageParam: { ts: string; id: string } | null;
+  }): Promise<NewSubRow[]> => {
+    const { data, error } = await supabase.rpc("new_subs_page", {
+      since: sinceIso(hours),
+      before_ts: pageParam?.ts ?? null,
+      before_id: pageParam?.id ?? null,
+      lim: NEW_SUBS_PAGE,
+    });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as NewSubRow[];
+  },
+  getNextPageParam: (last: NewSubRow[]) => {
+    if (last.length < NEW_SUBS_PAGE) return undefined;
+    const tail = last[last.length - 1]!;
+    return { ts: tail.first_seen_at, id: tail.id };
+  },
+  refetchInterval: 30_000,
+});
+
+export const heatmapQuery = (hours: number) =>
+  queryOptions({
+    queryKey: ["new-subs-heatmap", hours],
+    queryFn: async (): Promise<{ dow: number; hour: number; c: number }[]> => {
+      const { data, error } = await supabase.rpc("new_subs_hour_heatmap", {
+        since: sinceIso(hours),
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as { dow: number; hour: number; c: number }[];
+    },
+    refetchInterval: 120_000,
+  });
+
+export const labelBreakdownQuery = (hours: number, limit = 14) =>
+  queryOptions({
+    queryKey: ["new-subs-labels", hours, limit],
+    queryFn: async (): Promise<{ prefix: string; c: number }[]> => {
+      const { data, error } = await supabase.rpc("new_subs_label_breakdown", {
+        since: sinceIso(hours),
+        lim: limit,
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as { prefix: string; c: number }[];
+    },
+    refetchInterval: 120_000,
+  });
+
+export const INTERESTING_PATTERNS = [
+  "admin",
+  "internal",
+  "intranet",
+  "stage",
+  "staging",
+  "dev",
+  "test",
+  "uat",
+  "vpn",
+  "jenkins",
+  "git",
+  "jira",
+  "grafana",
+  "kibana",
+  "s3",
+  "api",
+  "auth",
+  "sso",
+  "db",
+  "backup",
+  "legacy",
+  "old",
+];
+
+export const isInteresting = (host: string) => {
+  const h = host.toLowerCase();
+  return INTERESTING_PATTERNS.some((p) => h.split(".").some((part) => part === p || part.startsWith(p)));
+};
