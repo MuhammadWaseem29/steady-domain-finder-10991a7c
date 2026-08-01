@@ -1,38 +1,31 @@
-## What's actually wrong (verified in the database)
+## Goal
+Remove the 300-host cap on the "Every new subdomain" feed on `/recentsubs`, and expand the page into a full analytics surface.
 
-For `natwest.com` (domain id `5e05…3e94`):
+## 1. Unlimited feed
+- Replace the fixed `recentNewSubsQuery(range, 300)` with an infinite/paged query (`useInfiniteQuery`, 500 rows per page, keyset paging on `first_seen_at` + `id`) so the feed can load every new subdomain in the selected range, not just 300.
+- Virtualized/windowed rendering of rows so tens of thousands of hosts stay smooth (render in chunks with a "Load more" + auto-load-on-scroll sentinel).
+- Header shows real total (from an exact count for the range) instead of "300 hosts".
+- "Copy all" and "Export" pull the **entire** range server-side (reuse the existing streaming `/api/public/export` route with a range filter), not just the loaded rows.
 
-- The subdomains table holds **3,986** hosts, and **5 of them were first seen at 2026-08-01 06:15:26 UTC** (`apply-cloud.natwest.com`, `cora-spending-assistant.gentest.assistant.natwest.com`, `www.cora-spending-assistant…`, `self-service-backend.kappa2-p.assistant…`, `www.self-service-backend…`).
-- The scan history table has **no scan row at all at 06:15** — its most recent row is 01:03 UTC with `new_count = 0`, and `domains.last_scanned_at` is also still 01:03 while `total_subdomains` still says 3,981.
+## 2. New charts and panels (owner's picks)
+- **Discovery velocity sparkline strip**: new subs per hour/day for the range with delta vs previous equal-length period (▲/▼ % badge).
+- **Hour-of-day heatmap**: 7×24 grid showing when discoveries land — makes cadence gaps obvious.
+- **Cumulative growth line**: running total of new subs across the range next to the existing area chart.
+- **Program leaderboard**: ranked list with share bars, new count, domains affected, sparkline per program.
+- **Newest TLD / keyword breakdown**: top subdomain label prefixes (api, dev, stage, admin, vpn…) — high-signal for recon, rendered as a bar chart plus quick filter chips.
+- **Interesting hosts panel**: highlights hosts matching high-value patterns (admin, internal, staging, vpn, jenkins, git, s3, jira…) with copy/export for that subset.
+- **Scan reliability strip**: scans run, errors, success rate and full-cycle coverage for the range.
 
-So the discovery genuinely happened; the bookkeeping around it did not.
+## 3. Feed controls
+- Search box (host/domain substring), program filter, and root-domain filter applied to the feed.
+- Sort toggle: newest first / grouped by root domain.
+- Per-row copy, and per-group "copy all for this domain".
+- Live-append: new discoveries slide in at the top while the page is open (keeps the existing AnimatePresence motion).
 
-**Root cause:** in the scanner, the hosts are ingested first, and the scan-history row plus the domain counters are written **only at the very end** of the run, in one final batch. When a cron sweep hits its time budget (or the worker request is cut off) after the ingest but before that final write, the newly inserted rows exist while the scan row, `new_count`, `last_scanned_at` and `total_subdomains` are simply never written. Those writes also never check for errors, so a failed insert is silent. The result the user sees: a long list of `+0` scans even though new hosts landed in the database.
-
-(The "5h 32m ago" next to "06:03:05" is not a bug — the row is stored 01:03 UTC and rendered in your local timezone; the elapsed time is correct.)
-
-## Part 1 — Make new-subdomain accounting durable (all platforms)
-
-1. **Open the scan row up front.** Insert the `scans` row with `status = running` before ingesting, and keep its id. Every ingest chunk immediately updates that row with the running `new_count`, `total_returned`, and `processed` progress. A truncated run then still leaves an accurate, visible record instead of nothing.
-2. **Update domain counters incrementally** in the same step (`last_scanned_at`, `total_subdomains`, `new_subdomains_last_scan`) rather than only after the last chunk.
-3. **Do the counting in the database.** Extend the ingest function so the per-chunk insert also increments the scan row's counter transactionally — the count can't be lost by a dying worker.
-4. **Self-healing reconciliation.** Add a database routine (run at the start of each cron tick) that, for any finished scan whose `new_count` is 0, recomputes it as the number of subdomains for that domain whose `first_seen_at` falls inside the scan's start/finish window, and closes out scans stuck in `running`. This retroactively repairs the existing history, including natwest's 06:15 discovery, across every program/platform.
-5. **Check write errors** on the scans/domains writes and surface failures into `last_scan_status` instead of swallowing them.
-6. **Verify**: re-run a cron sweep and a manual scan, then query the database to confirm scan rows, `new_count`, and `first_seen_at` all agree for natwest and a couple of large programs.
-
-## Part 2 — New `/recentsubs` page (flagship design)
-
-A dedicated, premium page devoted entirely to newly discovered subdomains:
-
-- **Hero band** with animated count-up KPIs: new in last 1h / 24h / 7d / 30d / 6mo, active programs contributing, discovery velocity (new per hour), and the single most recent find with a live ticking timestamp.
-- **Charts**: a large gradient-filled discovery timeline (switchable hour/day/week/month buckets), a per-platform stacked share chart, a top-programs bar chart, and a scan-health sparkline — all animated on mount.
-- **Live feed**: newest hosts streaming in with animated row insertion, platform-colored badges, root-domain links, relative + exact time, per-row copy, and a filter/search bar (by platform, program, text).
-- **Bulk actions**: copy all new hosts for the selected window, and export TXT/CSV/JSON through the existing streaming export endpoint.
-- **Breakdown tables**: top programs and top root domains by new finds in the window, with delta indicators.
-- Colorful but on-brand: platform accent colors, gradient surfaces, spotlight cards, scroll reveals, skeleton shimmer while loading, and full reduced-motion support. Route linked from the navbar.
+## 4. Polish
+- Keep the existing premium motion language (spring range pill, CountUp KPIs, spotlight cards); add shimmer skeletons for the new panels and reduced-motion safety.
 
 ## Technical notes
-
-- Migration: add a scan-progress update function + a `reconcile_scan_counts()` routine; keep existing GRANT/RLS conventions.
-- Edits: `src/lib/chaos.server.ts` (scan row lifecycle), `src/routes/api/public/hooks/scan.ts` (call reconciliation per tick), `src/lib/chaos-data.ts` (new queries for the recent-subs page), new `src/routes/recentsubs.tsx`, new chart components in `src/components/site/charts.tsx`, navbar link in `src/components/site/chrome.tsx`.
-- Verification is done against the live database and with browser screenshots of the new page.
+- New DB helper RPCs: `new_subs_hour_heatmap(since)`, `new_subs_label_breakdown(since, lim)`, `new_subs_cumulative(bucket, since)`, and a `count_new_subs(since)` exact counter — all `STABLE`, `SET search_path = public`, with `GRANT EXECUTE` to `anon`/`authenticated`.
+- Paging uses an index-friendly keyset on the existing `subdomains(first_seen_at DESC)` index; no new indexes expected.
+- Export/copy-all routed through the existing streaming export endpoint to avoid loading everything into browser memory.
