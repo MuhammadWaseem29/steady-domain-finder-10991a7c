@@ -64,14 +64,37 @@ async function ingestChunk(
   domainId: string,
   hosts: { label: string; host: string }[],
   stamp: string,
+  scanId?: string | null,
+  totalReturned?: number,
 ) {
-  const { data, error } = await supabaseAdmin.rpc("ingest_subdomain_chunk", {
+  const { data, error } = await supabaseAdmin.rpc("ingest_chunk_with_scan", {
+    _scan_id: scanId ?? null,
     _domain_id: domainId,
     _hosts: hosts,
     _stamp: stamp,
+    _total_returned: totalReturned ?? null,
   });
   if (error) throw new Error(error.message);
   return Number(data ?? 0);
+}
+
+/** Opens a scan row before any ingest so a truncated run still leaves a record. */
+async function openScan(domainId: string, trigger: "manual" | "cron", startedAt: string) {
+  const { data, error } = await supabaseAdmin
+    .from("scans")
+    .insert({
+      domain_id: domainId,
+      trigger,
+      status: "running",
+      started_at: startedAt,
+      total_returned: 0,
+      new_count: 0,
+      removed_count: 0,
+    })
+    .select("id")
+    .single();
+  if (error || !data) return null;
+  return data.id as string;
 }
 
 export async function scanDomain(
@@ -90,8 +113,11 @@ export async function scanDomain(
   const writeBudgetMs = options.writeBudgetMs ?? 60_000;
   const writeConcurrency = Math.min(Math.max(options.writeConcurrency ?? 6, 1), 12);
   const startedAt = new Date().toISOString();
+  let scanId: string | null = null;
 
   try {
+    scanId = await openScan(domainRow.id, trigger, startedAt);
+
     const labels = await fetchChaosSubdomains(domainRow.domain, options.fetchTimeoutMs);
     const hosts = labels.map((label) => ({
       label,
@@ -103,10 +129,14 @@ export async function scanDomain(
     let skipped = 0;
     const deadline = Date.now() + writeBudgetMs;
 
-    // Upsert with ignoreDuplicates: the (domain_id, host) unique index does the
-    // diffing in the database, so we never have to page through millions of
-    // existing rows. Batches run in parallel so 100k+ host programs finish
-    // inside the request budget instead of dying with a 500.
+    // Reset the per-scan "new" counter on the domain; ingest_chunk_with_scan
+    // increments it (and the scan row) transactionally per chunk, so a worker
+    // that dies mid-run never loses the discoveries it already wrote.
+    await supabaseAdmin
+      .from("domains")
+      .update({ new_subdomains_last_scan: 0, claimed_at: stamp, updated_at: stamp })
+      .eq("id", domainRow.id);
+
     const batches = chunk(hosts, 5000);
     let cursor = 0;
 
@@ -118,7 +148,7 @@ export async function scanDomain(
           skipped += batch.length;
           continue;
         }
-        freshCount += await ingestChunk(domainRow.id, batch, stamp);
+        freshCount += await ingestChunk(domainRow.id, batch, stamp, scanId, hosts.length);
       }
     }
 
@@ -127,21 +157,30 @@ export async function scanDomain(
     const status = skipped > 0 ? ("partial" as const) : ("success" as const);
     const finishedAt = new Date().toISOString();
 
-    // One write per scan instead of insert+update.
     await Promise.all([
-      supabaseAdmin.from("scans").insert({
-        domain_id: domainRow.id,
-        trigger,
-        status: "success",
-        started_at: startedAt,
-        finished_at: finishedAt,
-        total_returned: hosts.length,
-        new_count: freshCount,
-        removed_count: 0,
-        ...(skipped > 0
-          ? { error_message: `${skipped} hosts deferred to the next scan (time budget)` }
-          : {}),
-      }),
+      scanId
+        ? supabaseAdmin
+            .from("scans")
+            .update({
+              status: "success",
+              finished_at: finishedAt,
+              total_returned: hosts.length,
+              new_count: freshCount,
+              ...(skipped > 0
+                ? { error_message: `${skipped} hosts deferred to the next scan (time budget)` }
+                : {}),
+            })
+            .eq("id", scanId)
+        : supabaseAdmin.from("scans").insert({
+            domain_id: domainRow.id,
+            trigger,
+            status: "success",
+            started_at: startedAt,
+            finished_at: finishedAt,
+            total_returned: hosts.length,
+            new_count: freshCount,
+            removed_count: 0,
+          }),
       supabaseAdmin
         .from("domains")
         .update({
@@ -170,6 +209,7 @@ export async function scanDomain(
         : {}),
     };
   } catch (error) {
+
 
     const message = error instanceof Error ? error.message : String(error);
     const stamp = new Date().toISOString();
