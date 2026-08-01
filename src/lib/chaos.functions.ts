@@ -233,7 +233,7 @@ export type QueueJob = {
 export const listScanQueue = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const [jobsRes, dueRes, totalRes, runningRes] = await Promise.all([
+  const [jobsRes, countsRes, runningRes] = await Promise.all([
     supabaseAdmin
       .from("scan_jobs")
       .select(
@@ -241,14 +241,14 @@ export const listScanQueue = createServerFn({ method: "POST" }).handler(async ()
       )
       .order("created_at", { ascending: false })
       .limit(80),
-    supabaseAdmin
-      .from("domains")
-      .select("id", { count: "exact", head: true })
-      .eq("enabled", true)
-      .or(`claimed_at.is.null,claimed_at.lt.${new Date(Date.now() - 120 * 60_000).toISOString()}`),
-    supabaseAdmin.from("domains").select("id", { count: "exact", head: true }).eq("enabled", true),
+    supabaseAdmin.rpc("domain_cycle_counts", { cycle_minutes: 120 }),
     supabaseAdmin.from("scans").select("id", { count: "exact", head: true }).eq("status", "running"),
   ]);
+
+  const counts = (countsRes.data ?? [])[0] as
+    | { total_domains: number; due_domains: number }
+    | undefined;
+
 
   const jobs: QueueJob[] = (jobsRes.data ?? []).map((j) => ({
     id: j.id,
