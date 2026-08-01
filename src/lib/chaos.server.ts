@@ -90,6 +90,29 @@ async function ingestChunk(
 
 }
 
+
+/** Queues (or tops up) a resumable background job for leftover hosts. */
+async function enqueueResumableJob(domainId: string, labels: string[], trigger: "manual" | "cron") {
+  const { data: active } = await supabaseAdmin
+    .from("scan_jobs")
+    .select("id")
+    .eq("domain_id", domainId)
+    .in("status", ["queued", "fetching", "processing"])
+    .maybeSingle();
+  if (active) return;
+  const now = new Date().toISOString();
+  await supabaseAdmin.from("scan_jobs").insert({
+    domain_id: domainId,
+    status: "processing",
+    hosts: labels,
+    total_hosts: labels.length,
+    processed_hosts: 0,
+    new_count: 0,
+    started_at: now,
+    error_message: trigger === "cron" ? "deferred from rolling sweep" : null,
+  });
+}
+
 /** Opens a scan row before any ingest so a truncated run still leaves a record. */
 async function openScan(domainId: string, trigger: "manual" | "cron", startedAt: string) {
   const { data, error } = await supabaseAdmin
@@ -151,6 +174,7 @@ export async function scanDomain(
 
     const batches = chunk(hosts, 5000);
     let cursor = 0;
+    const deferred: string[] = [];
 
     async function writer() {
       while (cursor < batches.length) {
@@ -158,6 +182,7 @@ export async function scanDomain(
         if (!batch) return;
         if (Date.now() > deadline) {
           skipped += batch.length;
+          for (const h of batch) deferred.push(h.label);
           continue;
         }
         freshCount += await ingestChunk(domainRow.id, batch, stamp, scanId, hosts.length);
@@ -165,6 +190,12 @@ export async function scanDomain(
     }
 
     await Promise.all(Array.from({ length: writeConcurrency }, writer));
+
+    // Big programs never fit in one request. Whatever is left over is handed to
+    // a resumable background job so it always finishes instead of being dropped.
+    if (deferred.length > 0) {
+      await enqueueResumableJob(domainRow.id, deferred, trigger);
+    }
 
     const status = skipped > 0 ? ("partial" as const) : ("success" as const);
     const finishedAt = new Date().toISOString();
@@ -329,9 +360,20 @@ export async function getManualScanProgress(domainId: string): Promise<ScanJobPr
   };
 }
 
-/** Processes resumable manual jobs for a bounded amount of wall-clock time. */
-export async function processPendingScanJobs(budgetMs = 42_000) {
+/** Drains the resumable job queue for a bounded amount of wall-clock time. */
+export async function processPendingScanJobs(budgetMs = 20_000) {
   const deadline = Date.now() + Math.min(Math.max(budgetMs, 5_000), 45_000);
+  const done: unknown[] = [];
+  while (Date.now() < deadline - 4_000) {
+    const r = await processOnePendingJob(deadline);
+    if (!r) break;
+    done.push(r);
+    if (r.status === "processing") break; // still busy, resume next tick
+  }
+  return done.length === 1 ? done[0] : done.length === 0 ? null : done;
+}
+
+async function processOnePendingJob(deadline: number) {
   const stale = new Date(Date.now() - 2 * 60_000).toISOString();
   await supabaseAdmin
     .from("scan_jobs")
@@ -441,9 +483,10 @@ export async function processPendingScanJobs(budgetMs = 42_000) {
  */
 export async function scanAllEnabledDomains(
   trigger: "manual" | "cron",
-  options: { limit?: number; concurrency?: number; budgetMs?: number } = {},
+  options: { limit?: number; concurrency?: number; budgetMs?: number; cycleMinutes?: number } = {},
 ) {
   const limit = Math.min(Math.max(options.limit ?? 400, 1), 2000);
+  const cycleMinutes = Math.min(Math.max(options.cycleMinutes ?? 120, 1), 24 * 60);
   const concurrency = Math.min(Math.max(options.concurrency ?? 40, 1), 64);
   const budgetMs = Math.min(Math.max(options.budgetMs ?? 50_000, 5_000), 120_000);
   const deadline = Date.now() + budgetMs;
@@ -459,26 +502,20 @@ export async function scanAllEnabledDomains(
     .eq("status", "running")
     .lt("started_at", new Date(Date.now() - 3 * 60_000).toISOString());
 
+  // Only domains that are actually due this cycle. Anything scanned inside the
+  // window is skipped, so every root domain is re-scanned exactly once per
+  // `cycleMinutes` instead of being starved by a moving queue.
+  const dueBefore = new Date(Date.now() - cycleMinutes * 60_000).toISOString();
   const { data: domains } = await supabaseAdmin
     .from("domains")
     .select("id, domain")
     .eq("enabled", true)
+    .or(`claimed_at.is.null,claimed_at.lt.${dueBefore}`)
     .order("claimed_at", { ascending: true, nullsFirst: true })
     .limit(limit);
 
   const picked = domains ?? [];
   if (picked.length === 0) return [];
-
-  // Claim immediately so the next cron tick advances to the next slice.
-  const claimStamp = new Date().toISOString();
-  await Promise.all(
-    chunk(
-      picked.map((d) => d.id),
-      500,
-    ).map((batch) =>
-      supabaseAdmin.from("domains").update({ claimed_at: claimStamp }).in("id", batch),
-    ),
-  );
 
   const queue = [...picked];
   const results: ScanResult[] = [];
@@ -487,6 +524,13 @@ export async function scanAllEnabledDomains(
     while (queue.length > 0 && Date.now() < deadline) {
       const next = queue.shift();
       if (!next) return;
+      // Claim per domain, right before scanning it. A tick that runs out of
+      // budget leaves the rest unclaimed, so they stay due for the next tick
+      // instead of silently skipping a whole cycle.
+      await supabaseAdmin
+        .from("domains")
+        .update({ claimed_at: new Date().toISOString() })
+        .eq("id", next.id);
       results.push(
         await scanDomain(next, trigger, {
           recordStats: false,

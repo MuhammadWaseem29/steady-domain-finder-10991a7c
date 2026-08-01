@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ProgramsRouteImport } from './routes/programs'
+import { Route as QueueRouteImport } from './routes/queue'
 import { Route as RecentsubsRouteImport } from './routes/recentsubs'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as UpdatesRouteImport } from './routes/updates'
@@ -41,6 +42,11 @@ const NewRoute = NewRouteImport.update({
 const ProgramsRoute = ProgramsRouteImport.update({
   id: '/programs',
   path: '/programs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QueueRoute = QueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecentsubsRoute = RecentsubsRouteImport.update({
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
   '/programs': typeof ProgramsRoute
+  '/queue': typeof QueueRoute
   '/recentsubs': typeof RecentsubsRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
   '/programs': typeof ProgramsRoute
+  '/queue': typeof QueueRoute
   '/recentsubs': typeof RecentsubsRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
   '/programs': typeof ProgramsRoute
+  '/queue': typeof QueueRoute
   '/recentsubs': typeof RecentsubsRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/new'
     | '/programs'
+    | '/queue'
     | '/recentsubs'
     | '/stats'
     | '/updates'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/new'
     | '/programs'
+    | '/queue'
     | '/recentsubs'
     | '/stats'
     | '/updates'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/new'
     | '/programs'
+    | '/queue'
     | '/recentsubs'
     | '/stats'
     | '/updates'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   NewRoute: typeof NewRoute
   ProgramsRoute: typeof ProgramsRoute
+  QueueRoute: typeof QueueRoute
   RecentsubsRoute: typeof RecentsubsRoute
   StatsRoute: typeof StatsRoute
   UpdatesRoute: typeof UpdatesRoute
@@ -227,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/programs'
       fullPath: '/programs'
       preLoaderRoute: typeof ProgramsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/queue': {
+      id: '/queue'
+      path: '/queue'
+      fullPath: '/queue'
+      preLoaderRoute: typeof QueueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recentsubs': {
@@ -300,6 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   NewRoute: NewRoute,
   ProgramsRoute: ProgramsRoute,
+  QueueRoute: QueueRoute,
   RecentsubsRoute: RecentsubsRoute,
   StatsRoute: StatsRoute,
   UpdatesRoute: UpdatesRoute,

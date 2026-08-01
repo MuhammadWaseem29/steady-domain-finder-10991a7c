@@ -1,5 +1,5 @@
 import { LiveTime } from "@/components/site/live-time";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -71,6 +71,8 @@ function DomainDetail() {
     }
   }, [qc, scanJob]);
 
+  const navigate = useNavigate();
+
   const scanMutation = useMutation({
     mutationFn: () => {
       if (!row) throw new Error("Domain not found");
@@ -78,7 +80,11 @@ function DomainDetail() {
     },
     onSuccess: (res) => {
       if (res.status === "error") toast.error(res.error ?? "Scan failed");
-      else toast.success("Scan queued — it will continue in the background");
+      else
+        toast.success("Scan queued — running in the background", {
+          description: "Track it on the Queue page",
+          action: { label: "View queue", onClick: () => navigate({ to: "/queue" }) },
+        });
       void qc.invalidateQueries({ queryKey: ["scan-job", row?.id] });
     },
     onError: (e: Error) => toast.error(e.message),
