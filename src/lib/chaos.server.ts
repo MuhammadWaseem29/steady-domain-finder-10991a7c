@@ -90,6 +90,29 @@ async function ingestChunk(
 
 }
 
+
+/** Queues (or tops up) a resumable background job for leftover hosts. */
+async function enqueueResumableJob(domainId: string, labels: string[], trigger: "manual" | "cron") {
+  const { data: active } = await supabaseAdmin
+    .from("scan_jobs")
+    .select("id")
+    .eq("domain_id", domainId)
+    .in("status", ["queued", "fetching", "processing"])
+    .maybeSingle();
+  if (active) return;
+  const now = new Date().toISOString();
+  await supabaseAdmin.from("scan_jobs").insert({
+    domain_id: domainId,
+    status: "processing",
+    hosts: labels,
+    total_hosts: labels.length,
+    processed_hosts: 0,
+    new_count: 0,
+    started_at: now,
+    error_message: trigger === "cron" ? "deferred from rolling sweep" : null,
+  });
+}
+
 /** Opens a scan row before any ingest so a truncated run still leaves a record. */
 async function openScan(domainId: string, trigger: "manual" | "cron", startedAt: string) {
   const { data, error } = await supabaseAdmin
@@ -151,6 +174,7 @@ export async function scanDomain(
 
     const batches = chunk(hosts, 5000);
     let cursor = 0;
+    const deferred: string[] = [];
 
     async function writer() {
       while (cursor < batches.length) {
@@ -158,6 +182,7 @@ export async function scanDomain(
         if (!batch) return;
         if (Date.now() > deadline) {
           skipped += batch.length;
+          for (const h of batch) deferred.push(h.label);
           continue;
         }
         freshCount += await ingestChunk(domainRow.id, batch, stamp, scanId, hosts.length);
@@ -165,6 +190,12 @@ export async function scanDomain(
     }
 
     await Promise.all(Array.from({ length: writeConcurrency }, writer));
+
+    // Big programs never fit in one request. Whatever is left over is handed to
+    // a resumable background job so it always finishes instead of being dropped.
+    if (deferred.length > 0) {
+      await enqueueResumableJob(domainRow.id, deferred, trigger);
+    }
 
     const status = skipped > 0 ? ("partial" as const) : ("success" as const);
     const finishedAt = new Date().toISOString();
@@ -329,9 +360,20 @@ export async function getManualScanProgress(domainId: string): Promise<ScanJobPr
   };
 }
 
-/** Processes resumable manual jobs for a bounded amount of wall-clock time. */
-export async function processPendingScanJobs(budgetMs = 42_000) {
+/** Drains the resumable job queue for a bounded amount of wall-clock time. */
+export async function processPendingScanJobs(budgetMs = 20_000) {
   const deadline = Date.now() + Math.min(Math.max(budgetMs, 5_000), 45_000);
+  const done: unknown[] = [];
+  while (Date.now() < deadline - 4_000) {
+    const r = await processOnePendingJob(deadline);
+    if (!r) break;
+    done.push(r);
+    if (r.status === "processing") break; // still busy, resume next tick
+  }
+  return done.length === 1 ? done[0] : done.length === 0 ? null : done;
+}
+
+async function processOnePendingJob(deadline: number) {
   const stale = new Date(Date.now() - 2 * 60_000).toISOString();
   await supabaseAdmin
     .from("scan_jobs")
