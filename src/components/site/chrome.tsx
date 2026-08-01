@@ -13,7 +13,9 @@ import {
 const NAV = [
   { to: "/programs", label: "Programs" },
   { to: "/updates", label: "Updates" },
+  { to: "/recentsubs", label: "Recent subs" },
   { to: "/new", label: "New subs" },
+
   { to: "/stats", label: "Stats" },
   { to: "/dashboard", label: "Monitor" },
   { to: "/docs/fetch-subdomains", label: "Docs" },
