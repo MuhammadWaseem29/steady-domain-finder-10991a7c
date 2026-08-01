@@ -50,46 +50,49 @@ export const getRecentSubsAnalytics = createServerFn({ method: "GET" })
       return (rows ?? fallback) as T;
     };
 
-    const [overviewRows, series, scans, top, labels, heatmap, platforms, total, windowRows] =
-      await Promise.all([
-        call<{ total_new: number; programs_active: number; domains_active: number; latest_at: string | null; per_hour: number }[]>(
-          "recent_subs_overview",
-          { since },
-          [],
-        ),
-        call<{ ts: string; new_subdomains: number }[]>(
-          "discovery_timeseries",
-          { bucket: data.bucket, since },
-          [],
-        ),
-        call<{ ts: string; scans: number; errors: number; new_found: number }[]>(
-          "scan_timeseries",
-          { bucket: data.bucket, since },
-          [],
-        ),
-        call<{ domain: string; new_count: number }[]>(
-          "top_domains_by_new",
-          { since, lim: 12 },
-          [],
-        ),
-        call<{ prefix: string; c: number }[]>(
-          "new_subs_label_breakdown",
-          { since, lim: 14 },
-          [],
-        ),
-        call<{ dow: number; hour: number; c: number }[]>(
-          "new_subs_hour_heatmap",
-          { since: heatSince },
-          [],
-        ),
-        call<RecentSubsAnalytics["platforms"]>("platform_updates", { since }, []),
-        call<number>("count_new_subs", { since }, 0),
-        call<{ last_hour: number; last_day: number; last_week: number; last_month: number }[]>(
-          "new_subdomain_counts",
-          {},
-          [],
-        ),
-      ]);
+    // Sequential: these aggregate millions of rows; firing them in parallel
+    // saturates the connection pool and the requests start failing.
+    const overviewRows = await call<{ total_new: number; programs_active: number; domains_active: number; latest_at: string | null; per_hour: number }[]>(
+      "recent_subs_overview",
+      { since },
+      [],
+    );
+    const series = await call<{ ts: string; new_subdomains: number }[]>(
+      "discovery_timeseries",
+      { bucket: data.bucket, since },
+      [],
+    );
+    const scans = await call<{ ts: string; scans: number; errors: number; new_found: number }[]>(
+      "scan_timeseries",
+      { bucket: data.bucket, since },
+      [],
+    );
+    const top = await call<{ domain: string; new_count: number }[]>(
+      "top_domains_by_new",
+      { since, lim: 12 },
+      [],
+    );
+    const labels = await call<{ prefix: string; c: number }[]>(
+      "new_subs_label_breakdown",
+      { since, lim: 14 },
+      [],
+    );
+    const heatmap = await call<{ dow: number; hour: number; c: number }[]>(
+      "new_subs_hour_heatmap",
+      { since: heatSince },
+      [],
+    );
+    const platforms = await call<RecentSubsAnalytics["platforms"]>(
+      "platform_updates",
+      { since },
+      [],
+    );
+    const total = await call<number>("count_new_subs", { since }, 0);
+    const windowRows = await call<{ last_hour: number; last_day: number; last_week: number; last_month: number }[]>(
+      "new_subdomain_counts",
+      {},
+      [],
+    );
 
     const { count: prevCount } = await supabaseAdmin
       .from("subdomains")
