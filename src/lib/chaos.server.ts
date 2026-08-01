@@ -67,16 +67,27 @@ async function ingestChunk(
   scanId?: string | null,
   totalReturned?: number,
 ) {
+  if (!scanId) {
+    const res = await supabaseAdmin.rpc("ingest_subdomain_chunk", {
+      _domain_id: domainId,
+      _hosts: hosts,
+      _stamp: stamp,
+    });
+    if (res.error) throw new Error(res.error.message);
+    return Number(res.data ?? 0);
+  }
+
   const { data, error } = await supabaseAdmin.rpc("ingest_chunk_with_scan", {
+    _scan_id: scanId,
     _domain_id: domainId,
     _hosts: hosts,
     _stamp: stamp,
-    ...(scanId ? { _scan_id: scanId } : {}),
     ...(typeof totalReturned === "number" ? { _total_returned: totalReturned } : {}),
   });
 
   if (error) throw new Error(error.message);
   return Number(data ?? 0);
+
 }
 
 /** Opens a scan row before any ingest so a truncated run still leaves a record. */
