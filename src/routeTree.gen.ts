@@ -19,6 +19,7 @@ import { Route as QueueRouteImport } from './routes/queue'
 import { Route as RecentsubsRouteImport } from './routes/recentsubs'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as UpdatesRouteImport } from './routes/updates'
+import { Route as DocsApiRouteImport } from './routes/docs/api'
 import { Route as DocsApiKeyRouteImport } from './routes/docs/api-key'
 import { Route as DocsFetchSubdomainsRouteImport } from './routes/docs/fetch-subdomains'
 import { Route as DomainDomainRouteImport } from './routes/domain.$domain'
@@ -78,6 +79,11 @@ const UpdatesRoute = UpdatesRouteImport.update({
   path: '/updates',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsApiRoute = DocsApiRouteImport.update({
+  id: '/docs/api',
+  path: '/docs/api',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DocsApiKeyRoute = DocsApiKeyRouteImport.update({
   id: '/docs/api-key',
   path: '/docs/api-key',
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/recentsubs': typeof RecentsubsRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
+  '/docs/api': typeof DocsApiRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/recentsubs': typeof RecentsubsRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
+  '/docs/api': typeof DocsApiRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   '/recentsubs': typeof RecentsubsRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
+  '/docs/api': typeof DocsApiRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/recentsubs'
     | '/stats'
     | '/updates'
+    | '/docs/api'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/recentsubs'
     | '/stats'
     | '/updates'
+    | '/docs/api'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/recentsubs'
     | '/stats'
     | '/updates'
+    | '/docs/api'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
@@ -254,6 +266,7 @@ export interface RootRouteChildren {
   RecentsubsRoute: typeof RecentsubsRoute
   StatsRoute: typeof StatsRoute
   UpdatesRoute: typeof UpdatesRoute
+  DocsApiRoute: typeof DocsApiRoute
   DocsApiKeyRoute: typeof DocsApiKeyRoute
   DocsFetchSubdomainsRoute: typeof DocsFetchSubdomainsRoute
   DomainDomainRoute: typeof DomainDomainRoute
@@ -336,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UpdatesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/api': {
+      id: '/docs/api'
+      path: '/docs/api'
+      fullPath: '/docs/api'
+      preLoaderRoute: typeof DocsApiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/docs/api-key': {
       id: '/docs/api-key'
       path: '/docs/api-key'
@@ -406,6 +426,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecentsubsRoute: RecentsubsRoute,
   StatsRoute: StatsRoute,
   UpdatesRoute: UpdatesRoute,
+  DocsApiRoute: DocsApiRoute,
   DocsApiKeyRoute: DocsApiKeyRoute,
   DocsFetchSubdomainsRoute: DocsFetchSubdomainsRoute,
   DomainDomainRoute: DomainDomainRoute,

@@ -5,6 +5,7 @@ import { SiteShell } from "./chrome";
 const nav = [
   { to: "/docs/fetch-subdomains", label: "Fetch Subdomains" },
   { to: "/docs/api-key", label: "API Key" },
+  { to: "/docs/api", label: "Platform API" },
 ] as const;
 
 export function DocsLayout({
