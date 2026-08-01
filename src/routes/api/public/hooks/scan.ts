@@ -23,11 +23,19 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
           : [];
 
 
+        // Self-heal: repair scan rows whose discoveries were written by a
+        // worker that got cut off before it could record them.
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: reconciled } = await supabaseAdmin.rpc("reconcile_scan_counts", {
+          _since: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        });
+
         const scanned = results.length;
         const newCount = results.reduce((a, r) => a + r.newCount, 0);
         const errors = results.filter((r) => r.status === "error").length;
 
-        return Response.json({ ok: true, job, scanned, newCount, errors });
+        return Response.json({ ok: true, job, scanned, newCount, errors, reconciled });
+
       },
     },
   },
