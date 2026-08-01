@@ -4,9 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
 import { Activity, Clock, Layers, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
-import { Shell } from "@/components/site/chrome";
+import { SiteShell } from "@/components/site/chrome";
 import { CountUp } from "@/components/site/motion";
-import { LiveRelative } from "@/components/site/live-time";
+import { LiveAgo } from "@/components/site/live-time";
 import { cancelScanJob, listScanQueue } from "@/lib/chaos.functions";
 
 export const Route = createFileRoute("/queue")({
@@ -67,7 +67,7 @@ function QueuePage() {
   const pct = total > 0 ? Math.round((swept / total) * 100) : 0;
 
   return (
-    <Shell>
+    <SiteShell>
       <div className="space-y-8 py-10">
         <div className="rounded-lg border border-border bg-card p-6">
           <div className="chip-mono mb-3 inline-flex items-center gap-2">
@@ -145,7 +145,7 @@ function QueuePage() {
                     </div>
                   )}
                   <span className="ml-auto text-xs text-muted-foreground">
-                    +{j.newCount.toLocaleString()} new · <LiveRelative iso={j.createdAt} />
+                    +{j.newCount.toLocaleString()} new · <LiveAgo iso={j.createdAt} />
                   </span>
                   <button
                     type="button"
@@ -187,14 +187,14 @@ function QueuePage() {
                   </span>
                 )}
                 <span className="ml-auto text-xs text-muted-foreground">
-                  {j.finishedAt ? <LiveRelative iso={j.finishedAt} /> : null}
+                  {j.finishedAt ? <LiveAgo iso={j.finishedAt} /> : null}
                 </span>
               </div>
             ))
           )}
         </Section>
       </div>
-    </Shell>
+    </SiteShell>
   );
 }
 
