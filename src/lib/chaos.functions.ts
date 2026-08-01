@@ -216,3 +216,77 @@ export const deleteDomain = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export type QueueJob = {
+  id: string;
+  domain: string;
+  status: string;
+  total: number;
+  processed: number;
+  newCount: number;
+  error: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+};
+
+export const listScanQueue = createServerFn({ method: "POST" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const [jobsRes, dueRes, totalRes, runningRes] = await Promise.all([
+    supabaseAdmin
+      .from("scan_jobs")
+      .select(
+        "id, status, total_hosts, processed_hosts, new_count, error_message, created_at, started_at, finished_at, domains(domain)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(80),
+    supabaseAdmin
+      .from("domains")
+      .select("id", { count: "estimated", head: true })
+      .eq("enabled", true)
+      .or(`claimed_at.is.null,claimed_at.lt.${new Date(Date.now() - 120 * 60_000).toISOString()}`),
+    supabaseAdmin.from("domains").select("id", { count: "estimated", head: true }).eq("enabled", true),
+    supabaseAdmin.from("scans").select("id", { count: "exact", head: true }).eq("status", "running"),
+  ]);
+
+  const jobs: QueueJob[] = (jobsRes.data ?? []).map((j) => ({
+    id: j.id,
+    domain: (j.domains as { domain?: string } | null)?.domain ?? "—",
+    status: j.status,
+    total: j.total_hosts,
+    processed: j.processed_hosts,
+    newCount: j.new_count,
+    error: j.error_message,
+    createdAt: j.created_at,
+    startedAt: j.started_at,
+    finishedAt: j.finished_at,
+  }));
+
+  return {
+    jobs,
+    dueDomains: dueRes.count ?? 0,
+    totalDomains: totalRes.count ?? 0,
+    runningScans: runningRes.count ?? 0,
+    cycleMinutes: 120,
+  };
+});
+
+export const cancelScanJob = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => z.object({ jobId: z.string().uuid() }).parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("scan_jobs")
+      .update({
+        status: "error",
+        error_message: "cancelled",
+        hosts: null,
+        finished_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.jobId)
+      .in("status", ["queued", "fetching", "processing"]);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  });
