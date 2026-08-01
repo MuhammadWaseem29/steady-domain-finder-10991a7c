@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/site/theme-toggle";
+import { useSession, displayNameOf } from "@/lib/use-session";
 import {
   CountUp,
   EASE_SIGNATURE,
