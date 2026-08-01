@@ -70,15 +70,37 @@ function QueuePage() {
     <SiteShell>
       <div className="space-y-8 py-10">
         <div className="rounded-lg border border-border bg-card p-6">
-          <div className="chip-mono mb-3 inline-flex items-center gap-2">
-            <span className="live-dot" /> SCAN QUEUE
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="chip-mono mb-3 inline-flex items-center gap-2">
+                <span className="live-dot" /> SCAN QUEUE
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight">Scan queue</h1>
+              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                Every manual scan and every oversized program deferred by the rolling sweep lands here.
+                Jobs resume across worker ticks, so no program is too large to finish.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => rescanMutation.mutate()}
+              disabled={rescanMutation.isPending}
+              className="inline-flex shrink-0 items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            >
+              {rescanMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Full re-scan now
+            </button>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Scan queue</h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Every manual scan and every oversized program deferred by the rolling sweep lands here.
-            Jobs resume across worker ticks, so no program is too large to finish.
+          <p className="mt-3 text-xs text-muted-foreground">
+            Marks all {total.toLocaleString()} enabled root domains as due immediately — the rolling
+            worker then sweeps the entire asset list again from the top.
           </p>
         </div>
+
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card icon={<Loader2 className="h-4 w-4" />} label="ACTIVE JOBS" value={active.length} hint="queued · fetching · saving" />
