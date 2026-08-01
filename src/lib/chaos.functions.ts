@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const runScanNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ domainId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -48,6 +50,7 @@ export const getScanJobStatus = createServerFn({ method: "POST" })
 
 
 export const addDomains = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
       .object({
@@ -95,6 +98,7 @@ export const addDomains = createServerFn({ method: "POST" })
   });
 
 export const savePlatform = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
       .object({
@@ -135,6 +139,7 @@ export const savePlatform = createServerFn({ method: "POST" })
   });
 
 export const deletePlatform = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
       .object({
@@ -174,6 +179,7 @@ export const deletePlatform = createServerFn({ method: "POST" })
   });
 
 export const updateDomain = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
       .object({
@@ -207,6 +213,7 @@ export const updateDomain = createServerFn({ method: "POST" })
   });
 
 export const deleteDomain = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -273,6 +280,7 @@ export const listScanQueue = createServerFn({ method: "POST" }).handler(async ()
 });
 
 export const cancelScanJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ jobId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -296,7 +304,9 @@ export const cancelScanJob = createServerFn({ method: "POST" })
  * re-scans the entire asset list on its next ticks instead of waiting for the
  * 2-hour window to elapse.
  */
-export const triggerFullRescan = createServerFn({ method: "POST" }).handler(async () => {
+export const triggerFullRescan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { data, error } = await supabaseAdmin.rpc("mark_all_domains_due");
