@@ -258,16 +258,16 @@ function RecentSubsPage() {
 
   const seriesData = useMemo(
     () =>
-      (series.data ?? []).map((p) => ({
+      (a?.series ?? []).map((p) => ({
         label: formatTick(p.ts, RANGES[chartRange].bucket),
         value: Number(p.new_subdomains),
       })),
-    [series.data, chartRange],
+    [a?.series, chartRange],
   );
 
   const donutData = useMemo(
     () =>
-      (platforms.data ?? [])
+      (a?.platforms ?? [])
         .filter((p) => Number(p.new_count) > 0)
         .slice(0, 6)
         .map((p) => ({
@@ -275,21 +275,21 @@ function RecentSubsPage() {
           value: Number(p.new_count),
           ...(p.color ? { color: p.color } : {}),
         })),
-    [platforms.data],
+    [a?.platforms],
   );
 
   const topData = useMemo(
-    () => (topDomains.data ?? []).map((d) => ({ label: d.domain, value: Number(d.new_count) })),
-    [topDomains.data],
+    () => (a?.top ?? []).map((d) => ({ label: d.domain, value: Number(d.new_count) })),
+    [a?.top],
   );
 
   const labelData = useMemo(
-    () => (labels.data ?? []).map((l) => ({ label: l.prefix, value: Number(l.c) })),
-    [labels.data],
+    () => (a?.labels ?? []).map((l) => ({ label: l.prefix, value: Number(l.c) })),
+    [a?.labels],
   );
 
   const reliability = useMemo(() => {
-    const rowsS = scanStats.data ?? [];
+    const rowsS = a?.scans ?? [];
     const scans = rowsS.reduce((a, r) => a + Number(r.scans), 0);
     const errors = rowsS.reduce((a, r) => a + Number(r.errors), 0);
     const found = rowsS.reduce((a, r) => a + Number(r.new_found), 0);
@@ -299,12 +299,12 @@ function RecentSubsPage() {
       found,
       rate: scans ? Math.round(((scans - errors) / scans) * 1000) / 10 : 100,
     };
-  }, [scanStats.data]);
+  }, [a?.scans]);
 
-  const total = totalNew.data ?? 0;
+  const total = a?.total ?? 0;
   const delta =
-    prevCount.data && prevCount.data > 0
-      ? Math.round(((total - prevCount.data) / prevCount.data) * 100)
+    a && a.previous > 0
+      ? Math.round(((total - a.previous) / a.previous) * 100)
       : null;
 
   const exportUrl = `/api/public/export?scope=new&hours=${hours}`;
@@ -384,7 +384,7 @@ function RecentSubsPage() {
             value={total}
             delta={delta}
             hint={
-              overview.data?.latestAt
+              a?.overview.latestAt
                 ? `latest ${timeAgo(overview.data.latestAt)}`
                 : "waiting for data"
             }
@@ -394,7 +394,7 @@ function RecentSubsPage() {
             index={1}
             icon={Gauge}
             label="discovery rate"
-            value={Math.round(overview.data?.perHour ?? 0)}
+            value={Math.round(a?.overview.perHour ?? 0)}
             suffix="/h"
             hint="average hosts found per hour"
             tone="var(--color-chart-2)"
@@ -403,16 +403,16 @@ function RecentSubsPage() {
             index={2}
             icon={Layers}
             label="programs hit"
-            value={overview.data?.programsActive ?? 0}
-            hint={`${(overview.data?.domainsActive ?? 0).toLocaleString()} root domains affected`}
+            value={a?.overview.programsActive ?? 0}
+            hint={`${(a?.overview.domainsActive ?? 0).toLocaleString()} root domains affected`}
             tone="var(--color-chart-3)"
           />
           <Kpi
             index={3}
             icon={TrendingUp}
             label="last hour"
-            value={windows.data?.hour ?? 0}
-            hint={`${(windows.data?.day ?? 0).toLocaleString()} in 24h · ${(windows.data?.week ?? 0).toLocaleString()} in 7d`}
+            value={a?.windows.hour ?? 0}
+            hint={`${(a?.windows.day ?? 0).toLocaleString()} in 24h · ${(a?.windows.week ?? 0).toLocaleString()} in 7d`}
             tone="var(--color-chart-4)"
           />
         </div>
@@ -444,7 +444,7 @@ function RecentSubsPage() {
               subtitle={RANGES[chartRange].label}
               action={<Radar className="size-4 text-muted-foreground" />}
             >
-              {series.isLoading ? (
+              {loading ? (
                 <Skeleton className="h-[260px] w-full" />
               ) : (
                 <DiscoveryAreaChart data={seriesData} />
@@ -452,7 +452,7 @@ function RecentSubsPage() {
             </Panel>
           </div>
           <Panel title="Program share" subtitle="new subdomains by program">
-            {platforms.isLoading ? (
+            {loading ? (
               <Skeleton className="h-[260px] w-full" />
             ) : donutData.length ? (
               <ShareDonut data={donutData} />
@@ -466,24 +466,24 @@ function RecentSubsPage() {
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel title="Cumulative growth" subtitle={`running total · ${RANGES[chartRange].label}`}>
-            {series.isLoading ? (
+            {loading ? (
               <Skeleton className="h-[260px] w-full" />
             ) : (
               <CumulativeLineChart data={seriesData} />
             )}
           </Panel>
           <Panel title="Discovery cadence" subtitle="when new hosts land · last 7 days+">
-            {heatmap.isLoading ? (
+            {loading ? (
               <Skeleton className="h-[200px] w-full" />
             ) : (
-              <DiscoveryHeatmap cells={heatmap.data ?? []} />
+              <DiscoveryHeatmap cells={a?.heatmap ?? []} />
             )}
           </Panel>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel title="Top root domains" subtitle={`most new hosts · ${RANGES[chartRange].label}`}>
-            {topDomains.isLoading ? (
+            {loading ? (
               <Skeleton className="h-[280px] w-full" />
             ) : topData.length ? (
               <HorizontalBars data={topData} />
@@ -495,7 +495,7 @@ function RecentSubsPage() {
             title="Common name prefixes"
             subtitle="most frequent first labels — click to filter the feed"
           >
-            {labels.isLoading ? (
+            {loading ? (
               <Skeleton className="h-[280px] w-full" />
             ) : labelData.length ? (
               <>
