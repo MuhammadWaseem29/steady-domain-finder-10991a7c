@@ -5,7 +5,7 @@ export const runScanNow = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ domainId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { scanDomain } = await import("@/lib/chaos.server");
+    const { queueManualScan } = await import("@/lib/chaos.server");
 
     const { data: domain } = await supabaseAdmin
       .from("domains")
@@ -15,32 +15,35 @@ export const runScanNow = createServerFn({ method: "POST" })
 
     if (!domain)
       return {
-        domain: "",
+        id: "",
+        domainId: data.domainId,
         status: "error" as const,
         total: 0,
+        processed: 0,
         newCount: 0,
-        removedCount: 0,
         error: "Domain not found",
       };
 
     try {
-      // Big programs (100k+ hosts) need a generous fetch window and parallel
-      // writes; never let a failure bubble up as a 500 to the browser.
-      return await scanDomain(domain, "manual", {
-        fetchTimeoutMs: 45_000,
-        writeBudgetMs: 90_000,
-        writeConcurrency: 10,
-      });
+      return await queueManualScan(domain.id);
     } catch (error) {
       return {
-        domain: domain.domain,
+        id: "",
+        domainId: domain.id,
         status: "error" as const,
         total: 0,
+        processed: 0,
         newCount: 0,
-        removedCount: 0,
         error: error instanceof Error ? error.message : String(error),
       };
     }
+  });
+
+export const getScanJobStatus = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => z.object({ domainId: z.string().uuid() }).parse(data))
+  .handler(async ({ data }) => {
+    const { getManualScanProgress } = await import("@/lib/chaos.server");
+    return getManualScanProgress(data.domainId);
   });
 
 

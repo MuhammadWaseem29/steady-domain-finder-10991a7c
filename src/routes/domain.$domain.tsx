@@ -2,7 +2,7 @@ import { LiveTime } from "@/components/site/live-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { RefreshCw, Copy, Download, Loader2, ArrowLeft, Search } from "lucide-react";
 import { SiteShell, Stat } from "@/components/site/chrome";
@@ -14,7 +14,7 @@ import {
   isNew,
   download,
 } from "@/lib/chaos-data";
-import { runScanNow } from "@/lib/chaos.functions";
+import { getScanJobStatus, runScanNow } from "@/lib/chaos.functions";
 
 export const Route = createFileRoute("/domain/$domain")({
   head: ({ params }) => ({
@@ -43,21 +43,49 @@ function DomainDetail() {
   const { data: subs, isLoading } = useQuery(subdomainsQuery(row?.id));
   const { data: scans } = useQuery(scansQuery(row?.id));
   const scan = useServerFn(runScanNow);
+  const getScanStatus = useServerFn(getScanJobStatus);
 
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
+  const announcedJob = useRef<string | null>(null);
+
+  const { data: scanJob } = useQuery({
+    queryKey: ["scan-job", row?.id],
+    enabled: Boolean(row?.id),
+    queryFn: () => getScanStatus({ data: { domainId: row?.id ?? "" } }),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "queued" || status === "fetching" || status === "processing" ? 3000 : 15000;
+    },
+  });
+
+  useEffect(() => {
+    if (!scanJob || announcedJob.current === scanJob.id) return;
+    if (scanJob.status === "success") {
+      announcedJob.current = scanJob.id;
+      toast.success(`Scan complete — ${scanJob.newCount.toLocaleString()} new subdomains`);
+      void qc.invalidateQueries();
+    } else if (scanJob.status === "error") {
+      announcedJob.current = scanJob.id;
+      toast.error(scanJob.error ?? "Scan failed");
+    }
+  }, [qc, scanJob]);
 
   const scanMutation = useMutation({
-    mutationFn: () => scan({ data: { domainId: row!.id } }),
+    mutationFn: () => {
+      if (!row) throw new Error("Domain not found");
+      return scan({ data: { domainId: row.id } });
+    },
     onSuccess: (res) => {
       if (res.status === "error") toast.error(res.error ?? "Scan failed");
-      else if (res.status === "partial")
-        toast.warning(`${res.newCount.toLocaleString()} new — ${res.error}`);
-      else toast.success(`Scan complete — ${res.newCount} new subdomains`);
-      qc.invalidateQueries();
+      else toast.success("Scan queued — it will continue in the background");
+      void qc.invalidateQueries({ queryKey: ["scan-job", row?.id] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const scanActive = scanJob?.status === "queued" || scanJob?.status === "fetching" || scanJob?.status === "processing";
+  const scanPercent = scanJob?.total ? Math.min(100, Math.round((scanJob.processed / scanJob.total) * 100)) : 0;
 
   const all = subs ?? [];
   const filtered = useMemo(() => {
@@ -115,17 +143,29 @@ function DomainDetail() {
           </div>
           <button
             onClick={() => scanMutation.mutate()}
-            disabled={!row || scanMutation.isPending}
+            disabled={!row || scanMutation.isPending || scanActive}
             className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {scanMutation.isPending ? (
+            {scanMutation.isPending || scanActive ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <RefreshCw className="size-4" />
             )}
-            Scan now
+            {scanMutation.isPending ? "Queueing…" : scanJob?.status === "queued" ? "Queued" : scanJob?.status === "fetching" ? "Fetching…" : scanJob?.status === "processing" ? `Saving ${scanPercent}%` : "Scan now"}
           </button>
         </div>
+
+        {scanActive && (
+          <div className="mt-5" role="status" aria-live="polite">
+            <div className="mb-2 flex justify-between font-mono text-xs text-muted-foreground">
+              <span>{scanJob.status === "queued" ? "Waiting for scanner" : scanJob.status === "fetching" ? "Fetching all hosts from Chaos" : "Saving discovered hosts"}</span>
+              {scanJob.total > 0 && <span>{scanJob.processed.toLocaleString()} / {scanJob.total.toLocaleString()}</span>}
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${scanJob.status === "fetching" ? 8 : scanPercent}%` }} />
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
           <Stat label="Total subdomains" value={all.length.toLocaleString()} />
