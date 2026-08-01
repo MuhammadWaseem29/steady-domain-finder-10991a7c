@@ -78,7 +78,11 @@ function DomainDetail() {
     },
     onSuccess: (res) => {
       if (res.status === "error") toast.error(res.error ?? "Scan failed");
-      else toast.success("Scan queued — it will continue in the background");
+      else
+        toast.success("Scan queued — running in the background", {
+          description: "Track it on the Queue page",
+          action: { label: "View queue", onClick: () => navigate({ to: "/queue" }) },
+        });
       void qc.invalidateQueries({ queryKey: ["scan-job", row?.id] });
     },
     onError: (e: Error) => toast.error(e.message),
