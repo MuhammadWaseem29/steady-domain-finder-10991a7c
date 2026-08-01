@@ -282,3 +282,87 @@ function Programs() {
     </SiteShell>
   );
 }
+
+const SCOPES = [
+  { key: "all", label: "All subs", hours: 0 },
+  { key: "new1", label: "New 1h", hours: 1 },
+  { key: "new24", label: "New 24h", hours: 24 },
+  { key: "new7d", label: "New 7d", hours: 168 },
+  { key: "inactive", label: "Inactive", hours: 0 },
+] as const;
+
+const FORMATS = ["txt", "csv", "json"] as const;
+
+function PlatformDownloads({ slug }: { slug: string }) {
+  const [scopeKey, setScopeKey] = useState<(typeof SCOPES)[number]["key"]>("all");
+  const [format, setFormat] = useState<(typeof FORMATS)[number]>("txt");
+  const [copying, setCopying] = useState(false);
+
+  const scope = SCOPES.find((s) => s.key === scopeKey)!;
+  const apiScope = scopeKey === "all" ? "all" : scopeKey === "inactive" ? "inactive" : "new";
+  const base = `/api/public/export?platform=${slug}&scope=${apiScope}&hours=${scope.hours}`;
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex flex-wrap gap-1.5">
+        {SCOPES.map((s) => (
+          <button
+            key={s.key}
+            onClick={() => setScopeKey(s.key)}
+            className={`label-mono rounded-full border px-2.5 py-1 transition-colors ${
+              scopeKey === s.key
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border hover:bg-accent"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {FORMATS.map((f) => (
+          <button
+            key={f}
+            onClick={() => setFormat(f)}
+            className={`label-mono rounded-full border px-2.5 py-1 uppercase transition-colors ${
+              format === f
+                ? "border-foreground bg-foreground text-background"
+                : "border-border hover:bg-accent"
+            }`}
+          >
+            {f}
+          </button>
+        ))}
+        <a
+          href={`${base}&format=${format}`}
+          className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 transition-colors hover:bg-accent"
+        >
+          Download
+        </a>
+        <button
+          disabled={copying}
+          onClick={async () => {
+            setCopying(true);
+            try {
+              const res = await fetch(`${base}&format=txt`);
+              const text = await res.text();
+              if (text.includes("# export error")) throw new Error("Export failed");
+              await navigator.clipboard.writeText(text);
+              toast.success(
+                `Copied ${text.trim() ? text.trim().split("\n").length : 0} hosts`,
+              );
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Copy failed");
+            } finally {
+              setCopying(false);
+            }
+          }}
+          className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 transition-colors hover:bg-accent disabled:opacity-50"
+        >
+          {copying ? <Loader2 className="size-3 animate-spin" /> : <Copy className="size-3" />} Copy
+        </button>
+      </div>
+    </div>
+  );
+}
+
