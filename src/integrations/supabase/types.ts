@@ -274,6 +274,7 @@ export type Database = {
         Args: { _errors: number; _new: number }
         Returns: undefined
       }
+      count_new_subs: { Args: { since: string }; Returns: number }
       discovery_timeseries: {
         Args: { bucket: string; since: string }
         Returns: {
@@ -303,6 +304,35 @@ export type Database = {
           last_hour: number
           last_month: number
           last_week: number
+        }[]
+      }
+      new_subs_hour_heatmap: {
+        Args: { since: string }
+        Returns: {
+          c: number
+          dow: number
+          hour: number
+        }[]
+      }
+      new_subs_label_breakdown: {
+        Args: { lim?: number; since: string }
+        Returns: {
+          c: number
+          prefix: string
+        }[]
+      }
+      new_subs_page: {
+        Args: {
+          before_id?: string
+          before_ts?: string
+          lim?: number
+          since: string
+        }
+        Returns: {
+          domain: string
+          first_seen_at: string
+          host: string
+          id: string
         }[]
       }
       platform_recent_subdomains: {
