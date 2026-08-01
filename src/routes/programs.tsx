@@ -272,31 +272,8 @@ function Programs() {
                   </p>
                 </div>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <a
-                  href={`/api/public/export?platform=${p.slug}&scope=all`}
-                  className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
-                >
-                  Download all
-                </a>
-                <a
-                  href={`/api/public/export?platform=${p.slug}&scope=new&hours=24`}
-                  className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
-                >
-                  Download new 24h
-                </a>
-                <button
-                  onClick={async () => {
-                    const res = await fetch(`/api/public/export?platform=${p.slug}&scope=new&hours=24`);
-                    const text = await res.text();
-                    await navigator.clipboard.writeText(text);
-                    toast.success(`Copied ${text.trim() ? text.trim().split("\n").length : 0} hosts`);
-                  }}
-                  className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
-                >
-                  <Copy className="size-3" /> Copy new
-                </button>
-              </div>
+              <PlatformDownloads slug={p.slug} />
+
               </Spotlight>
             </motion.div>
           ))}
