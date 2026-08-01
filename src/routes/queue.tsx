@@ -58,6 +58,23 @@ function QueuePage() {
     },
   });
 
+  const fullRescan = useServerFn(triggerFullRescan);
+  const rescanMutation = useMutation({
+    mutationFn: () => fullRescan({ data: undefined as never }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error(res.error ?? "Could not queue the full re-scan");
+        return;
+      }
+      toast.success(`Full re-scan queued — ${res.queued.toLocaleString()} root domains are due now`, {
+        description: "The rolling worker picks them up on the next ticks.",
+      });
+      void qc.invalidateQueries({ queryKey: ["scan-queue"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const jobs = data?.jobs ?? [];
   const active = jobs.filter((j) => ACTIVE.has(j.status));
   const finished = jobs.filter((j) => !ACTIVE.has(j.status));
