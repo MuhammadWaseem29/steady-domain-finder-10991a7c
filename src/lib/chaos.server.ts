@@ -483,9 +483,10 @@ async function processOnePendingJob(deadline: number) {
  */
 export async function scanAllEnabledDomains(
   trigger: "manual" | "cron",
-  options: { limit?: number; concurrency?: number; budgetMs?: number } = {},
+  options: { limit?: number; concurrency?: number; budgetMs?: number; cycleMinutes?: number } = {},
 ) {
   const limit = Math.min(Math.max(options.limit ?? 400, 1), 2000);
+  const cycleMinutes = Math.min(Math.max(options.cycleMinutes ?? 120, 1), 24 * 60);
   const concurrency = Math.min(Math.max(options.concurrency ?? 40, 1), 64);
   const budgetMs = Math.min(Math.max(options.budgetMs ?? 50_000, 5_000), 120_000);
   const deadline = Date.now() + budgetMs;
@@ -501,26 +502,20 @@ export async function scanAllEnabledDomains(
     .eq("status", "running")
     .lt("started_at", new Date(Date.now() - 3 * 60_000).toISOString());
 
+  // Only domains that are actually due this cycle. Anything scanned inside the
+  // window is skipped, so every root domain is re-scanned exactly once per
+  // `cycleMinutes` instead of being starved by a moving queue.
+  const dueBefore = new Date(Date.now() - cycleMinutes * 60_000).toISOString();
   const { data: domains } = await supabaseAdmin
     .from("domains")
     .select("id, domain")
     .eq("enabled", true)
+    .or(`claimed_at.is.null,claimed_at.lt.${dueBefore}`)
     .order("claimed_at", { ascending: true, nullsFirst: true })
     .limit(limit);
 
   const picked = domains ?? [];
   if (picked.length === 0) return [];
-
-  // Claim immediately so the next cron tick advances to the next slice.
-  const claimStamp = new Date().toISOString();
-  await Promise.all(
-    chunk(
-      picked.map((d) => d.id),
-      500,
-    ).map((batch) =>
-      supabaseAdmin.from("domains").update({ claimed_at: claimStamp }).in("id", batch),
-    ),
-  );
 
   const queue = [...picked];
   const results: ScanResult[] = [];
@@ -529,6 +524,13 @@ export async function scanAllEnabledDomains(
     while (queue.length > 0 && Date.now() < deadline) {
       const next = queue.shift();
       if (!next) return;
+      // Claim per domain, right before scanning it. A tick that runs out of
+      // budget leaves the rest unclaimed, so they stay due for the next tick
+      // instead of silently skipping a whole cycle.
+      await supabaseAdmin
+        .from("domains")
+        .update({ claimed_at: new Date().toISOString() })
+        .eq("id", next.id);
       results.push(
         await scanDomain(next, trigger, {
           recordStats: false,

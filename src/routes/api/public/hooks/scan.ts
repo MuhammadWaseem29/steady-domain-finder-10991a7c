@@ -13,13 +13,15 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
         const limit = Number(url.searchParams.get("limit") ?? 400);
         const concurrency = Number(url.searchParams.get("concurrency") ?? 40);
         const budgetMs = Number(url.searchParams.get("budgetMs") ?? 50000);
+        const cycleMinutes = Number(url.searchParams.get("cycleMinutes") ?? 120);
+        const jobBudgetMs = Number(url.searchParams.get("jobBudgetMs") ?? 20000);
 
         const { processPendingScanJobs, scanAllEnabledDomains } = await import("@/lib/chaos.server");
         const started = Date.now();
-        const job = await processPendingScanJobs(Math.min(budgetMs, 42000));
+        const job = await processPendingScanJobs(Math.min(jobBudgetMs, budgetMs));
         const remaining = budgetMs - (Date.now() - started);
         const results = remaining > 8000
-          ? await scanAllEnabledDomains("cron", { limit, concurrency, budgetMs: remaining })
+          ? await scanAllEnabledDomains("cron", { limit, concurrency, budgetMs: remaining, cycleMinutes })
           : [];
 
 
