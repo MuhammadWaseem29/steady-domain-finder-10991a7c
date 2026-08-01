@@ -243,10 +243,10 @@ export const listScanQueue = createServerFn({ method: "POST" }).handler(async ()
       .limit(80),
     supabaseAdmin
       .from("domains")
-      .select("id", { count: "estimated", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("enabled", true)
       .or(`claimed_at.is.null,claimed_at.lt.${new Date(Date.now() - 120 * 60_000).toISOString()}`),
-    supabaseAdmin.from("domains").select("id", { count: "estimated", head: true }).eq("enabled", true),
+    supabaseAdmin.from("domains").select("id", { count: "exact", head: true }).eq("enabled", true),
     supabaseAdmin.from("scans").select("id", { count: "exact", head: true }).eq("status", "running"),
   ]);
 
