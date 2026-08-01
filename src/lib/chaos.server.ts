@@ -227,14 +227,20 @@ export async function scanDomain(
     const stamp = new Date().toISOString();
 
     await Promise.all([
-      supabaseAdmin.from("scans").insert({
-        domain_id: domainRow.id,
-        trigger,
-        status: "error",
-        started_at: startedAt,
-        finished_at: stamp,
-        error_message: message,
-      }),
+      scanId
+        ? supabaseAdmin
+            .from("scans")
+            .update({ status: "error", finished_at: stamp, error_message: message })
+            .eq("id", scanId)
+        : supabaseAdmin.from("scans").insert({
+            domain_id: domainRow.id,
+            trigger,
+            status: "error",
+            started_at: startedAt,
+            finished_at: stamp,
+            error_message: message,
+          }),
+
       supabaseAdmin
         .from("domains")
         .update({
