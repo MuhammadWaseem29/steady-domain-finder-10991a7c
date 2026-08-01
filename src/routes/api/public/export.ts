@@ -51,55 +51,70 @@ export const Route = createFileRoute("/api/public/export")({
 
         const encoder = new TextEncoder();
         let wroteJson = false;
+        // Chunk domain ids: a single .in() with thousands of uuids blows the
+        // PostgREST URL length limit and fails with an empty error message.
+        const ID_CHUNK = 40;
+        const chunks: (string[] | null)[] = domainIds
+          ? Array.from({ length: Math.ceil(domainIds.length / ID_CHUNK) }, (_, i) =>
+              domainIds.slice(i * ID_CHUNK, i * ID_CHUNK + ID_CHUNK),
+            )
+          : [null];
+
         const stream = new ReadableStream({
           async start(controller) {
+            let emitted = 0;
             try {
-              let from = 0;
-              for (let page = 0; page < 5000; page++) {
-                let q = supabaseAdmin
-                  .from("subdomains")
-                  .select("host, first_seen_at, last_seen_at, is_active")
-                  .order("host", { ascending: true })
-                  .range(from, from + PAGE - 1);
-                if (domainIds) q = q.in("domain_id", domainIds);
-                if (search) q = q.ilike("host", `%${search}%`);
-                if (scope === "inactive") q = q.eq("is_active", false);
-                if (scope === "new")
-                  q = q.gte(
-                    "first_seen_at",
-                    new Date(Date.now() - hours * 3600_000).toISOString(),
-                  );
-                const { data, error } = await q;
-                if (error) throw new Error(error.message);
-                if (!data || data.length === 0) break;
-                if (format === "csv") {
-                  if (page === 0)
-                    controller.enqueue(
-                      encoder.encode("host,first_seen_at,last_seen_at,is_active\n"),
+              for (const ids of chunks) {
+                let from = 0;
+                for (let page = 0; page < 5000; page++) {
+                  let q = supabaseAdmin
+                    .from("subdomains")
+                    .select("host, first_seen_at, last_seen_at, is_active")
+                    .order("host", { ascending: true })
+                    .range(from, from + PAGE - 1);
+                  if (ids) q = q.in("domain_id", ids);
+                  if (search) q = q.ilike("host", `%${search}%`);
+                  if (scope === "inactive") q = q.eq("is_active", false);
+                  if (scope === "new")
+                    q = q.gte(
+                      "first_seen_at",
+                      new Date(Date.now() - hours * 3600_000).toISOString(),
                     );
-                  controller.enqueue(
-                    encoder.encode(
-                      data
-                        .map(
-                          (r) =>
-                            `${r.host},${r.first_seen_at},${r.last_seen_at},${r.is_active}`,
-                        )
-                        .join("\n") + "\n",
-                    ),
-                  );
-                } else if (format === "json") {
-                  const body = data.map((r) => JSON.stringify(r)).join(",\n");
-                  controller.enqueue(encoder.encode((page === 0 ? "[\n" : ",\n") + body));
-                  wroteJson = true;
-                } else {
-                  controller.enqueue(encoder.encode(data.map((r) => r.host).join("\n") + "\n"));
+                  const { data, error } = await q;
+                  if (error) throw new Error(error.message || "database error");
+                  if (!data || data.length === 0) break;
+                  if (format === "csv") {
+                    if (emitted === 0)
+                      controller.enqueue(
+                        encoder.encode("host,first_seen_at,last_seen_at,is_active\n"),
+                      );
+                    controller.enqueue(
+                      encoder.encode(
+                        data
+                          .map(
+                            (r) =>
+                              `${r.host},${r.first_seen_at},${r.last_seen_at},${r.is_active}`,
+                          )
+                          .join("\n") + "\n",
+                      ),
+                    );
+                  } else if (format === "json") {
+                    const body = data.map((r) => JSON.stringify(r)).join(",\n");
+                    controller.enqueue(encoder.encode((emitted === 0 ? "[\n" : ",\n") + body));
+                    wroteJson = true;
+                  } else {
+                    controller.enqueue(encoder.encode(data.map((r) => r.host).join("\n") + "\n"));
+                  }
+                  emitted += data.length;
+                  if (data.length < PAGE) break;
+                  from += PAGE;
                 }
-                if (data.length < PAGE) break;
-                from += PAGE;
               }
             } catch (e) {
               controller.enqueue(
-                encoder.encode(`\n# export error: ${e instanceof Error ? e.message : e}\n`),
+                encoder.encode(
+                  `\n# export error: ${e instanceof Error ? e.message : String(e)}\n`,
+                ),
               );
             }
             if (format === "json") controller.enqueue(encoder.encode(wroteJson ? "\n]\n" : "[]\n"));
