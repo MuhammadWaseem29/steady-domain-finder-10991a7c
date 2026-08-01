@@ -583,8 +583,7 @@ export const newSubsInfiniteOptions = (hours: number) => ({
   }): Promise<NewSubRow[]> => {
     const { data, error } = await supabase.rpc("new_subs_page", {
       since: sinceIso(hours),
-      before_ts: pageParam?.ts ?? null,
-      before_id: pageParam?.id ?? null,
+      ...(pageParam ? { before_ts: pageParam.ts, before_id: pageParam.id } : {}),
       lim: NEW_SUBS_PAGE,
     });
     if (error) throw new Error(error.message);
