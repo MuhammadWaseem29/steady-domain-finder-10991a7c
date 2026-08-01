@@ -2,12 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
-import { Activity, Clock, Layers, Loader2, X } from "lucide-react";
+import { Activity, Clock, Layers, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { SiteShell } from "@/components/site/chrome";
 import { CountUp } from "@/components/site/motion";
 import { LiveAgo } from "@/components/site/live-time";
-import { cancelScanJob, listScanQueue } from "@/lib/chaos.functions";
+import { cancelScanJob, listScanQueue, triggerFullRescan } from "@/lib/chaos.functions";
 
 export const Route = createFileRoute("/queue")({
   head: () => ({
