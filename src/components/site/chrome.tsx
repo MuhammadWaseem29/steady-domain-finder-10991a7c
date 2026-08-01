@@ -77,6 +77,35 @@ export function SiteHeader() {
   );
 }
 
+function HeaderAccount() {
+  const { user, loading } = useSession();
+
+  if (loading) {
+    return <span className="h-8 w-24 animate-pulse rounded-full bg-muted" aria-hidden />;
+  }
+
+  return (
+    <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} transition={springSnappy}>
+      {user ? (
+        <Link
+          to="/account"
+          className="inline-flex max-w-[180px] items-center gap-2 truncate rounded-full border border-border px-4 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+        >
+          <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+          <span className="truncate">{displayNameOf(user)}</span>
+        </Link>
+      ) : (
+        <Link
+          to="/auth"
+          className="inline-flex rounded-full border border-border px-4 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+        >
+          Sign in
+        </Link>
+      )}
+    </motion.div>
+  );
+}
+
 export function SiteFooter() {
   return (
     <footer className="border-t border-border">
