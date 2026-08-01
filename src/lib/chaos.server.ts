@@ -12,6 +12,16 @@ export type ScanResult = {
   error?: string;
 };
 
+export type ScanJobProgress = {
+  id: string;
+  domainId: string;
+  status: "queued" | "fetching" | "processing" | "success" | "error";
+  total: number;
+  processed: number;
+  newCount: number;
+  error?: string;
+};
+
 async function fetchChaosSubdomains(domain: string, timeoutMs = 45_000): Promise<string[]> {
   const key = process.env.CHAOS_API_KEY;
   if (!key) throw new Error("CHAOS_API_KEY is not configured");
@@ -50,6 +60,20 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
+async function ingestChunk(
+  domainId: string,
+  hosts: { label: string; host: string }[],
+  stamp: string,
+) {
+  const { data, error } = await supabaseAdmin.rpc("ingest_subdomain_chunk", {
+    _domain_id: domainId,
+    _hosts: hosts,
+    _stamp: stamp,
+  });
+  if (error) throw new Error(error.message);
+  return Number(data ?? 0);
+}
+
 export async function scanDomain(
   domainRow: { id: string; domain: string },
   trigger: "manual" | "cron",
@@ -83,7 +107,7 @@ export async function scanDomain(
     // diffing in the database, so we never have to page through millions of
     // existing rows. Batches run in parallel so 100k+ host programs finish
     // inside the request budget instead of dying with a 500.
-    const batches = chunk(hosts, 1000);
+    const batches = chunk(hosts, 5000);
     let cursor = 0;
 
     async function writer() {
@@ -94,22 +118,7 @@ export async function scanDomain(
           skipped += batch.length;
           continue;
         }
-        const { data: inserted, error } = await supabaseAdmin
-          .from("subdomains")
-          .upsert(
-            batch.map((h) => ({
-              domain_id: domainRow.id,
-              label: h.label,
-              host: h.host,
-              first_seen_at: stamp,
-              last_seen_at: stamp,
-              is_active: true,
-            })),
-            { onConflict: "domain_id,host", ignoreDuplicates: true },
-          )
-          .select("host");
-        if (error) throw new Error(error.message);
-        freshCount += inserted?.length ?? 0;
+        freshCount += await ingestChunk(domainRow.id, batch, stamp);
       }
     }
 
@@ -197,6 +206,171 @@ export async function scanDomain(
       removedCount: 0,
       error: message,
     };
+  }
+}
+
+export async function queueManualScan(domainId: string): Promise<ScanJobProgress> {
+  const { data: active } = await supabaseAdmin
+    .from("scan_jobs")
+    .select("id, domain_id, status, total_hosts, processed_hosts, new_count, error_message")
+    .eq("domain_id", domainId)
+    .in("status", ["queued", "fetching", "processing"])
+    .maybeSingle();
+
+  let job = active;
+  if (!job) {
+    const { data, error } = await supabaseAdmin
+      .from("scan_jobs")
+      .insert({ domain_id: domainId, status: "queued" })
+      .select("id, domain_id, status, total_hosts, processed_hosts, new_count, error_message")
+      .single();
+    if (error) {
+      // A simultaneous click may have won the partial unique-index race.
+      const { data: raced } = await supabaseAdmin
+        .from("scan_jobs")
+        .select("id, domain_id, status, total_hosts, processed_hosts, new_count, error_message")
+        .eq("domain_id", domainId)
+        .in("status", ["queued", "fetching", "processing"])
+        .single();
+      if (!raced) throw new Error(error.message);
+      job = raced;
+    } else {
+      job = data;
+    }
+  }
+
+  return {
+    id: job.id,
+    domainId: job.domain_id,
+    status: job.status as ScanJobProgress["status"],
+    total: job.total_hosts,
+    processed: job.processed_hosts,
+    newCount: job.new_count,
+    ...(job.error_message ? { error: job.error_message } : {}),
+  };
+}
+
+export async function getManualScanProgress(domainId: string): Promise<ScanJobProgress | null> {
+  const { data, error } = await supabaseAdmin
+    .from("scan_jobs")
+    .select("id, domain_id, status, total_hosts, processed_hosts, new_count, error_message")
+    .eq("domain_id", domainId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return {
+    id: data.id,
+    domainId: data.domain_id,
+    status: data.status as ScanJobProgress["status"],
+    total: data.total_hosts,
+    processed: data.processed_hosts,
+    newCount: data.new_count,
+    ...(data.error_message ? { error: data.error_message } : {}),
+  };
+}
+
+/** Processes resumable manual jobs for a bounded amount of wall-clock time. */
+export async function processPendingScanJobs(budgetMs = 42_000) {
+  const deadline = Date.now() + Math.min(Math.max(budgetMs, 5_000), 45_000);
+  const stale = new Date(Date.now() - 2 * 60_000).toISOString();
+  await supabaseAdmin
+    .from("scan_jobs")
+    .update({ status: "queued", claimed_at: null, updated_at: new Date().toISOString() })
+    .in("status", ["fetching", "processing"])
+    .lt("claimed_at", stale);
+
+  const { data: pending } = await supabaseAdmin
+    .from("scan_jobs")
+    .select("id, domain_id, status, hosts, total_hosts, processed_hosts, new_count, started_at, domains(domain)")
+    .in("status", ["queued", "fetching", "processing"])
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!pending) return null;
+
+  const domainRelation = pending.domains as { domain?: string } | null;
+  const domain = domainRelation?.domain;
+  if (!domain) return null;
+  const now = new Date().toISOString();
+
+  try {
+    let labels = Array.isArray(pending.hosts) ? (pending.hosts as string[]) : null;
+    let processed = pending.processed_hosts;
+    let newCount = pending.new_count;
+    let startedAt = pending.started_at ?? now;
+
+    if (!labels) {
+      await supabaseAdmin.from("scan_jobs").update({
+        status: "fetching",
+        claimed_at: now,
+        started_at: startedAt,
+        updated_at: now,
+      }).eq("id", pending.id);
+      labels = await fetchChaosSubdomains(domain, Math.max(Math.min(deadline - Date.now() - 2_000, 40_000), 5_000));
+      await supabaseAdmin.from("scan_jobs").update({
+        status: "processing",
+        hosts: labels,
+        total_hosts: labels.length,
+        claimed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", pending.id);
+    }
+
+    while (processed < labels.length && Date.now() < deadline - 3_000) {
+      const labelChunk = labels.slice(processed, processed + 5000);
+      const hostChunk = labelChunk.map((label) => ({
+        label,
+        host: label === "" ? domain : `${label}.${domain}`,
+      }));
+      newCount += await ingestChunk(pending.domain_id, hostChunk, startedAt);
+      processed += labelChunk.length;
+      await supabaseAdmin.from("scan_jobs").update({
+        status: "processing",
+        processed_hosts: processed,
+        new_count: newCount,
+        claimed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", pending.id);
+    }
+
+    if (processed < labels.length) {
+      return { id: pending.id, status: "processing", processed, total: labels.length };
+    }
+
+    const finishedAt = new Date().toISOString();
+    await Promise.all([
+      supabaseAdmin.from("scan_jobs").update({
+        status: "success", processed_hosts: processed, new_count: newCount,
+        hosts: null, finished_at: finishedAt, claimed_at: finishedAt, updated_at: finishedAt,
+      }).eq("id", pending.id),
+      supabaseAdmin.from("scans").insert({
+        domain_id: pending.domain_id, trigger: "manual", status: "success",
+        started_at: startedAt, finished_at: finishedAt, total_returned: labels.length,
+        new_count: newCount, removed_count: 0,
+      }),
+      supabaseAdmin.from("domains").update({
+        last_scanned_at: finishedAt, claimed_at: finishedAt, last_scan_status: "success",
+        total_subdomains: labels.length, new_subdomains_last_scan: newCount, updated_at: finishedAt,
+      }).eq("id", pending.domain_id),
+      supabaseAdmin.rpc("bump_daily_stats", { _new: newCount, _errors: 0 }),
+    ]);
+    return { id: pending.id, status: "success", processed, total: labels.length };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const finishedAt = new Date().toISOString();
+    await Promise.all([
+      supabaseAdmin.from("scan_jobs").update({
+        status: "error", error_message: message, hosts: null,
+        finished_at: finishedAt, updated_at: finishedAt,
+      }).eq("id", pending.id),
+      supabaseAdmin.from("scans").insert({
+        domain_id: pending.domain_id, trigger: "manual", status: "error",
+        started_at: pending.started_at ?? now, finished_at: finishedAt, error_message: message,
+      }),
+    ]);
+    return { id: pending.id, status: "error", error: message };
   }
 }
 
