@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Copy, Plus, Pencil, Trash2, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { SignInNotice } from "@/components/site/chrome";
 import { CountUp, EASE_SIGNATURE, Spotlight } from "@/components/site/motion";
 import { platformsQuery } from "@/lib/chaos-data";
 import { savePlatform, deletePlatform } from "@/lib/chaos.functions";
@@ -75,6 +76,7 @@ function Programs() {
 
   return (
     <SiteShell>
+      <SignInNotice />
       <div className="mx-auto max-w-6xl px-5 py-12">
         <p className="label-mono text-muted-foreground">Programs</p>
         <h1 className="mt-2 text-4xl font-extrabold">Bug bounty platforms</h1>

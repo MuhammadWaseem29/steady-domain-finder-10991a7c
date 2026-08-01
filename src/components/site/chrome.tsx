@@ -229,3 +229,22 @@ export function SectionCard({ children }: { children: ReactNode }) {
     <Reveal className="rounded-lg border border-border bg-card p-5">{children}</Reveal>
   );
 }
+
+/** Banner shown on pages whose actions require a signed-in account. */
+export function SignInNotice() {
+  const { user, loading } = useSession();
+  if (loading || user) return null;
+  return (
+    <Reveal className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+      <span className="text-muted-foreground">
+        Browsing is public — sign in to trigger scans, manage programs and issue API keys.
+      </span>
+      <Link
+        to="/auth"
+        className="ml-auto rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+      >
+        Sign in
+      </Link>
+    </Reveal>
+  );
+}
