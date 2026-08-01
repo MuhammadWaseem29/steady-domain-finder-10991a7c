@@ -385,7 +385,7 @@ function RecentSubsPage() {
             delta={delta}
             hint={
               a?.overview.latestAt
-                ? `latest ${timeAgo(overview.data.latestAt)}`
+                ? `latest ${timeAgo(a.overview.latestAt)}`
                 : "waiting for data"
             }
             tone="var(--color-chart-1)"
