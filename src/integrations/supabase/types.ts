@@ -124,6 +124,62 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_jobs: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          domain_id: string
+          error_message: string | null
+          finished_at: string | null
+          hosts: Json | null
+          id: string
+          new_count: number
+          processed_hosts: number
+          started_at: string | null
+          status: string
+          total_hosts: number
+          updated_at: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          domain_id: string
+          error_message?: string | null
+          finished_at?: string | null
+          hosts?: Json | null
+          id?: string
+          new_count?: number
+          processed_hosts?: number
+          started_at?: string | null
+          status?: string
+          total_hosts?: number
+          updated_at?: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          domain_id?: string
+          error_message?: string | null
+          finished_at?: string | null
+          hosts?: Json | null
+          id?: string
+          new_count?: number
+          processed_hosts?: number
+          started_at?: string | null
+          status?: string
+          total_hosts?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_jobs_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scans: {
         Row: {
           domain_id: string
@@ -224,6 +280,10 @@ export type Database = {
           new_subdomains: number
           ts: string
         }[]
+      }
+      ingest_subdomain_chunk: {
+        Args: { _domain_id: string; _hosts: Json; _stamp: string }
+        Returns: number
       }
       new_subdomain_counts: {
         Args: never
