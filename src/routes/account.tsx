@@ -131,7 +131,10 @@ function AccountPage() {
             className="mt-4 flex flex-wrap gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              if (!name.trim()) return toast.error("Give the key a name");
+              if (!name.trim()) {
+                toast.error("Give the key a name");
+                return;
+              }
               createMutation.mutate(name.trim());
             }}
           >
