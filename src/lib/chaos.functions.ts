@@ -265,8 +265,8 @@ export const listScanQueue = createServerFn({ method: "POST" }).handler(async ()
 
   return {
     jobs,
-    dueDomains: dueRes.count ?? 0,
-    totalDomains: totalRes.count ?? 0,
+    dueDomains: Number(counts?.due_domains ?? 0),
+    totalDomains: Number(counts?.total_domains ?? 0),
     runningScans: runningRes.count ?? 0,
     cycleMinutes: 120,
   };
@@ -299,16 +299,8 @@ export const cancelScanJob = createServerFn({ method: "POST" })
 export const triggerFullRescan = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const { count } = await supabaseAdmin
-    .from("domains")
-    .select("id", { count: "estimated", head: true })
-    .eq("enabled", true);
-
-  const { error } = await supabaseAdmin
-    .from("domains")
-    .update({ claimed_at: null, updated_at: new Date().toISOString() })
-    .eq("enabled", true);
+  const { data, error } = await supabaseAdmin.rpc("mark_all_domains_due");
 
   if (error) return { ok: false as const, error: error.message, queued: 0 };
-  return { ok: true as const, queued: count ?? 0 };
+  return { ok: true as const, queued: Number(data ?? 0) };
 });
