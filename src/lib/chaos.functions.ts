@@ -290,3 +290,25 @@ export const cancelScanJob = createServerFn({ method: "POST" })
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   });
+
+/**
+ * Marks every enabled root domain as due right now, so the rolling worker
+ * re-scans the entire asset list on its next ticks instead of waiting for the
+ * 2-hour window to elapse.
+ */
+export const triggerFullRescan = createServerFn({ method: "POST" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { count } = await supabaseAdmin
+    .from("domains")
+    .select("id", { count: "estimated", head: true })
+    .eq("enabled", true);
+
+  const { error } = await supabaseAdmin
+    .from("domains")
+    .update({ claimed_at: null, updated_at: new Date().toISOString() })
+    .eq("enabled", true);
+
+  if (error) return { ok: false as const, error: error.message, queued: 0 };
+  return { ok: true as const, queued: count ?? 0 };
+});
