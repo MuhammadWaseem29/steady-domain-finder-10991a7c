@@ -187,6 +187,34 @@ export const windowCountsQuery = queryOptions({
   refetchInterval: 60_000,
 });
 
+export const recentSubsOverviewQuery = (hours: number) =>
+  queryOptions({
+    queryKey: ["recent-subs-overview", hours],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("recent_subs_overview", {
+        since: sinceIso(hours),
+      });
+      if (error) throw new Error(error.message);
+      const row = (data ?? [])[0] as
+        | {
+            total_new: number;
+            programs_active: number;
+            domains_active: number;
+            latest_at: string | null;
+            per_hour: number;
+          }
+        | undefined;
+      return {
+        totalNew: Number(row?.total_new ?? 0),
+        programsActive: Number(row?.programs_active ?? 0),
+        domainsActive: Number(row?.domains_active ?? 0),
+        latestAt: row?.latest_at ?? null,
+        perHour: Number(row?.per_hour ?? 0),
+      };
+    },
+    refetchInterval: 15_000,
+  });
+
 
 
 export const globalStatsQuery = queryOptions({
