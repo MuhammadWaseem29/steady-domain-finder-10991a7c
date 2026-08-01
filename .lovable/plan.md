@@ -1,41 +1,56 @@
-## What's wrong
+## Goal
 
-Confirmed in the database: `vodafone.com.tr` really has **99,381** subdomains stored (and 99,381 first seen in the last 24h). The page shows 60,000 because of the frontend, not the data.
+Add accounts to the site and a real API so data can be pulled programmatically with a token. Browsing stays public; actions (scan now, full re-scan, add/edit/delete domains and programs, queue cancel) and API-key management require sign-in.
 
-`subdomainsQuery` in `src/lib/chaos-data.ts` pulls every subdomain row into the browser in pages of 1,000, with a hard stop at 60 pages = **60,000 rows**. Every stat on the domain page is then computed from that truncated in-memory array:
+## 1. Authentication
 
-- "Total subdomains" = `all.length` → caps at 60,000
-- "New (24h)" = filter over the same array → caps too
-- "Showing X of Y hosts" → caps too
+- New public route `/auth` — single card with **Continue with Google** (managed broker) and email/password sign-in + sign-up tabs, styled to match the Chaos look.
+- Google provider gets enabled on the backend in the same step, so the first click works.
+- Profiles table (`profiles`: user id, email, display name, avatar) auto-created on signup by a trigger, so the header can show who's signed in.
+- Header changes: `Sign in` button when signed out; avatar/email menu with **Account** and **Sign out** when signed in.
+- Session listener wired once at the app root so the header and gated buttons react instantly to sign-in/out.
 
-So any program with more than 60,000 hosts is wrong, and even under that limit the page downloads up to 60k rows on every visit (and re-fetches them every 60s), which is why big programs feel slow.
+## 2. Gating actions (site stays public)
 
-## The fix
+Every page keeps working for anonymous visitors. These become sign-in-required, with an inline "Sign in to do this" prompt instead of a redirect:
 
-Stop counting in the browser. Count in the database, and page the table.
+- Dashboard: add/import domains, edit, delete, scan now
+- Programs: create/edit/delete program, per-domain actions
+- Queue: full re-scan, cancel job
+- Domain page: scan now
 
-**1. Database helpers (one migration)**
-- `domain_subdomain_stats(_domain_id uuid)` → returns `total`, `new_24h`, `new_7d`, `active`, `inactive`, `latest_seen` in one query.
-- `domain_subdomains_page(_domain_id, _search, _filter, _limit, _offset)` → returns one page of hosts plus an exact `total_count` for the current filter/search, ordered newest-first.
+Server-side each of those switches to an authenticated server function, so gating is enforced on the backend, not just hidden in the UI.
 
-Both read-only and `STABLE`, callable by `anon` like the existing public RPCs.
+## 3. API tokens
 
-**2. Domain page rewrite of the data layer (`src/lib/chaos-data.ts`)**
-- Replace `subdomainsQuery` (the 60-page loop) with:
-  - `domainStatsQuery(domainId)` → the stats RPC
-  - `domainSubdomainsPageQuery(domainId, search, filter, page)` → 100 rows per page
-- Delete the 60,000-row ceiling entirely.
+- New `api_keys` table: owner, name, key prefix (shown in UI), hashed secret, created/last-used timestamps, revoked flag. Only the hash is stored; the full key `chs_live_…` is shown once at creation.
+- New **Account / API keys** page (`/account`): create a named key, copy it once, see prefix + last used, revoke.
 
-**3. Domain page UI (`src/routes/domain.$domain.tsx`)**
-- Stat cards read from the stats RPC: real 99,381 total, real 24h count. "New last scan" keeps using the domain row.
-- Table becomes server-paged with Prev / Next and "Page N of M · X hosts", replacing the current "preview limited to 500 rows" note.
-- Search and the all/new/inactive filter move server-side (they currently filter the truncated array, so they were also under-reporting).
-- Copy all / export txt / csv / json switch to the existing streaming export endpoint (`/api/public/export`) with the current filter and search applied, so they emit the full set instead of whatever was loaded — this is what makes exports correct for 100k+ host programs.
+## 4. Public REST API
 
-**4. Same bug on other pages**
-Audit and apply the same server-count treatment anywhere else a count is derived from a fetched array rather than from the database — program/platform pages and the dashboard totals — so the fix covers every platform, not just this one page.
+Base: `https://steady-domain-finder.lovable.app/api/v1/…`, auth via `Authorization: Bearer chs_live_…`. JSON responses, consistent `{ data, meta }` envelope and clear error codes.
 
-## Notes
+Read endpoints:
+- `GET /api/v1/domains` — list with search, platform filter, paging
+- `GET /api/v1/domains/{domain}` — domain detail + counts
+- `GET /api/v1/domains/{domain}/subdomains` — paged hosts, filters `all|new|inactive`, search
+- `GET /api/v1/subdomains/new` — newly discovered hosts across everything, `since`/`window` param
+- `GET /api/v1/platforms` — program list with stats
+- `GET /api/v1/platforms/{slug}/domains`
+- `GET /api/v1/scans` — recent scan history, filterable by domain
+- `GET /api/v1/export` — streaming bulk export (txt/csv/json) with the same scope filters as the UI
 
-- Nothing about the scanner, cron cycle, or ingestion changes; the stored data was already correct.
-- After this, the domain page loads a fixed ~100 rows regardless of program size, so `taobao.com` and `vodafone.com.tr` open as fast as small ones.
+Write endpoints:
+- `POST /api/v1/scans` — queue a scan for a domain
+- `POST /api/v1/scans/rescan-all` — mark everything due
+
+All endpoints validate input, resolve the token to a user, stamp `last_used_at`, and never expose backend keys.
+
+## 5. Docs
+
+New `/docs/api` page in the existing docs layout: authentication, every endpoint with parameters, curl examples and sample JSON — matching the current docs styling. Header/footer links updated.
+
+## Technical notes
+
+- Tables `profiles` and `api_keys` get row-level security scoped to the owner, plus the required grants; the API routes live under `src/routes/api/v1/*` and verify the bearer token themselves (SHA-256 compare against the stored hash) before touching data with the service client.
+- Existing `/api/public/export` stays as-is for the in-app download buttons.
