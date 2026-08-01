@@ -15,11 +15,12 @@ export const runScanNow = createServerFn({ method: "POST" })
 
     if (!domain)
       return {
-        domain: "",
+        id: "",
+        domainId: data.domainId,
         status: "error" as const,
         total: 0,
+        processed: 0,
         newCount: 0,
-        removedCount: 0,
         error: "Domain not found",
       };
 

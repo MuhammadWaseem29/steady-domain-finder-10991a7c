@@ -4,6 +4,11 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const suppliedKey = request.headers.get("apikey");
+        const expectedKey = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
+        if (!expectedKey || suppliedKey !== expectedKey) {
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
+        }
         const url = new URL(request.url);
         const limit = Number(url.searchParams.get("limit") ?? 400);
         const concurrency = Number(url.searchParams.get("concurrency") ?? 40);

@@ -72,7 +72,10 @@ function DomainDetail() {
   }, [qc, scanJob]);
 
   const scanMutation = useMutation({
-    mutationFn: () => scan({ data: { domainId: row!.id } }),
+    mutationFn: () => {
+      if (!row) throw new Error("Domain not found");
+      return scan({ data: { domainId: row.id } });
+    },
     onSuccess: (res) => {
       if (res.status === "error") toast.error(res.error ?? "Scan failed");
       else toast.success("Scan queued — it will continue in the background");
