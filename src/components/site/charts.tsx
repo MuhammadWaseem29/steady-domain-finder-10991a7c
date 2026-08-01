@@ -5,6 +5,8 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
   Legend,
   Pie,
   PieChart,
@@ -128,5 +130,82 @@ export function ShareDonut({ data }: { data: { label: string; value: number; col
         <Tooltip contentStyle={tooltipStyle} />
       </PieChart>
     </ResponsiveContainer>
+  );
+}
+
+export function CumulativeLineChart({ data }: { data: Point[] }) {
+  let running = 0;
+  const cum = data.map((d) => {
+    running += d.value;
+    return { label: d.label, value: running };
+  });
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <LineChart data={cum} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
+        <CartesianGrid stroke="var(--color-border)" vertical={false} />
+        <XAxis dataKey="label" {...axisProps} minTickGap={24} />
+        <YAxis {...axisProps} width={48} />
+        <Tooltip contentStyle={tooltipStyle} />
+        <Line
+          type="monotone"
+          dataKey="value"
+          name="Cumulative new"
+          stroke="var(--color-chart-2)"
+          strokeWidth={2.5}
+          dot={false}
+          animationDuration={1100}
+          animationEasing="ease-out"
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+export function DiscoveryHeatmap({ cells }: { cells: { dow: number; hour: number; c: number }[] }) {
+  const map = new Map<string, number>();
+  let max = 0;
+  for (const cell of cells) {
+    const v = Number(cell.c);
+    map.set(`${cell.dow}-${cell.hour}`, v);
+    if (v > max) max = v;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[560px]">
+        <div className="mb-1 flex gap-[3px] pl-9">
+          {Array.from({ length: 24 }).map((_, h) => (
+            <span
+              key={h}
+              className="w-[18px] text-center text-[9px] text-muted-foreground"
+            >
+              {h % 3 === 0 ? h : ""}
+            </span>
+          ))}
+        </div>
+        {DAYS.map((day, d) => (
+          <div key={day} className="mb-[3px] flex items-center gap-[3px]">
+            <span className="w-9 text-[10px] text-muted-foreground">{day}</span>
+            {Array.from({ length: 24 }).map((_, h) => {
+              const v = map.get(`${d}-${h}`) ?? 0;
+              const ratio = max ? v / max : 0;
+              return (
+                <span
+                  key={h}
+                  title={`${day} ${h}:00 — ${v.toLocaleString()} new`}
+                  className="h-[18px] w-[18px] rounded-[4px] border border-border/60 transition-transform hover:scale-125"
+                  style={{
+                    background: v
+                      ? `color-mix(in oklab, var(--color-chart-1) ${Math.round(12 + ratio * 88)}%, transparent)`
+                      : "var(--color-muted)",
+                  }}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
