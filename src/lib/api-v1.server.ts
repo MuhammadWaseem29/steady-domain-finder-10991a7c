@@ -150,19 +150,19 @@ async function domainsRoute(ctx: Ctx): Promise<Response> {
     const offset = num(ctx.url, "offset", 0, 0, 5_000_000);
     const rawFilter = ctx.url.searchParams.get("filter");
     const filter = rawFilter === "new" || rawFilter === "inactive" ? rawFilter : "all";
-    const search = (ctx.url.searchParams.get("search") ?? "").trim() || null;
+    const search = (ctx.url.searchParams.get("search") ?? "").trim() || undefined;
 
     const [{ data: rows, error }, { data: total }] = await Promise.all([
       db.rpc("domain_subdomains_page", {
         _domain_id: domain.id,
-        _search: search,
+        ...(search ? { _search: search } : {}),
         _filter: filter,
         _limit: limit,
         _offset: offset,
       }),
       db.rpc("domain_subdomains_count", {
         _domain_id: domain.id,
-        _search: search,
+        ...(search ? { _search: search } : {}),
         _filter: filter,
       }),
     ]);
@@ -190,8 +190,8 @@ async function subdomainsRoute(ctx: Ctx): Promise<Response> {
 
   const { data, error } = await db.rpc("new_subs_page", {
     since,
-    before_ts: beforeTs || null,
-    before_id: beforeId || null,
+    ...(beforeTs ? { before_ts: beforeTs } : {}),
+    ...(beforeId ? { before_id: beforeId } : {}),
     lim: limit,
   });
   if (error) return apiError(500, "query_failed", error.message);
