@@ -2,12 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
-import { Activity, Clock, Layers, Loader2, X } from "lucide-react";
+import { Activity, Clock, Layers, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { SiteShell } from "@/components/site/chrome";
 import { CountUp } from "@/components/site/motion";
 import { LiveAgo } from "@/components/site/live-time";
-import { cancelScanJob, listScanQueue } from "@/lib/chaos.functions";
+import { cancelScanJob, listScanQueue, triggerFullRescan } from "@/lib/chaos.functions";
 
 export const Route = createFileRoute("/queue")({
   head: () => ({
@@ -58,6 +58,23 @@ function QueuePage() {
     },
   });
 
+  const fullRescan = useServerFn(triggerFullRescan);
+  const rescanMutation = useMutation({
+    mutationFn: () => fullRescan({ data: undefined as never }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error(res.error ?? "Could not queue the full re-scan");
+        return;
+      }
+      toast.success(`Full re-scan queued — ${res.queued.toLocaleString()} root domains are due now`, {
+        description: "The rolling worker picks them up on the next ticks.",
+      });
+      void qc.invalidateQueries({ queryKey: ["scan-queue"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const jobs = data?.jobs ?? [];
   const active = jobs.filter((j) => ACTIVE.has(j.status));
   const finished = jobs.filter((j) => !ACTIVE.has(j.status));
@@ -70,15 +87,37 @@ function QueuePage() {
     <SiteShell>
       <div className="space-y-8 py-10">
         <div className="rounded-lg border border-border bg-card p-6">
-          <div className="chip-mono mb-3 inline-flex items-center gap-2">
-            <span className="live-dot" /> SCAN QUEUE
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="chip-mono mb-3 inline-flex items-center gap-2">
+                <span className="live-dot" /> SCAN QUEUE
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight">Scan queue</h1>
+              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                Every manual scan and every oversized program deferred by the rolling sweep lands here.
+                Jobs resume across worker ticks, so no program is too large to finish.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => rescanMutation.mutate()}
+              disabled={rescanMutation.isPending}
+              className="inline-flex shrink-0 items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            >
+              {rescanMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Full re-scan now
+            </button>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Scan queue</h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Every manual scan and every oversized program deferred by the rolling sweep lands here.
-            Jobs resume across worker ticks, so no program is too large to finish.
+          <p className="mt-3 text-xs text-muted-foreground">
+            Marks all {total.toLocaleString()} enabled root domains as due immediately — the rolling
+            worker then sweeps the entire asset list again from the top.
           </p>
         </div>
+
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card icon={<Loader2 className="h-4 w-4" />} label="ACTIVE JOBS" value={active.length} hint="queued · fetching · saving" />

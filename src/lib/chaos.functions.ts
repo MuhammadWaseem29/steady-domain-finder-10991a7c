@@ -233,7 +233,7 @@ export type QueueJob = {
 export const listScanQueue = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const [jobsRes, dueRes, totalRes, runningRes] = await Promise.all([
+  const [jobsRes, countsRes, runningRes] = await Promise.all([
     supabaseAdmin
       .from("scan_jobs")
       .select(
@@ -241,14 +241,14 @@ export const listScanQueue = createServerFn({ method: "POST" }).handler(async ()
       )
       .order("created_at", { ascending: false })
       .limit(80),
-    supabaseAdmin
-      .from("domains")
-      .select("id", { count: "estimated", head: true })
-      .eq("enabled", true)
-      .or(`claimed_at.is.null,claimed_at.lt.${new Date(Date.now() - 120 * 60_000).toISOString()}`),
-    supabaseAdmin.from("domains").select("id", { count: "estimated", head: true }).eq("enabled", true),
+    supabaseAdmin.rpc("domain_cycle_counts", { cycle_minutes: 120 }),
     supabaseAdmin.from("scans").select("id", { count: "exact", head: true }).eq("status", "running"),
   ]);
+
+  const counts = (countsRes.data ?? [])[0] as
+    | { total_domains: number; due_domains: number }
+    | undefined;
+
 
   const jobs: QueueJob[] = (jobsRes.data ?? []).map((j) => ({
     id: j.id,
@@ -265,8 +265,8 @@ export const listScanQueue = createServerFn({ method: "POST" }).handler(async ()
 
   return {
     jobs,
-    dueDomains: dueRes.count ?? 0,
-    totalDomains: totalRes.count ?? 0,
+    dueDomains: Number(counts?.due_domains ?? 0),
+    totalDomains: Number(counts?.total_domains ?? 0),
     runningScans: runningRes.count ?? 0,
     cycleMinutes: 120,
   };
@@ -290,3 +290,17 @@ export const cancelScanJob = createServerFn({ method: "POST" })
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   });
+
+/**
+ * Marks every enabled root domain as due right now, so the rolling worker
+ * re-scans the entire asset list on its next ticks instead of waiting for the
+ * 2-hour window to elapse.
+ */
+export const triggerFullRescan = createServerFn({ method: "POST" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data, error } = await supabaseAdmin.rpc("mark_all_domains_due");
+
+  if (error) return { ok: false as const, error: error.message, queued: 0 };
+  return { ok: true as const, queued: Number(data ?? 0) };
+});

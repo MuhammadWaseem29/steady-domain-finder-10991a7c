@@ -282,6 +282,13 @@ export type Database = {
           ts: string
         }[]
       }
+      domain_cycle_counts: {
+        Args: { cycle_minutes?: number }
+        Returns: {
+          due_domains: number
+          total_domains: number
+        }[]
+      }
       ingest_chunk_with_scan: {
         Args: {
           _domain_id: string
@@ -296,6 +303,7 @@ export type Database = {
         Args: { _domain_id: string; _hosts: Json; _stamp: string }
         Returns: number
       }
+      mark_all_domains_due: { Args: never; Returns: number }
       new_subdomain_counts: {
         Args: never
         Returns: {
