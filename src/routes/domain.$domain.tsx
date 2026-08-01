@@ -8,12 +8,15 @@ import { RefreshCw, Copy, Download, Loader2, ArrowLeft, Search } from "lucide-re
 import { SiteShell, Stat } from "@/components/site/chrome";
 import {
   domainQuery,
-  subdomainsQuery,
+  domainStatsQuery,
+  domainSubdomainsPageQuery,
+  domainSubCountQuery,
+  SUBS_PAGE_SIZE,
   scansQuery,
   timeAgo,
   isNew,
-  download,
 } from "@/lib/chaos-data";
+
 import { getScanJobStatus, runScanNow } from "@/lib/chaos.functions";
 
 export const Route = createFileRoute("/domain/$domain")({
@@ -40,13 +43,25 @@ function DomainDetail() {
   const { domain } = Route.useParams();
   const qc = useQueryClient();
   const { data: row } = useQuery(domainQuery(domain));
-  const { data: subs, isLoading } = useQuery(subdomainsQuery(row?.id));
   const { data: scans } = useQuery(scansQuery(row?.id));
   const scan = useServerFn(runScanNow);
   const getScanStatus = useServerFn(getScanJobStatus);
 
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
+  const [page, setPage] = useState(0);
+  const [debouncedQ, setDebouncedQ] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+  useEffect(() => setPage(0), [debouncedQ, filter]);
+
+  const { data: stats } = useQuery(domainStatsQuery(row?.id));
+  const { data: pageRows, isLoading } = useQuery(
+    domainSubdomainsPageQuery(row?.id, debouncedQ, filter, page),
+  );
+  const { data: matchCount } = useQuery(domainSubCountQuery(row?.id, debouncedQ, filter));
   const announcedJob = useRef<string | null>(null);
 
   const { data: scanJob } = useQuery({
@@ -93,41 +108,34 @@ function DomainDetail() {
   const scanActive = scanJob?.status === "queued" || scanJob?.status === "fetching" || scanJob?.status === "processing";
   const scanPercent = scanJob?.total ? Math.min(100, Math.round((scanJob.processed / scanJob.total) * 100)) : 0;
 
-  const all = subs ?? [];
-  const filtered = useMemo(() => {
-    let list = all;
-    if (filter === "new") list = list.filter((s) => isNew(s.first_seen_at));
-    if (filter === "inactive") list = list.filter((s) => !s.is_active);
-    if (q.trim()) {
-      const needle = q.trim().toLowerCase();
-      list = list.filter((s) => s.host.includes(needle));
+  const rows = pageRows ?? [];
+  const filteredTotal =
+    matchCount ?? (filter === "all" && !debouncedQ.trim() ? (stats?.total ?? 0) : rows.length);
+  const totalPages = Math.max(1, Math.ceil(filteredTotal / SUBS_PAGE_SIZE));
+
+  const exportUrl = (format: "txt" | "csv" | "json") => {
+    const params = new URLSearchParams({ domain, format });
+    if (filter === "new") params.set("scope", "new");
+    if (filter === "inactive") params.set("scope", "inactive");
+    if (debouncedQ.trim()) params.set("search", debouncedQ.trim());
+    return `/api/public/export?${params.toString()}`;
+  };
+
+  const copy = async () => {
+    const id = toast.loading(`Fetching ${filteredTotal.toLocaleString()} hosts…`);
+    try {
+      const res = await fetch(exportUrl("txt"));
+      const text = await res.text();
+      await navigator.clipboard.writeText(text.trim());
+      toast.success(`Copied ${text.trim().split("\n").filter(Boolean).length.toLocaleString()} hosts`, { id });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Copy failed", { id });
     }
-    return list;
-  }, [all, filter, q]);
-
-  const newCount = all.filter((s) => isNew(s.first_seen_at)).length;
-
-  const copy = () => {
-    navigator.clipboard.writeText(filtered.map((s) => s.host).join("\n"));
-    toast.success(`Copied ${filtered.length} hosts`);
   };
 
   const exportAs = (format: "txt" | "csv" | "json") => {
-    const base = `${domain}-subdomains`;
-    if (format === "txt") {
-      download(`${base}.txt`, filtered.map((s) => s.host).join("\n"));
-    } else if (format === "csv") {
-      const rows = [
-        "host,first_seen_at,last_seen_at,is_active",
-        ...filtered.map(
-          (s) => `${s.host},${s.first_seen_at},${s.last_seen_at},${s.is_active}`,
-        ),
-      ];
-      download(`${base}.csv`, rows.join("\n"), "text/csv");
-    } else {
-      download(`${base}.json`, JSON.stringify(filtered, null, 2), "application/json");
-    }
-    toast.success(`Exported ${filtered.length} hosts`);
+    window.location.href = exportUrl(format);
+    toast.success(`Exporting ${filteredTotal.toLocaleString()} hosts as ${format}`);
   };
 
   return (
@@ -174,8 +182,8 @@ function DomainDetail() {
         )}
 
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          <Stat label="Total subdomains" value={all.length.toLocaleString()} />
-          <Stat label="New (24h)" value={newCount.toLocaleString()} />
+          <Stat label="Total subdomains" value={(stats?.total ?? row?.total_subdomains ?? 0).toLocaleString()} />
+          <Stat label="New (24h)" value={(stats?.new_24h ?? 0).toLocaleString()} />
           <Stat
             label="New last scan"
             value={(row?.new_subdomains_last_scan ?? 0).toLocaleString()}
@@ -223,7 +231,8 @@ function DomainDetail() {
         </div>
 
         <p className="mt-3 text-xs text-muted-foreground">
-          Showing {filtered.length.toLocaleString()} of {all.length.toLocaleString()} hosts
+          Page {(page + 1).toLocaleString()} of {totalPages.toLocaleString()} ·{" "}
+          {filteredTotal.toLocaleString()} hosts match
         </p>
 
         <div className="mt-3 overflow-hidden rounded-lg border border-border">
@@ -237,7 +246,7 @@ function DomainDetail() {
               </tr>
             </thead>
             <tbody>
-              {filtered.slice(0, 500).map((s) => (
+              {rows.map((s) => (
                 <tr key={s.id} className="border-t border-border">
                   <td className="px-5 py-2.5 font-mono">
                     {s.host}
@@ -266,7 +275,7 @@ function DomainDetail() {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {rows.length === 0 && (
                 <tr>
                   <td className="px-5 py-8 text-center text-muted-foreground" colSpan={4}>
                     {isLoading ? "Loading…" : "No subdomains match this filter."}
@@ -276,11 +285,28 @@ function DomainDetail() {
             </tbody>
           </table>
         </div>
-        {filtered.length > 500 && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Table preview limited to 500 rows — copy or export to get all{" "}
-            {filtered.length.toLocaleString()}.
-          </p>
+        {filteredTotal > SUBS_PAGE_SIZE && (
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="label-mono rounded-full border border-border px-4 py-1.5 transition-colors hover:bg-accent disabled:opacity-40"
+            >
+              Prev
+            </button>
+            <span className="label-mono text-muted-foreground">
+              {(page * SUBS_PAGE_SIZE + 1).toLocaleString()}–
+              {Math.min((page + 1) * SUBS_PAGE_SIZE, filteredTotal).toLocaleString()} of{" "}
+              {filteredTotal.toLocaleString()}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              className="label-mono rounded-full border border-border px-4 py-1.5 transition-colors hover:bg-accent disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
         )}
 
         <h2 className="mt-12 text-2xl font-bold">Scan history</h2>

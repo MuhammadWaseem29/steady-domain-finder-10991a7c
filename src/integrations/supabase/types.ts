@@ -289,6 +289,38 @@ export type Database = {
           total_domains: number
         }[]
       }
+      domain_subdomain_stats: {
+        Args: { _domain_id: string }
+        Returns: {
+          active: number
+          inactive: number
+          latest_seen: string
+          new_24h: number
+          new_7d: number
+          total: number
+        }[]
+      }
+      domain_subdomains_count: {
+        Args: { _domain_id: string; _filter?: string; _search?: string }
+        Returns: number
+      }
+      domain_subdomains_page: {
+        Args: {
+          _domain_id: string
+          _filter?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+        }
+        Returns: {
+          first_seen_at: string
+          host: string
+          id: string
+          is_active: boolean
+          label: string
+          last_seen_at: string
+        }[]
+      }
       ingest_chunk_with_scan: {
         Args: {
           _domain_id: string

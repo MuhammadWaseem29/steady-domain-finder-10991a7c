@@ -272,28 +272,88 @@ export const domainQuery = (domain: string) =>
     refetchInterval: 60_000,
   });
 
-export const subdomainsQuery = (domainId: string | undefined) =>
+export type DomainSubStats = {
+  total: number;
+  new_24h: number;
+  new_7d: number;
+  active: number;
+  inactive: number;
+  latest_seen: string | null;
+};
+
+export const domainStatsQuery = (domainId: string | undefined) =>
   queryOptions({
-    queryKey: ["subdomains", domainId],
+    queryKey: ["domain-sub-stats", domainId],
     enabled: Boolean(domainId),
-    queryFn: async (): Promise<SubdomainRow[]> => {
-      const all: SubdomainRow[] = [];
-      const pageSize = 1000;
-      for (let page = 0; page < 60; page++) {
-        const { data, error } = await supabase
-          .from("subdomains")
-          .select("id, host, label, first_seen_at, last_seen_at, is_active")
-          .eq("domain_id", domainId!)
-          .order("first_seen_at", { ascending: false })
-          .range(page * pageSize, page * pageSize + pageSize - 1);
-        if (error) throw new Error(error.message);
-        all.push(...(data ?? []));
-        if (!data || data.length < pageSize) break;
-      }
-      return all;
+    queryFn: async (): Promise<DomainSubStats> => {
+      const { data, error } = await supabase.rpc("domain_subdomain_stats", {
+        _domain_id: domainId!,
+      });
+      if (error) throw new Error(error.message);
+      const row = (data ?? [])[0] as DomainSubStats | undefined;
+      return {
+        total: Number(row?.total ?? 0),
+        new_24h: Number(row?.new_24h ?? 0),
+        new_7d: Number(row?.new_7d ?? 0),
+        active: Number(row?.active ?? 0),
+        inactive: Number(row?.inactive ?? 0),
+        latest_seen: row?.latest_seen ?? null,
+      };
     },
     refetchInterval: 60_000,
   });
+
+export const SUBS_PAGE_SIZE = 100;
+
+export const domainSubdomainsPageQuery = (
+  domainId: string | undefined,
+  search: string,
+  filter: string,
+  page: number,
+) =>
+  queryOptions({
+    queryKey: ["domain-subs-page", domainId, search, filter, page],
+    enabled: Boolean(domainId),
+    queryFn: async (): Promise<SubdomainRow[]> => {
+      const term = search.trim();
+      const { data, error } = await supabase.rpc("domain_subdomains_page", {
+        _domain_id: domainId!,
+        _filter: filter,
+        _limit: SUBS_PAGE_SIZE,
+        _offset: page * SUBS_PAGE_SIZE,
+        ...(term ? { _search: term } : {}),
+      });
+
+      if (error) throw new Error(error.message);
+      return (data ?? []) as SubdomainRow[];
+    },
+    placeholderData: (prev) => prev,
+    refetchInterval: 60_000,
+  });
+
+export const domainSubCountQuery = (
+  domainId: string | undefined,
+  search: string,
+  filter: string,
+) =>
+  queryOptions({
+    queryKey: ["domain-subs-count", domainId, search, filter],
+    enabled: Boolean(domainId),
+    queryFn: async (): Promise<number> => {
+      const term = search.trim();
+      const { data, error } = await supabase.rpc("domain_subdomains_count", {
+        _domain_id: domainId!,
+        _filter: filter,
+        ...(term ? { _search: term } : {}),
+      });
+      if (error) throw new Error(error.message);
+      return Number(data ?? 0);
+    },
+    placeholderData: (prev) => prev,
+    staleTime: 60_000,
+  });
+
+
 
 export const scansQuery = (domainId: string | undefined) =>
   queryOptions({
