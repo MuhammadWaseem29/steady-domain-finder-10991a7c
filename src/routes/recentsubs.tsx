@@ -192,16 +192,14 @@ function RecentSubsPage() {
   const hours = UPDATE_RANGES[range].hours;
   const chartRange = CHART_RANGE[range];
 
-  const overview = useQuery(recentSubsOverviewQuery(hours));
-  const windows = useQuery(windowCountsQuery);
-  const series = useQuery(discoveryTimeseriesQuery(chartRange));
-  const platforms = useQuery(platformUpdatesQuery(range));
-  const topDomains = useQuery(topDomainsQuery(chartRange, 12));
-  const totalNew = useQuery(newSubsCountQuery(hours));
-  const prevCount = useQuery(newSubsPreviousCountQuery(hours));
-  const heatmap = useQuery(heatmapQuery(Math.max(hours, 24 * 7)));
-  const labels = useQuery(labelBreakdownQuery(hours, 14));
-  const scanStats = useQuery(scanTimeseriesQuery(chartRange));
+  const analytics = useQuery({
+    queryKey: ["recentsubs-analytics", hours, RANGES[chartRange].bucket],
+    queryFn: () =>
+      getRecentSubsAnalytics({ data: { hours, bucket: RANGES[chartRange].bucket } }),
+    refetchInterval: 60_000,
+  });
+  const a = analytics.data;
+  const loading = analytics.isLoading;
 
   const feed = useInfiniteQuery(newSubsInfiniteOptions(hours));
 
