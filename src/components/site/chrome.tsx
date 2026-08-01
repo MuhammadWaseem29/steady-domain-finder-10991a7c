@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/site/theme-toggle";
+import { useSession, displayNameOf } from "@/lib/use-session";
 import {
   CountUp,
   EASE_SIGNATURE,
@@ -69,18 +70,40 @@ export function SiteHeader() {
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
-          <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} transition={springSnappy}>
-            <Link
-              to="/dashboard"
-              className="inline-flex rounded-full border border-border px-4 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              Get Started
-            </Link>
-          </motion.div>
+          <HeaderAccount />
         </div>
       </div>
       <ScrollProgress />
     </motion.header>
+  );
+}
+
+function HeaderAccount() {
+  const { user, loading } = useSession();
+
+  if (loading) {
+    return <span className="h-8 w-24 animate-pulse rounded-full bg-muted" aria-hidden />;
+  }
+
+  return (
+    <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} transition={springSnappy}>
+      {user ? (
+        <Link
+          to="/account"
+          className="inline-flex max-w-[180px] items-center gap-2 truncate rounded-full border border-border px-4 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+        >
+          <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+          <span className="truncate">{displayNameOf(user)}</span>
+        </Link>
+      ) : (
+        <Link
+          to="/auth"
+          className="inline-flex rounded-full border border-border px-4 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+        >
+          Sign in
+        </Link>
+      )}
+    </motion.div>
   );
 }
 
@@ -204,5 +227,24 @@ export function Stat({
 export function SectionCard({ children }: { children: ReactNode }) {
   return (
     <Reveal className="rounded-lg border border-border bg-card p-5">{children}</Reveal>
+  );
+}
+
+/** Banner shown on pages whose actions require a signed-in account. */
+export function SignInNotice() {
+  const { user, loading } = useSession();
+  if (loading || user) return null;
+  return (
+    <Reveal className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+      <span className="text-muted-foreground">
+        Browsing is public — sign in to trigger scans, manage programs and issue API keys.
+      </span>
+      <Link
+        to="/auth"
+        className="ml-auto rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+      >
+        Sign in
+      </Link>
+    </Reveal>
   );
 }

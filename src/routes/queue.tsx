@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Activity, Clock, Layers, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { SiteShell } from "@/components/site/chrome";
+import { SignInNotice } from "@/components/site/chrome";
 import { CountUp } from "@/components/site/motion";
 import { LiveAgo } from "@/components/site/live-time";
 import { cancelScanJob, listScanQueue, triggerFullRescan } from "@/lib/chaos.functions";
@@ -85,6 +86,7 @@ function QueuePage() {
 
   return (
     <SiteShell>
+      <SignInNotice />
       <div className="space-y-8 py-10">
         <div className="rounded-lg border border-border bg-card p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

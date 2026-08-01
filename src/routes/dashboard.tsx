@@ -21,6 +21,7 @@ import {
 
 import { AnimatePresence, motion } from "framer-motion";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { SignInNotice } from "@/components/site/chrome";
 import { LiveScanActivity } from "@/components/site/live-scans";
 import { CountUp, EASE_SIGNATURE, Skeleton, springSnappy } from "@/components/site/motion";
 import { DiscoveryAreaChart } from "@/components/site/charts";
@@ -160,6 +161,7 @@ function Dashboard() {
 
   return (
     <SiteShell>
+      <SignInNotice />
       <div className="mx-auto max-w-6xl px-5 py-12">
         <p className="label-mono text-muted-foreground">Dashboard</p>
         <h1 className="mt-2 text-4xl font-extrabold">Subdomain monitor</h1>
