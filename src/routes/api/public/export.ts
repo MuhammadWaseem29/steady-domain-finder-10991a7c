@@ -9,8 +9,12 @@ export const Route = createFileRoute("/api/public/export")({
         const url = new URL(request.url);
         const platform = url.searchParams.get("platform");
         const domain = url.searchParams.get("domain");
-        const scope = url.searchParams.get("scope") === "new" ? "new" : "all";
+        const rawScope = url.searchParams.get("scope");
+        const scope = rawScope === "new" || rawScope === "inactive" ? rawScope : "all";
         const hours = Number(url.searchParams.get("hours") ?? 24);
+        const search = (url.searchParams.get("search") ?? "").trim();
+        const rawFormat = url.searchParams.get("format");
+        const format = rawFormat === "csv" || rawFormat === "json" ? rawFormat : "txt";
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -46,6 +50,7 @@ export const Route = createFileRoute("/api/public/export")({
         }
 
         const encoder = new TextEncoder();
+        let wroteJson = false;
         const stream = new ReadableStream({
           async start(controller) {
             try {
@@ -53,10 +58,12 @@ export const Route = createFileRoute("/api/public/export")({
               for (let page = 0; page < 5000; page++) {
                 let q = supabaseAdmin
                   .from("subdomains")
-                  .select("host")
+                  .select("host, first_seen_at, last_seen_at, is_active")
                   .order("host", { ascending: true })
                   .range(from, from + PAGE - 1);
                 if (domainIds) q = q.in("domain_id", domainIds);
+                if (search) q = q.ilike("host", `%${search}%`);
+                if (scope === "inactive") q = q.eq("is_active", false);
                 if (scope === "new")
                   q = q.gte(
                     "first_seen_at",
@@ -65,7 +72,28 @@ export const Route = createFileRoute("/api/public/export")({
                 const { data, error } = await q;
                 if (error) throw new Error(error.message);
                 if (!data || data.length === 0) break;
-                controller.enqueue(encoder.encode(data.map((r) => r.host).join("\n") + "\n"));
+                if (format === "csv") {
+                  if (page === 0)
+                    controller.enqueue(
+                      encoder.encode("host,first_seen_at,last_seen_at,is_active\n"),
+                    );
+                  controller.enqueue(
+                    encoder.encode(
+                      data
+                        .map(
+                          (r) =>
+                            `${r.host},${r.first_seen_at},${r.last_seen_at},${r.is_active}`,
+                        )
+                        .join("\n") + "\n",
+                    ),
+                  );
+                } else if (format === "json") {
+                  const body = data.map((r) => JSON.stringify(r)).join(",\n");
+                  controller.enqueue(encoder.encode((page === 0 ? "[\n" : ",\n") + body));
+                  wroteJson = true;
+                } else {
+                  controller.enqueue(encoder.encode(data.map((r) => r.host).join("\n") + "\n"));
+                }
                 if (data.length < PAGE) break;
                 from += PAGE;
               }
@@ -74,6 +102,7 @@ export const Route = createFileRoute("/api/public/export")({
                 encoder.encode(`\n# export error: ${e instanceof Error ? e.message : e}\n`),
               );
             }
+            if (format === "json") controller.enqueue(encoder.encode(wroteJson ? "\n]\n" : "[]\n"));
             controller.close();
           },
         });
@@ -81,8 +110,13 @@ export const Route = createFileRoute("/api/public/export")({
         const name = domain ?? platform ?? "all";
         return new Response(stream, {
           headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-            "Content-Disposition": `attachment; filename="${name}-${scope}-subdomains.txt"`,
+            "Content-Type":
+              format === "json"
+                ? "application/json; charset=utf-8"
+                : format === "csv"
+                  ? "text/csv; charset=utf-8"
+                  : "text/plain; charset=utf-8",
+            "Content-Disposition": `attachment; filename="${name}-${scope}-subdomains.${format}"`,
           },
         });
       },
