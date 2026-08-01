@@ -69,14 +69,7 @@ export function SiteHeader() {
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
-          <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} transition={springSnappy}>
-            <Link
-              to="/dashboard"
-              className="inline-flex rounded-full border border-border px-4 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              Get Started
-            </Link>
-          </motion.div>
+          <HeaderAccount />
         </div>
       </div>
       <ScrollProgress />
