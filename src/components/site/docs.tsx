@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { SiteShell } from "./chrome";
+import { CopyButton } from "./api-console";
 
 const nav = [
   { to: "/docs/fetch-subdomains", label: "Fetch Subdomains" },
