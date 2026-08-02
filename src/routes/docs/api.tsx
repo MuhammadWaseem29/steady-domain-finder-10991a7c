@@ -1,12 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
 import { DocsLayout, DocSection, Param, Code } from "@/components/site/docs";
-import {
-  ApiConsole,
-  ApiTokenBar,
-  MethodBadge,
-  type ConsoleField,
-} from "@/components/site/api-console";
 
 export const Route = createFileRoute("/docs/api")({
   head: () => ({
@@ -15,55 +8,38 @@ export const Route = createFileRoute("/docs/api")({
       {
         name: "description",
         content:
-          "REST API reference with an interactive console: bearer token auth, domains, subdomains, new discoveries, platforms, scan history, scan triggers and bulk exports.",
+          "REST API reference for this Chaos monitor: bearer token auth, domains, subdomains, new discoveries, platforms, scan history, scan triggers and bulk exports.",
       },
       { property: "og:title", content: "Platform API v1 — Chaos Subdomain Monitor" },
       {
         property: "og:description",
-        content:
-          "Token-authenticated REST endpoints with a live try-it console and copyable curl for every call.",
+        content: "Token-authenticated REST endpoints for domains, subdomains, scans and exports.",
       },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ApiDocs,
 });
 
-const BASE = "https://chaos.thescope.top/api/v1";
+const BASE = "https://steady-domain-finder.lovable.app/api/v1";
 
 function Endpoint({
   method,
   path,
-  summary,
-  fields,
-  body,
   children,
 }: {
-  method: "GET" | "POST";
+  method: string;
   path: string;
-  summary: string;
-  fields?: ConsoleField[];
-  body?: string;
-  children?: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <MethodBadge method={method} />
+        <span className="label-mono rounded-full bg-primary px-2 py-0.5 text-primary-foreground">
+          {method}
+        </span>
         <code className="font-mono text-sm font-semibold text-foreground">{path}</code>
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">{summary}</p>
-      {children ? <div className="mt-3 space-y-3">{children}</div> : null}
-      <div className="mt-4">
-        <p className="label-mono mb-2 text-muted-foreground">Try it</p>
-        <ApiConsole
-          method={method}
-          path={path}
-          {...(fields ? { fields } : {})}
-          {...(body !== undefined ? { body } : {})}
-        />
-      </div>
+      <div className="mt-2 space-y-3">{children}</div>
     </div>
   );
 }
@@ -72,10 +48,9 @@ function ApiDocs() {
   return (
     <DocsLayout
       title="Platform API"
-      intro="Everything this monitor collects is available over a token-authenticated REST API — domains, subdomains, freshly discovered hosts, program stats, scan history, scan triggers and streaming bulk exports. Every endpoint below can be executed right here."
+      intro="Everything this monitor collects is available over a token-authenticated REST API — domains, subdomains, freshly discovered hosts, program stats, scan history, scan triggers and streaming bulk exports."
       sections={[
         { id: "authentication", label: "Authentication" },
-        { id: "console", label: "Try it console" },
         { id: "conventions", label: "Conventions" },
         { id: "domains", label: "Domains" },
         { id: "subdomains", label: "Subdomains" },
@@ -108,19 +83,6 @@ function ApiDocs() {
         </p>
       </DocSection>
 
-      <DocSection id="console" title="Try it console">
-        <p>
-          Paste a token once and every endpoint below becomes executable — fill the parameters, hit{" "}
-          <strong className="text-foreground">Send request</strong>, and copy the generated curl or
-          the JSON response.
-        </p>
-        <ApiTokenBar />
-        <p>
-          Requests run from your browser against this site&apos;s origin, so the response you see is
-          exactly what your integration will get.
-        </p>
-      </DocSection>
-
       <DocSection id="conventions" title="Conventions">
         <p>
           Every response is JSON shaped as{" "}
@@ -137,60 +99,42 @@ function ApiDocs() {
       </DocSection>
 
       <DocSection id="domains" title="Domains">
-        <Endpoint
-          method="GET"
-          path="/domains"
-          summary="List tracked root domains with counts and last-scan state."
-          fields={[
-            { name: "search", placeholder: "vodafone" },
-            { name: "platform", placeholder: "hackerone" },
-            { name: "limit", value: "50", placeholder: "1–1000" },
-            { name: "offset", placeholder: "0" },
-          ]}
-        >
+        <Endpoint method="GET" path="/domains">
+          <p>
+            List tracked root domains. Query: <code className="font-mono">search</code>,{" "}
+            <code className="font-mono">platform</code> (slug), <code className="font-mono">limit</code>{" "}
+            (max 1000), <code className="font-mono">offset</code>.
+          </p>
           <Code>{`curl "${BASE}/domains?platform=hackerone&limit=50" \\
   -H "Authorization: Bearer $CHAOS_TOKEN"`}</Code>
         </Endpoint>
-
-        <Endpoint
-          method="GET"
-          path="/domains/{domain}"
-          summary="Single domain with live counts (total, new 24h / 7d, active, inactive)."
-          fields={[{ name: "domain", in: "path", value: "lovable.app" }]}
-        >
+        <Endpoint method="GET" path="/domains/{domain}">
+          <p>Single domain with live counts (total, new 24h / 7d, active, inactive).</p>
           <Code>{`curl "${BASE}/domains/lovable.app" -H "Authorization: Bearer $CHAOS_TOKEN"`}</Code>
         </Endpoint>
-
-        <Endpoint
-          method="GET"
-          path="/domains/{domain}/subdomains"
-          summary="Paged hosts for one domain, newest first."
-          fields={[
-            { name: "domain", in: "path", value: "lovable.app" },
-            { name: "filter", placeholder: "all | new | inactive" },
-            { name: "search", placeholder: "api" },
-            { name: "limit", value: "100", placeholder: "1–1000" },
-            { name: "offset", placeholder: "0" },
-          ]}
-        >
+        <Endpoint method="GET" path="/domains/{domain}/subdomains">
+          <p>
+            Paged hosts, newest first. Query: <code className="font-mono">filter</code> (
+            <code className="font-mono">all</code> | <code className="font-mono">new</code> |{" "}
+            <code className="font-mono">inactive</code>), <code className="font-mono">search</code>,{" "}
+            <code className="font-mono">limit</code> (max 1000), <code className="font-mono">offset</code>.
+          </p>
           <Code>{`curl "${BASE}/domains/lovable.app/subdomains?filter=new&limit=200" \\
   -H "Authorization: Bearer $CHAOS_TOKEN"`}</Code>
         </Endpoint>
       </DocSection>
 
       <DocSection id="subdomains" title="Subdomains">
-        <Endpoint
-          method="GET"
-          path="/subdomains/new"
-          summary="Every newly discovered host across all programs. Page with meta.next_cursor."
-          fields={[
-            { name: "hours", value: "1", placeholder: "24" },
-            { name: "since", placeholder: "2026-08-01T00:00:00Z" },
-            { name: "limit", value: "100", placeholder: "1–2000" },
-            { name: "before_ts", placeholder: "cursor timestamp" },
-            { name: "before_id", placeholder: "cursor id" },
-          ]}
-        >
+        <Endpoint method="GET" path="/subdomains/new">
+          <p>
+            Every newly discovered host across all programs. Query:{" "}
+            <code className="font-mono">hours</code> (default 24) or{" "}
+            <code className="font-mono">since</code>, <code className="font-mono">limit</code> (max
+            2000). Page with the returned{" "}
+            <code className="font-mono">meta.next_cursor</code> values.
+          </p>
+          <Code>{`curl "${BASE}/subdomains/new?hours=1&limit=1000" \\
+  -H "Authorization: Bearer $CHAOS_TOKEN"`}</Code>
           <Code>{`{
   "data": [
     { "host": "vpn-new.example.com", "domain": "example.com", "first_seen_at": "2026-08-01T12:04:11Z" }
@@ -201,66 +145,54 @@ function ApiDocs() {
       </DocSection>
 
       <DocSection id="platforms" title="Platforms">
-        <Endpoint
-          method="GET"
-          path="/platforms"
-          summary="Programs with domain counts, subdomain totals and 24h discoveries."
-        />
-        <Endpoint
-          method="GET"
-          path="/platforms/{slug}/domains"
-          summary="Domains belonging to one program."
-          fields={[
-            { name: "slug", in: "path", value: "bugcrowd" },
-            { name: "limit", value: "100", placeholder: "1–1000" },
-            { name: "offset", placeholder: "0" },
-          ]}
-        />
+        <Endpoint method="GET" path="/platforms">
+          <p>Programs with domain counts, subdomain totals and 24h discoveries.</p>
+        </Endpoint>
+        <Endpoint method="GET" path="/platforms/{slug}/domains">
+          <p>
+            Domains belonging to one program. Query: <code className="font-mono">limit</code>,{" "}
+            <code className="font-mono">offset</code>.
+          </p>
+          <Code>{`curl "${BASE}/platforms/bugcrowd/domains?limit=500" \\
+  -H "Authorization: Bearer $CHAOS_TOKEN"`}</Code>
+        </Endpoint>
       </DocSection>
 
       <DocSection id="scans" title="Scans">
-        <Endpoint
-          method="GET"
-          path="/scans"
-          summary="Scan history, newest first."
-          fields={[
-            { name: "domain", placeholder: "lovable.app" },
-            { name: "limit", value: "20", placeholder: "1–500" },
-            { name: "offset", placeholder: "0" },
-          ]}
-        />
-        <Endpoint
-          method="POST"
-          path="/scans"
-          summary="Queue an immediate re-scan of one domain. Returns 202; big programs continue in the background."
-          body={`{ "domain": "lovable.app" }`}
-        >
+        <Endpoint method="GET" path="/scans">
+          <p>
+            Scan history, newest first. Query: <code className="font-mono">domain</code>,{" "}
+            <code className="font-mono">limit</code> (max 500), <code className="font-mono">offset</code>.
+          </p>
+        </Endpoint>
+        <Endpoint method="POST" path="/scans">
+          <p>
+            Queue an immediate re-scan of one domain. Returns{" "}
+            <code className="font-mono">202</code> with the job status; big programs continue in the
+            background.
+          </p>
           <Code>{`curl -X POST "${BASE}/scans" \\
   -H "Authorization: Bearer $CHAOS_TOKEN" \\
   -H "Content-Type: application/json" \\
   -d '{"domain":"lovable.app"}'`}</Code>
         </Endpoint>
-        <Endpoint
-          method="POST"
-          path="/scans/rescan-all"
-          summary="Mark every enabled domain as due, kicking off a full sweep on the next worker tick."
-        />
+        <Endpoint method="POST" path="/scans/rescan-all">
+          <p>Mark every enabled domain as due, kicking off a full sweep on the next worker tick.</p>
+          <Code>{`curl -X POST "${BASE}/scans/rescan-all" -H "Authorization: Bearer $CHAOS_TOKEN"`}</Code>
+        </Endpoint>
       </DocSection>
 
       <DocSection id="export" title="Export">
-        <Endpoint
-          method="GET"
-          path="/export"
-          summary="Streaming bulk export of hosts — handles 100k+ rows."
-          fields={[
-            { name: "platform", placeholder: "bugcrowd" },
-            { name: "domain", placeholder: "lovable.app" },
-            { name: "scope", placeholder: "all | new | inactive" },
-            { name: "hours", placeholder: "24" },
-            { name: "search", placeholder: "api" },
-            { name: "format", value: "txt", placeholder: "txt | csv | json" },
-          ]}
-        >
+        <Endpoint method="GET" path="/export">
+          <p>
+            Streaming bulk export of hosts. Query: <code className="font-mono">domain</code> or{" "}
+            <code className="font-mono">platform</code>, <code className="font-mono">scope</code> (
+            <code className="font-mono">all</code> | <code className="font-mono">new</code> |{" "}
+            <code className="font-mono">inactive</code>), <code className="font-mono">hours</code>,{" "}
+            <code className="font-mono">search</code>, <code className="font-mono">format</code> (
+            <code className="font-mono">txt</code> | <code className="font-mono">csv</code> |{" "}
+            <code className="font-mono">json</code>). Handles 100k+ hosts.
+          </p>
           <Code>{`curl "${BASE}/export?platform=bugcrowd&scope=new&hours=24&format=txt" \\
   -H "Authorization: Bearer $CHAOS_TOKEN" -o new-hosts.txt`}</Code>
         </Endpoint>

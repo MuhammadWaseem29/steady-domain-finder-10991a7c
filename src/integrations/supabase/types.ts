@@ -133,33 +133,6 @@ export type Database = {
           },
         ]
       }
-      live_hosts: {
-        Row: {
-          created_at: string
-          host: string
-          id: string
-          note: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          host: string
-          id?: string
-          note?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          host?: string
-          id?: string
-          note?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       platforms: {
         Row: {
           color: string

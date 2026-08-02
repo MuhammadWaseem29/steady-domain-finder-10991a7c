@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as LiveRouteImport } from './routes/live'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as QueueRouteImport } from './routes/queue'
@@ -48,11 +47,6 @@ const AuthRoute = AuthRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiveRoute = LiveRouteImport.update({
-  id: '/live',
-  path: '/live',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewRoute = NewRouteImport.update({
@@ -136,7 +130,6 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
-  '/live': typeof LiveRoute
   '/new': typeof NewRoute
   '/programs': typeof ProgramsRoute
   '/queue': typeof QueueRoute
@@ -158,7 +151,6 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
-  '/live': typeof LiveRoute
   '/new': typeof NewRoute
   '/programs': typeof ProgramsRoute
   '/queue': typeof QueueRoute
@@ -181,7 +173,6 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
-  '/live': typeof LiveRoute
   '/new': typeof NewRoute
   '/programs': typeof ProgramsRoute
   '/queue': typeof QueueRoute
@@ -205,7 +196,6 @@ export interface FileRouteTypes {
     | '/account'
     | '/auth'
     | '/dashboard'
-    | '/live'
     | '/new'
     | '/programs'
     | '/queue'
@@ -227,7 +217,6 @@ export interface FileRouteTypes {
     | '/account'
     | '/auth'
     | '/dashboard'
-    | '/live'
     | '/new'
     | '/programs'
     | '/queue'
@@ -249,7 +238,6 @@ export interface FileRouteTypes {
     | '/account'
     | '/auth'
     | '/dashboard'
-    | '/live'
     | '/new'
     | '/programs'
     | '/queue'
@@ -272,7 +260,6 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
-  LiveRoute: typeof LiveRoute
   NewRoute: typeof NewRoute
   ProgramsRoute: typeof ProgramsRoute
   QueueRoute: typeof QueueRoute
@@ -318,13 +305,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live': {
-      id: '/live'
-      path: '/live'
-      fullPath: '/live'
-      preLoaderRoute: typeof LiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new': {
@@ -440,7 +420,6 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
-  LiveRoute: LiveRoute,
   NewRoute: NewRoute,
   ProgramsRoute: ProgramsRoute,
   QueueRoute: QueueRoute,
