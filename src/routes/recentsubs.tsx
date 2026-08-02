@@ -658,9 +658,37 @@ function RecentSubsPage() {
                       ) : (
                         <span className="size-1.5 shrink-0 rounded-full bg-border" />
                       )}
-                      <span className="truncate font-mono text-xs">{row.host}</span>
+                      <a
+                        href={`https://${row.host}`}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="truncate font-mono text-xs transition-colors hover:text-[color:var(--color-chart-2)] hover:underline"
+                        title={`Open https://${row.host} in a new tab`}
+                      >
+                        {row.host}
+                      </a>
                     </span>
                     <span className="flex shrink-0 items-center gap-3">
+                      <span className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                        <a
+                          href={`https://${row.host}`}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="chip-mono rounded border border-border px-1.5 py-0.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                          aria-label={`Open ${row.host} over https in a new tab`}
+                        >
+                          https
+                        </a>
+                        <a
+                          href={`http://${row.host}`}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="chip-mono rounded border border-border px-1.5 py-0.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                          aria-label={`Open ${row.host} over http in a new tab`}
+                        >
+                          http
+                        </a>
+                      </span>
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(row.host);
