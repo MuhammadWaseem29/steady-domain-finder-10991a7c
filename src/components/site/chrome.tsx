@@ -16,6 +16,9 @@ const NAV = [
   { to: "/updates", label: "Updates" },
   { to: "/recentsubs", label: "Recent subs" },
   { to: "/new", label: "New subs" },
+  { to: "/live", label: "Live" },
+
+
 
   { to: "/stats", label: "Stats" },
   { to: "/queue", label: "Queue" },
