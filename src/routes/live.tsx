@@ -330,7 +330,10 @@ function LivePage() {
               </GhostButton>
               <GhostButton
                 onClick={() => {
-                  if (!rows.length) return toast.error("Nothing to clear");
+                  if (!rows.length) {
+                    toast.error("Nothing to clear");
+                    return;
+                  }
                   if (confirm(`Delete all ${rows.length} saved hosts?`)) clearMutation.mutate();
                 }}
               >
