@@ -109,8 +109,13 @@ export function Param({
 
 export function Code({ children }: { children: string }) {
   return (
-    <pre className="overflow-x-auto rounded-lg bg-primary p-4 font-mono text-[13px] leading-6 text-primary-foreground">
-      {children}
-    </pre>
+    <div className="group relative">
+      <div className="absolute right-2 top-2 opacity-0 transition group-hover:opacity-100">
+        <CopyButton text={children} />
+      </div>
+      <pre className="overflow-x-auto rounded-lg bg-primary p-4 font-mono text-[13px] leading-6 text-primary-foreground">
+        {children}
+      </pre>
+    </div>
   );
 }
