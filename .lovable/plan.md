@@ -1,56 +1,40 @@
-## Goal
+## 1. Professional API docs with an interactive "Try it" console
 
-Add accounts to the site and a real API so data can be pulled programmatically with a token. Browsing stays public; actions (scan now, full re-scan, add/edit/delete domains and programs, queue cancel) and API-key management require sign-in.
+Rework `/docs/api` into a proper reference page:
 
-## 1. Authentication
+- **Docs shell upgrade** (`src/components/site/docs.tsx`): add a copy-to-clipboard button on every code block, a `Method` badge palette (GET green / POST amber), and an anchor-linked section header.
+- **New `ApiConsole` component** (`src/components/site/api-console.tsx`):
+  - One console per endpoint, collapsed by default.
+  - Token field at the top of the page (stored in `sessionStorage`, never persisted to disk or sent anywhere but this API), shared by all consoles.
+  - Editable inputs for every path param (`{domain}`, `{slug}`) and query param (`limit`, `offset`, `search`, `platform`, `filter`, `hours`, `scope`, `format`), plus a JSON body box for the POST endpoints.
+  - Live-updating curl snippet that reflects the current inputs, with a one-click Copy.
+  - **Send** button → fetches `/api/public/v1/...` from the browser, shows status code, response time, and pretty-printed JSON (truncated with a "copy full response" action). Export endpoint shows a download link instead of dumping the body.
+  - Errors surface the API's `{ error: { code, message } }` shape.
+- **Docs content**: every endpoint gets purpose, auth requirement, full parameter table (`Param` rows), a sample response, and a live console. Add sections for rate/size notes, pagination + cursors, and a quick-start (create token → first call → export). Base URL selector (`/api/v1` vs `/api/public/v1`) drives the snippets. The base URL uses the current origin so the docs work on the custom domain too.
 
-- New public route `/auth` — single card with **Continue with Google** (managed broker) and email/password sign-in + sign-up tabs, styled to match the Chaos look.
-- Google provider gets enabled on the backend in the same step, so the first click works.
-- Profiles table (`profiles`: user id, email, display name, avatar) auto-created on signup by a trigger, so the header can show who's signed in.
-- Header changes: `Sign in` button when signed out; avatar/email menu with **Account** and **Sign out** when signed in.
-- Session listener wired once at the app root so the header and gated buttons react instantly to sign-in/out.
+## 2. Recent-subs feed: open hosts in a new tab
 
-## 2. Gating actions (site stays public)
+In `src/routes/recentsubs.tsx` (and the same row renderer used elsewhere in that page):
 
-Every page keeps working for anonymous visitors. These become sign-in-required, with an inline "Sign in to do this" prompt instead of a redirect:
+- Each host row keeps its monospace text but gains two small icon buttons on hover/right side: **https** and **http**, each opening `https://host` / `http://host` in a new tab (`target="_blank"`, `rel="noopener noreferrer nofollow"`).
+- Host text itself stays selectable/copyable; the existing copy-per-row action remains.
+- Same treatment applied to the grouped-by-domain view.
 
-- Dashboard: add/import domains, edit, delete, scan now
-- Programs: create/edit/delete program, per-domain actions
-- Queue: full re-scan, cancel job
-- Domain page: scan now
+## 3. New `/live` page
 
-Server-side each of those switches to an authenticated server function, so gating is enforced on the backend, not just hidden in the UI.
+A workspace for hosts you have manually verified as live.
 
-## 3. API tokens
+- Route `src/routes/live.tsx` with its own `head()` metadata, added to the header nav.
+- **Paste box**: paste any blob of text; it parses out hostnames (one per line, comma/space separated, strips `http(s)://`, ports, paths), de-dupes against what's already stored, and reports how many were added/skipped.
+- **List view**: search filter, sort (newest / A–Z / by root domain), per-row https/http open-in-new-tab buttons, per-row copy and delete, multi-select with bulk delete.
+- **Bulk tools**: Copy all, Copy filtered, Export as TXT / CSV / JSON, and Clear all (with confirm).
+- **Stats strip**: total live hosts, unique root domains, added today, last added time.
+- Optional note field per host (short label like "admin panel").
+- Styling and motion match the rest of the site (animated counters, staggered row entry, dark-mode tokens).
 
-- New `api_keys` table: owner, name, key prefix (shown in UI), hashed secret, created/last-used timestamps, revoked flag. Only the hash is stored; the full key `chs_live_…` is shown once at creation.
-- New **Account / API keys** page (`/account`): create a named key, copy it once, see prefix + last used, revoke.
+### Technical notes
 
-## 4. Public REST API
-
-Base: `https://steady-domain-finder.lovable.app/api/v1/…`, auth via `Authorization: Bearer chs_live_…`. JSON responses, consistent `{ data, meta }` envelope and clear error codes.
-
-Read endpoints:
-- `GET /api/v1/domains` — list with search, platform filter, paging
-- `GET /api/v1/domains/{domain}` — domain detail + counts
-- `GET /api/v1/domains/{domain}/subdomains` — paged hosts, filters `all|new|inactive`, search
-- `GET /api/v1/subdomains/new` — newly discovered hosts across everything, `since`/`window` param
-- `GET /api/v1/platforms` — program list with stats
-- `GET /api/v1/platforms/{slug}/domains`
-- `GET /api/v1/scans` — recent scan history, filterable by domain
-- `GET /api/v1/export` — streaming bulk export (txt/csv/json) with the same scope filters as the UI
-
-Write endpoints:
-- `POST /api/v1/scans` — queue a scan for a domain
-- `POST /api/v1/scans/rescan-all` — mark everything due
-
-All endpoints validate input, resolve the token to a user, stamp `last_used_at`, and never expose backend keys.
-
-## 5. Docs
-
-New `/docs/api` page in the existing docs layout: authentication, every endpoint with parameters, curl examples and sample JSON — matching the current docs styling. Header/footer links updated.
-
-## Technical notes
-
-- Tables `profiles` and `api_keys` get row-level security scoped to the owner, plus the required grants; the API routes live under `src/routes/api/v1/*` and verify the bearer token themselves (SHA-256 compare against the stored hash) before touching data with the service client.
-- Existing `/api/public/export` stays as-is for the in-app download buttons.
+- Storage: a new `live_hosts` table (host, note, added_at, user_id) with RLS so each signed-in owner sees only their own rows; reads/writes go through server functions using the authenticated Supabase client. If you are not signed in, the page prompts sign-in rather than silently storing locally.
+- The API console calls the existing `/api/public/v1/*` splat route — no backend changes needed; only the export endpoint is handled specially (link instead of inline body).
+- Token entered in the docs console is kept in memory/`sessionStorage` only and is never logged or stored server-side.
+- Host parsing and all inputs are validated with zod (max lengths, hostname regex) both client-side and in the server functions.
