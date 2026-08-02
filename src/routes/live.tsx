@@ -179,13 +179,19 @@ function LivePage() {
   }, [rows]);
 
   function copy(lines: string[], label: string) {
-    if (!lines.length) return toast.error("Nothing to copy");
+    if (!lines.length) {
+      toast.error("Nothing to copy");
+      return;
+    }
     void navigator.clipboard.writeText(lines.join("\n"));
     toast.success(`${lines.length.toLocaleString()} ${label} copied`);
   }
 
   function exportAs(format: "txt" | "csv" | "json") {
-    if (!filtered.length) return toast.error("Nothing to export");
+    if (!filtered.length) {
+      toast.error("Nothing to export");
+      return;
+    }
     if (format === "txt") {
       download("live-hosts.txt", filtered.map((r) => r.host).join("\n"));
     } else if (format === "csv") {
