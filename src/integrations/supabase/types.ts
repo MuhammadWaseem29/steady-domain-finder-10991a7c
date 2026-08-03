@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_subscriptions: {
+        Row: {
+          created_at: string
+          domain_ids: string[]
+          email: string
+          frequency: string
+          id: string
+          is_active: boolean
+          keywords: string[]
+          last_host_seen_at: string
+          last_sent_at: string | null
+          platform_ids: string[]
+          scope: string
+          sent_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          domain_ids?: string[]
+          email: string
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          last_host_seen_at?: string
+          last_sent_at?: string | null
+          platform_ids?: string[]
+          scope?: string
+          sent_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          domain_ids?: string[]
+          email?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          last_host_seen_at?: string
+          last_sent_at?: string | null
+          platform_ids?: string[]
+          scope?: string
+          sent_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string
