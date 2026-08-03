@@ -18,9 +18,11 @@ const NAV = [
   { to: "/new", label: "New subs" },
 
   { to: "/stats", label: "Stats" },
+  { to: "/alerts", label: "Alerts" },
   { to: "/queue", label: "Queue" },
   { to: "/dashboard", label: "Monitor" },
   { to: "/docs/fetch-subdomains", label: "Docs" },
+
 ] as const;
 
 export function SiteHeader() {
