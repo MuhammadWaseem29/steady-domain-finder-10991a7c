@@ -18,9 +18,11 @@ const NAV = [
   { to: "/new", label: "New subs" },
 
   { to: "/stats", label: "Stats" },
+  { to: "/alerts", label: "Alerts" },
   { to: "/queue", label: "Queue" },
   { to: "/dashboard", label: "Monitor" },
   { to: "/docs/fetch-subdomains", label: "Docs" },
+
 ] as const;
 
 export function SiteHeader() {
@@ -127,9 +129,13 @@ export function SiteFooter() {
           <Link to="/stats" className="story-link hover:text-foreground">
             Stats
           </Link>
+          <Link to="/alerts" className="story-link hover:text-foreground">
+            Alerts
+          </Link>
           <Link to="/docs/api-key" className="story-link hover:text-foreground">
             API key
           </Link>
+
         </div>
       </div>
     </footer>
