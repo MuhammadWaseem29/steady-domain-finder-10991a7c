@@ -32,11 +32,21 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
           _since: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
         });
 
+        // Email alerts for freshly discovered hosts, within the leftover budget.
+        let alerts: { processed: number; sent: number } = { processed: 0, sent: 0 };
+        try {
+          const { dispatchDueAlerts } = await import("@/lib/alerts.server");
+          alerts = await dispatchDueAlerts(Math.max(budgetMs - (Date.now() - started), 3000));
+        } catch (err) {
+          console.error("alert dispatch tick failed:", err);
+        }
+
         const scanned = results.length;
         const newCount = results.reduce((a, r) => a + r.newCount, 0);
         const errors = results.filter((r) => r.status === "error").length;
 
-        return Response.json({ ok: true, job, scanned, newCount, errors, reconciled });
+        return Response.json({ ok: true, job, scanned, newCount, errors, reconciled, alerts });
+
 
       },
     },
