@@ -233,14 +233,16 @@ function AlertsPage() {
                 {scope === "platforms" && (
                   <div className="flex flex-wrap gap-2">
                     {(platforms.data ?? []).map((p) => {
-                      const on = platformIds.includes(p.id);
+                      const on = platformIds.includes(p.platform_id);
                       return (
                         <button
-                          key={p.id}
+                          key={p.platform_id}
                           type="button"
                           onClick={() =>
                             setPlatformIds((prev) =>
-                              on ? prev.filter((x) => x !== p.id) : [...prev, p.id],
+                              on
+                                ? prev.filter((x) => x !== p.platform_id)
+                                : [...prev, p.platform_id],
                             )
                           }
                           className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
@@ -251,6 +253,7 @@ function AlertsPage() {
                         </button>
                       );
                     })}
+
                   </div>
                 )}
 
