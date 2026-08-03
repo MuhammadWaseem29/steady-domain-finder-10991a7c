@@ -129,9 +129,13 @@ export function SiteFooter() {
           <Link to="/stats" className="story-link hover:text-foreground">
             Stats
           </Link>
+          <Link to="/alerts" className="story-link hover:text-foreground">
+            Alerts
+          </Link>
           <Link to="/docs/api-key" className="story-link hover:text-foreground">
             API key
           </Link>
+
         </div>
       </div>
     </footer>
