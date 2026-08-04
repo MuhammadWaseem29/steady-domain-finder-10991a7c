@@ -180,6 +180,40 @@ function AlertsPage() {
               <Stat label="Hosts emailed" value={totalSent} index={2} />
             </div>
 
+            <Reveal className="mt-6 rounded-lg border border-border bg-card p-5">
+              <h2 className="text-sm font-semibold">Test email delivery</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Sends a sample digest with dummy hosts so you can confirm alerts land in your inbox.
+              </p>
+              <form
+                className="mt-3 flex flex-wrap gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const address = (testEmail || user?.email || "").trim();
+                  if (!address) return toast.error("Enter an email address");
+                  testMutation.mutate(address);
+                }}
+              >
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  placeholder={user?.email ?? "you@example.com"}
+                  className="min-w-[240px] flex-1 rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+                <button
+                  type="submit"
+                  disabled={testMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold transition-colors hover:bg-accent disabled:opacity-60"
+                >
+                  <Send className="size-4" />
+                  {testMutation.isPending ? "Sending…" : "Send test email"}
+                </button>
+              </form>
+            </Reveal>
+
+
+
             <Reveal className="mt-8 rounded-lg border border-border bg-card p-5">
               <h2 className="text-lg font-bold tracking-tight">New alert</h2>
 
