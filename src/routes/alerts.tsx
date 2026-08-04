@@ -190,7 +190,10 @@ function AlertsPage() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   const address = (testEmail || user?.email || "").trim();
-                  if (!address) return toast.error("Enter an email address");
+                  if (!address) {
+                    toast.error("Enter an email address");
+                    return;
+                  }
                   testMutation.mutate(address);
                 }}
               >
