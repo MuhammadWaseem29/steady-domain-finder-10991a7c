@@ -16,6 +16,7 @@ import {
   deleteAlertSubscription,
   listAlertSubscriptions,
   sendAlertNow,
+  sendTestAlertEmail,
   setAlertSubscriptionActive,
 } from "@/lib/alerts.functions";
 
@@ -52,8 +53,10 @@ function AlertsPage() {
   const toggle = useServerFn(setAlertSubscriptionActive);
   const remove = useServerFn(deleteAlertSubscription);
   const sendNow = useServerFn(sendAlertNow);
+  const sendTest = useServerFn(sendTestAlertEmail);
 
   const [email, setEmail] = useState("");
+  const [testEmail, setTestEmail] = useState("");
   const [frequency, setFrequency] = useState<Frequency>("daily");
   const [scope, setScope] = useState<Scope>("all");
   const [platformIds, setPlatformIds] = useState<string[]>([]);
