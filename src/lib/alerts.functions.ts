@@ -118,3 +118,14 @@ export const sendAlertNow = createServerFn({ method: "POST" })
     const { dispatchSubscription } = await import("@/lib/alerts.server");
     return dispatchSubscription(row as never, { force: true });
   });
+
+/** Sends a sample digest to any address so users can verify email delivery. */
+export const sendTestAlertEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ email: z.string().trim().email() }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { sendTestAlertEmailTo } = await import("@/lib/alerts-email.server");
+    return sendTestAlertEmailTo(data.email);
+  });

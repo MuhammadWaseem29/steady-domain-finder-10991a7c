@@ -16,6 +16,7 @@ import {
   deleteAlertSubscription,
   listAlertSubscriptions,
   sendAlertNow,
+  sendTestAlertEmail,
   setAlertSubscriptionActive,
 } from "@/lib/alerts.functions";
 
@@ -52,8 +53,10 @@ function AlertsPage() {
   const toggle = useServerFn(setAlertSubscriptionActive);
   const remove = useServerFn(deleteAlertSubscription);
   const sendNow = useServerFn(sendAlertNow);
+  const sendTest = useServerFn(sendTestAlertEmail);
 
   const [email, setEmail] = useState("");
+  const [testEmail, setTestEmail] = useState("");
   const [frequency, setFrequency] = useState<Frequency>("daily");
   const [scope, setScope] = useState<Scope>("all");
   const [platformIds, setPlatformIds] = useState<string[]>([]);
@@ -126,9 +129,19 @@ function AlertsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const testMutation = useMutation({
+    mutationFn: (address: string) => sendTest({ data: { email: address } }),
+    onSuccess: (res) => {
+      if (res.sent) toast.success("Test email sent — check the inbox (and spam)");
+      else toast.error(res.reason ?? "Test email was not sent");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const rows = subs.data ?? [];
   const activeCount = rows.filter((r) => r.is_active).length;
   const totalSent = rows.reduce((a, r) => a + Number(r.sent_count ?? 0), 0);
+
 
   return (
     <SiteShell>
@@ -166,6 +179,43 @@ function AlertsPage() {
               <Stat label="Total alerts" value={rows.length} index={1} />
               <Stat label="Hosts emailed" value={totalSent} index={2} />
             </div>
+
+            <Reveal className="mt-6 rounded-lg border border-border bg-card p-5">
+              <h2 className="text-sm font-semibold">Test email delivery</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Sends a sample digest with dummy hosts so you can confirm alerts land in your inbox.
+              </p>
+              <form
+                className="mt-3 flex flex-wrap gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const address = (testEmail || user?.email || "").trim();
+                  if (!address) {
+                    toast.error("Enter an email address");
+                    return;
+                  }
+                  testMutation.mutate(address);
+                }}
+              >
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  placeholder={user?.email ?? "you@example.com"}
+                  className="min-w-[240px] flex-1 rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+                <button
+                  type="submit"
+                  disabled={testMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold transition-colors hover:bg-accent disabled:opacity-60"
+                >
+                  <Send className="size-4" />
+                  {testMutation.isPending ? "Sending…" : "Send test email"}
+                </button>
+              </form>
+            </Reveal>
+
+
 
             <Reveal className="mt-8 rounded-lg border border-border bg-card p-5">
               <h2 className="text-lg font-bold tracking-tight">New alert</h2>
