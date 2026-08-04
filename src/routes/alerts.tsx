@@ -126,9 +126,19 @@ function AlertsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const testMutation = useMutation({
+    mutationFn: (address: string) => sendTest({ data: { email: address } }),
+    onSuccess: (res) => {
+      if (res.sent) toast.success("Test email sent — check the inbox (and spam)");
+      else toast.error(res.reason ?? "Test email was not sent");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const rows = subs.data ?? [];
   const activeCount = rows.filter((r) => r.is_active).length;
   const totalSent = rows.reduce((a, r) => a + Number(r.sent_count ?? 0), 0);
+
 
   return (
     <SiteShell>
