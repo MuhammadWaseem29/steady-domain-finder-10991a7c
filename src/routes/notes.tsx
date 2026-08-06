@@ -61,7 +61,14 @@ function NotesPage() {
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Something went wrong");
 
   const saveMutation = useMutation({
-    mutationFn: (input: Parameters<typeof upsert>[0]["data"]) => upsert({ data: input }),
+    mutationFn: (input: {
+      id?: string;
+      board: Board;
+      host: string;
+      scheme: "http" | "https" | "both";
+      body: string;
+      tags: string[];
+    }) => upsert({ data: input }),
     onSuccess: () => {
       toast.success("Saved");
       refresh();

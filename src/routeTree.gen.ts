@@ -15,6 +15,7 @@ import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as NewRouteImport } from './routes/new'
+import { Route as NotesRouteImport } from './routes/notes'
 import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as QueueRouteImport } from './routes/queue'
 import { Route as RecentsubsRouteImport } from './routes/recentsubs'
@@ -59,6 +60,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const NewRoute = NewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotesRoute = NotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProgramsRoute = ProgramsRouteImport.update({
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
+  '/notes': typeof NotesRoute
   '/programs': typeof ProgramsRoute
   '/queue': typeof QueueRoute
   '/recentsubs': typeof RecentsubsRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
+  '/notes': typeof NotesRoute
   '/programs': typeof ProgramsRoute
   '/queue': typeof QueueRoute
   '/recentsubs': typeof RecentsubsRoute
@@ -192,6 +200,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
+  '/notes': typeof NotesRoute
   '/programs': typeof ProgramsRoute
   '/queue': typeof QueueRoute
   '/recentsubs': typeof RecentsubsRoute
@@ -217,6 +226,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/new'
+    | '/notes'
     | '/programs'
     | '/queue'
     | '/recentsubs'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/new'
+    | '/notes'
     | '/programs'
     | '/queue'
     | '/recentsubs'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/new'
+    | '/notes'
     | '/programs'
     | '/queue'
     | '/recentsubs'
@@ -287,6 +299,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
   NewRoute: typeof NewRoute
+  NotesRoute: typeof NotesRoute
   ProgramsRoute: typeof ProgramsRoute
   QueueRoute: typeof QueueRoute
   RecentsubsRoute: typeof RecentsubsRoute
@@ -346,6 +359,13 @@ declare module '@tanstack/react-router' {
       path: '/new'
       fullPath: '/new'
       preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notes': {
+      id: '/notes'
+      path: '/notes'
+      fullPath: '/notes'
+      preLoaderRoute: typeof NotesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/programs': {
@@ -463,6 +483,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
   NewRoute: NewRoute,
+  NotesRoute: NotesRoute,
   ProgramsRoute: ProgramsRoute,
   QueueRoute: QueueRoute,
   RecentsubsRoute: RecentsubsRoute,
@@ -482,13 +503,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
