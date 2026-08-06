@@ -211,6 +211,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notes: {
+        Row: {
+          board: string
+          body: string
+          created_at: string
+          host: string | null
+          id: string
+          scheme: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          board?: string
+          body?: string
+          created_at?: string
+          host?: string | null
+          id?: string
+          scheme?: string
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          board?: string
+          body?: string
+          created_at?: string
+          host?: string | null
+          id?: string
+          scheme?: string
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platforms: {
         Row: {
           color: string
