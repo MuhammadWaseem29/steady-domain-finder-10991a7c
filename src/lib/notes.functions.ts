@@ -128,7 +128,7 @@ export const bulkAddNotes = createServerFn({ method: "POST" })
           tags: [] as string[],
         };
       })
-      .filter(Boolean) as Array<Record<string, unknown>>;
+      .filter((r): r is NonNullable<typeof r> => r !== null);
 
     if (!rows.length) return { added: 0 };
 
