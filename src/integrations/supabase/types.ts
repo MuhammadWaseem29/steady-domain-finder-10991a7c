@@ -74,6 +74,7 @@ export type Database = {
           last_used_at: string | null
           name: string
           revoked: boolean
+          scopes: string[]
           updated_at: string
           user_id: string
         }
@@ -85,6 +86,7 @@ export type Database = {
           last_used_at?: string | null
           name: string
           revoked?: boolean
+          scopes?: string[]
           updated_at?: string
           user_id: string
         }
@@ -96,10 +98,55 @@ export type Database = {
           last_used_at?: string | null
           name?: string
           revoked?: boolean
+          scopes?: string[]
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      api_request_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          id: string
+          key_id: string
+          method: string
+          path: string
+          request_id: string | null
+          status: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          key_id: string
+          method: string
+          path: string
+          request_id?: string | null
+          status: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          key_id?: string
+          method?: string
+          path?: string
+          request_id?: string | null
+          status?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_request_logs_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_stats: {
         Row: {
@@ -447,6 +494,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      api_rate_check: {
+        Args: { _key_id: string; _limit?: number }
+        Returns: {
+          allowed: boolean
+          reset_at: string
+          used: number
+        }[]
+      }
+      api_usage_summary: {
+        Args: { _user_id: string }
+        Returns: {
+          error_rate_24h: number
+          key_id: string
+          last_request_at: string
+          requests_1h: number
+          requests_24h: number
+          requests_7d: number
+        }[]
+      }
       bump_daily_stats: {
         Args: { _errors: number; _new: number }
         Returns: undefined
@@ -464,6 +530,14 @@ export type Database = {
         Returns: {
           due_domains: number
           total_domains: number
+        }[]
+      }
+      domain_new_subs: {
+        Args: { _domain_id: string; lim?: number; since: string }
+        Returns: {
+          first_seen_at: string
+          host: string
+          id: string
         }[]
       }
       domain_subdomain_stats: {
@@ -638,6 +712,16 @@ export type Database = {
           new_found: number
           scans: number
           ts: string
+        }[]
+      }
+      search_subdomains: {
+        Args: { lim?: number; off?: number; q: string }
+        Returns: {
+          domain: string
+          first_seen_at: string
+          host: string
+          id: string
+          is_active: boolean
         }[]
       }
       top_domains_by_new: {
