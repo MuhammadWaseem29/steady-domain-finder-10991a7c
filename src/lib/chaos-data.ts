@@ -755,8 +755,8 @@ export const chaosUpdatesPageQuery = (opts: {
     queryFn: async (): Promise<DomainUpdateRow[]> => {
       const { data, error } = await supabase.rpc("domain_updates_page", {
         _since: sinceIso(UPDATE_RANGES[opts.range].hours),
-        _search: opts.search.trim() || undefined,
-        _platform_id: opts.platformId ?? undefined,
+        ...(opts.search.trim() ? { _search: opts.search.trim() } : {}),
+        ...(opts.platformId ? { _platform_id: opts.platformId } : {}),
         _sort: opts.sort,
         _dir: opts.dir,
         _limit: UPDATES_PAGE_SIZE,
@@ -773,8 +773,8 @@ export const chaosUpdatesCountQuery = (search: string, platformId?: string | und
     queryKey: ["chaos-updates-count", search, platformId ?? "all"],
     queryFn: async (): Promise<number> => {
       const { data, error } = await supabase.rpc("domain_updates_count", {
-        _search: search.trim() || undefined,
-        _platform_id: platformId ?? undefined,
+        ...(search.trim() ? { _search: search.trim() } : {}),
+        ...(platformId ? { _platform_id: platformId } : {}),
       });
       if (error) throw new Error(error.message);
       return Number(data ?? 0);
