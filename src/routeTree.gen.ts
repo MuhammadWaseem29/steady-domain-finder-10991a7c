@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as Chaos_updatesRouteImport } from './routes/chaos_updates'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as NotesRouteImport } from './routes/notes'
@@ -50,6 +51,11 @@ const AlertsRoute = AlertsRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Chaos_updatesRoute = Chaos_updatesRouteImport.update({
+  id: '/chaos_updates',
+  path: '/chaos_updates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
+  '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
   '/notes': typeof NotesRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
+  '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
   '/notes': typeof NotesRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
+  '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
   '/new': typeof NewRoute
   '/notes': typeof NotesRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/alerts'
     | '/auth'
+    | '/chaos_updates'
     | '/dashboard'
     | '/new'
     | '/notes'
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/alerts'
     | '/auth'
+    | '/chaos_updates'
     | '/dashboard'
     | '/new'
     | '/notes'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/alerts'
     | '/auth'
+    | '/chaos_updates'
     | '/dashboard'
     | '/new'
     | '/notes'
@@ -297,6 +309,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AlertsRoute: typeof AlertsRoute
   AuthRoute: typeof AuthRoute
+  Chaos_updatesRoute: typeof Chaos_updatesRoute
   DashboardRoute: typeof DashboardRoute
   NewRoute: typeof NewRoute
   NotesRoute: typeof NotesRoute
@@ -345,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chaos_updates': {
+      id: '/chaos_updates'
+      path: '/chaos_updates'
+      fullPath: '/chaos_updates'
+      preLoaderRoute: typeof Chaos_updatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -481,6 +501,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AlertsRoute: AlertsRoute,
   AuthRoute: AuthRoute,
+  Chaos_updatesRoute: Chaos_updatesRoute,
   DashboardRoute: DashboardRoute,
   NewRoute: NewRoute,
   NotesRoute: NotesRoute,

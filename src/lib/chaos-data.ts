@@ -737,7 +737,7 @@ export const UPDATES_PAGE_SIZE = 50;
 export const chaosUpdatesPageQuery = (opts: {
   range: UpdateRangeKey;
   search: string;
-  platformId?: string;
+  platformId?: string | undefined;
   sort: UpdatesSort;
   dir: "asc" | "desc";
   page: number;
@@ -755,8 +755,8 @@ export const chaosUpdatesPageQuery = (opts: {
     queryFn: async (): Promise<DomainUpdateRow[]> => {
       const { data, error } = await supabase.rpc("domain_updates_page", {
         _since: sinceIso(UPDATE_RANGES[opts.range].hours),
-        _search: opts.search.trim() || null,
-        _platform_id: opts.platformId ?? null,
+        _search: opts.search.trim() || undefined,
+        _platform_id: opts.platformId ?? undefined,
         _sort: opts.sort,
         _dir: opts.dir,
         _limit: UPDATES_PAGE_SIZE,
@@ -768,13 +768,13 @@ export const chaosUpdatesPageQuery = (opts: {
     refetchInterval: 30_000,
   });
 
-export const chaosUpdatesCountQuery = (search: string, platformId?: string) =>
+export const chaosUpdatesCountQuery = (search: string, platformId?: string | undefined) =>
   queryOptions({
     queryKey: ["chaos-updates-count", search, platformId ?? "all"],
     queryFn: async (): Promise<number> => {
       const { data, error } = await supabase.rpc("domain_updates_count", {
-        _search: search.trim() || null,
-        _platform_id: platformId ?? null,
+        _search: search.trim() || undefined,
+        _platform_id: platformId ?? undefined,
       });
       if (error) throw new Error(error.message);
       return Number(data ?? 0);
