@@ -572,6 +572,33 @@ export type Database = {
           last_seen_at: string
         }[]
       }
+      domain_updates_count: {
+        Args: { _platform_id?: string; _search?: string }
+        Returns: number
+      }
+      domain_updates_page: {
+        Args: {
+          _dir?: string
+          _limit?: number
+          _offset?: number
+          _platform_id?: string
+          _search?: string
+          _since: string
+          _sort?: string
+        }
+        Returns: {
+          domain: string
+          id: string
+          last_scanned_at: string
+          last_seen: string
+          new_count: number
+          platform_color: string
+          platform_id: string
+          platform_name: string
+          platform_slug: string
+          total_subdomains: number
+        }[]
+      }
       ingest_chunk_with_scan: {
         Args: {
           _domain_id: string
