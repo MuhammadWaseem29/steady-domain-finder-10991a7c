@@ -713,3 +713,71 @@ export const isInteresting = (host: string) => {
   const h = host.toLowerCase();
   return INTERESTING_PATTERNS.some((p) => h.split(".").some((part) => part === p || part.startsWith(p)));
 };
+
+// ---------------------------------------------------------------------------
+// Chaos-style updates table (/chaos_updates)
+// ---------------------------------------------------------------------------
+
+export type DomainUpdateRow = {
+  id: string;
+  domain: string;
+  total_subdomains: number;
+  new_count: number;
+  last_seen: string | null;
+  last_scanned_at: string | null;
+  platform_id: string | null;
+  platform_slug: string | null;
+  platform_name: string | null;
+  platform_color: string | null;
+};
+
+export type UpdatesSort = "new" | "total" | "domain";
+export const UPDATES_PAGE_SIZE = 50;
+
+export const chaosUpdatesPageQuery = (opts: {
+  range: UpdateRangeKey;
+  search: string;
+  platformId?: string;
+  sort: UpdatesSort;
+  dir: "asc" | "desc";
+  page: number;
+}) =>
+  queryOptions({
+    queryKey: [
+      "chaos-updates",
+      opts.range,
+      opts.search,
+      opts.platformId ?? "all",
+      opts.sort,
+      opts.dir,
+      opts.page,
+    ],
+    queryFn: async (): Promise<DomainUpdateRow[]> => {
+      const { data, error } = await supabase.rpc("domain_updates_page", {
+        _since: sinceIso(UPDATE_RANGES[opts.range].hours),
+        _search: opts.search.trim() || null,
+        _platform_id: opts.platformId ?? null,
+        _sort: opts.sort,
+        _dir: opts.dir,
+        _limit: UPDATES_PAGE_SIZE,
+        _offset: opts.page * UPDATES_PAGE_SIZE,
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as DomainUpdateRow[];
+    },
+    refetchInterval: 30_000,
+  });
+
+export const chaosUpdatesCountQuery = (search: string, platformId?: string) =>
+  queryOptions({
+    queryKey: ["chaos-updates-count", search, platformId ?? "all"],
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc("domain_updates_count", {
+        _search: search.trim() || null,
+        _platform_id: platformId ?? null,
+      });
+      if (error) throw new Error(error.message);
+      return Number(data ?? 0);
+    },
+    refetchInterval: 60_000,
+  });
