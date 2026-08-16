@@ -9,23 +9,49 @@ export const Route = createFileRoute("/api/public/export")({
         const url = new URL(request.url);
         const platform = url.searchParams.get("platform");
         const domain = url.searchParams.get("domain");
+        const domainsParam = url.searchParams.get("domains");
         const rawScope = url.searchParams.get("scope");
         const scope = rawScope === "new" || rawScope === "inactive" ? rawScope : "all";
         const hours = Number(url.searchParams.get("hours") ?? 24);
+        const sinceParam = url.searchParams.get("since");
+        const untilParam = url.searchParams.get("until");
+        const keyword = (url.searchParams.get("keyword") ?? "").trim();
         const search = (url.searchParams.get("search") ?? "").trim();
         const rawFormat = url.searchParams.get("format");
         const format = rawFormat === "csv" || rawFormat === "json" ? rawFormat : "txt";
 
+        const sinceIso =
+          sinceParam && !Number.isNaN(Date.parse(sinceParam))
+            ? new Date(sinceParam).toISOString()
+            : new Date(Date.now() - (Number.isFinite(hours) ? hours : 24) * 3600_000).toISOString();
+        const untilIso =
+          untilParam && !Number.isNaN(Date.parse(untilParam))
+            ? new Date(untilParam).toISOString()
+            : null;
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         let domainIds: string[] | null = null;
-        if (domain) {
-          const { data } = await supabaseAdmin
-            .from("domains")
-            .select("id")
-            .eq("domain", domain.toLowerCase());
-          domainIds = (data ?? []).map((d) => d.id);
+        const wanted = domainsParam
+          ? domainsParam
+              .split(",")
+              .map((d) => d.trim().toLowerCase())
+              .filter(Boolean)
+          : domain
+            ? [domain.toLowerCase()]
+            : [];
+        if (wanted.length) {
+          const ids: string[] = [];
+          for (let i = 0; i < wanted.length; i += 100) {
+            const { data } = await supabaseAdmin
+              .from("domains")
+              .select("id")
+              .in("domain", wanted.slice(i, i + 100));
+            ids.push(...(data ?? []).map((d) => d.id));
+          }
+          domainIds = ids;
         } else if (platform) {
+
           const { data: p } = await supabaseAdmin
             .from("platforms")
             .select("id")
@@ -74,12 +100,13 @@ export const Route = createFileRoute("/api/public/export")({
                     .range(from, from + PAGE - 1);
                   if (ids) q = q.in("domain_id", ids);
                   if (search) q = q.ilike("host", `%${search}%`);
+                  if (keyword) q = q.ilike("host", `%${keyword}%`);
                   if (scope === "inactive") q = q.eq("is_active", false);
-                  if (scope === "new")
-                    q = q.gte(
-                      "first_seen_at",
-                      new Date(Date.now() - hours * 3600_000).toISOString(),
-                    );
+                  if (scope === "new") {
+                    q = q.gte("first_seen_at", sinceIso);
+                    if (untilIso) q = q.lte("first_seen_at", untilIso);
+                  }
+
                   const { data, error } = await q;
                   if (error) throw new Error(error.message || "database error");
                   if (!data || data.length === 0) break;
