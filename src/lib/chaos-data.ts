@@ -733,51 +733,169 @@ export type DomainUpdateRow = {
 
 export type UpdatesSort = "new" | "total" | "domain";
 export const UPDATES_PAGE_SIZE = 50;
+export const UPDATES_PAGE_SIZES = [25, 50, 100, 250];
 
-export const chaosUpdatesPageQuery = (opts: {
-  range: UpdateRangeKey;
+export const UPDATE_WINDOWS = {
+  "1h": { hours: 1, label: "1 hour" },
+  "6h": { hours: 6, label: "6 hours" },
+  "12h": { hours: 12, label: "12 hours" },
+  "24h": { hours: 24, label: "24 hours" },
+  "3d": { hours: 72, label: "3 days" },
+  "7d": { hours: 24 * 7, label: "7 days" },
+  "30d": { hours: 24 * 30, label: "30 days" },
+  "90d": { hours: 24 * 90, label: "90 days" },
+  "6mo": { hours: 24 * 182, label: "6 months" },
+} as const;
+
+export type UpdateWindowKey = keyof typeof UPDATE_WINDOWS | "custom";
+
+export type ResolvedWindow = {
+  since: string;
+  until: string | null;
+  hours: number;
+  label: string;
+};
+
+export const resolveWindow = (
+  win: UpdateWindowKey,
+  from?: string,
+  to?: string,
+): ResolvedWindow => {
+  if (win === "custom" && from && !Number.isNaN(Date.parse(from))) {
+    const since = new Date(from);
+    const until = to && !Number.isNaN(Date.parse(to)) ? new Date(to) : null;
+    const hours = Math.max(
+      1,
+      Math.round(((until?.getTime() ?? Date.now()) - since.getTime()) / 3_600_000),
+    );
+    return {
+      since: since.toISOString(),
+      until: until ? until.toISOString() : null,
+      hours,
+      label: `${since.toLocaleString()} → ${until ? until.toLocaleString() : "now"}`,
+    };
+  }
+  const preset = UPDATE_WINDOWS[(win === "custom" ? "24h" : win) as keyof typeof UPDATE_WINDOWS];
+  return {
+    since: new Date(Date.now() - preset.hours * 3_600_000).toISOString(),
+    until: null,
+    hours: preset.hours,
+    label: `Last ${preset.label}`,
+  };
+};
+
+export type UpdatesFilters = {
+  since: string;
   search: string;
   platformId?: string | undefined;
-  sort: UpdatesSort;
-  dir: "asc" | "desc";
-  page: number;
-}) =>
+  keyword: string;
+  onlyNew: boolean;
+};
+
+const filterArgs = (f: UpdatesFilters) => ({
+  ...(f.search.trim() ? { _search: f.search.trim() } : {}),
+  ...(f.platformId ? { _platform_id: f.platformId } : {}),
+  ...(f.keyword.trim() ? { _keyword: f.keyword.trim() } : {}),
+  _only_new: f.onlyNew,
+});
+
+const filterKey = (f: UpdatesFilters) => [
+  f.since,
+  f.search,
+  f.platformId ?? "all",
+  f.keyword,
+  f.onlyNew,
+];
+
+export const chaosUpdatesPageQuery = (
+  f: UpdatesFilters & {
+    sort: UpdatesSort;
+    dir: "asc" | "desc";
+    page: number;
+    pageSize: number;
+  },
+) =>
   queryOptions({
-    queryKey: [
-      "chaos-updates",
-      opts.range,
-      opts.search,
-      opts.platformId ?? "all",
-      opts.sort,
-      opts.dir,
-      opts.page,
-    ],
+    queryKey: ["chaos-updates", ...filterKey(f), f.sort, f.dir, f.page, f.pageSize],
     queryFn: async (): Promise<DomainUpdateRow[]> => {
       const { data, error } = await supabase.rpc("domain_updates_page", {
-        _since: sinceIso(UPDATE_RANGES[opts.range].hours),
-        ...(opts.search.trim() ? { _search: opts.search.trim() } : {}),
-        ...(opts.platformId ? { _platform_id: opts.platformId } : {}),
-        _sort: opts.sort,
-        _dir: opts.dir,
-        _limit: UPDATES_PAGE_SIZE,
-        _offset: opts.page * UPDATES_PAGE_SIZE,
+        _since: f.since,
+        ...filterArgs(f),
+        _sort: f.sort,
+        _dir: f.dir,
+        _limit: f.pageSize,
+        _offset: f.page * f.pageSize,
       });
       if (error) throw new Error(error.message);
       return (data ?? []) as unknown as DomainUpdateRow[];
     },
-    refetchInterval: 30_000,
   });
 
-export const chaosUpdatesCountQuery = (search: string, platformId?: string | undefined) =>
+export const chaosUpdatesCountQuery = (f: UpdatesFilters) =>
   queryOptions({
-    queryKey: ["chaos-updates-count", search, platformId ?? "all"],
+    queryKey: ["chaos-updates-count", ...filterKey(f)],
     queryFn: async (): Promise<number> => {
       const { data, error } = await supabase.rpc("domain_updates_count", {
-        ...(search.trim() ? { _search: search.trim() } : {}),
-        ...(platformId ? { _platform_id: platformId } : {}),
+        _since: f.since,
+        ...filterArgs(f),
       });
       if (error) throw new Error(error.message);
       return Number(data ?? 0);
     },
-    refetchInterval: 60_000,
   });
+
+export type UpdatesSummary = {
+  companies: number;
+  companies_with_new: number;
+  new_hosts: number;
+  total_subdomains: number;
+};
+
+export const chaosUpdatesSummaryQuery = (f: UpdatesFilters) =>
+  queryOptions({
+    queryKey: ["chaos-updates-summary", ...filterKey(f)],
+    queryFn: async (): Promise<UpdatesSummary> => {
+      const { data, error } = await supabase.rpc("domain_updates_summary", {
+        _since: f.since,
+        ...filterArgs(f),
+      });
+      if (error) throw new Error(error.message);
+      const row = (data as unknown as UpdatesSummary[] | null)?.[0];
+      return {
+        companies: Number(row?.companies ?? 0),
+        companies_with_new: Number(row?.companies_with_new ?? 0),
+        new_hosts: Number(row?.new_hosts ?? 0),
+        total_subdomains: Number(row?.total_subdomains ?? 0),
+      };
+    },
+  });
+
+export const domainNewSubsQuery = (domainId: string | undefined, since: string, limit = 50) =>
+  queryOptions({
+    queryKey: ["domain-new-subs", domainId, since, limit],
+    enabled: Boolean(domainId),
+    queryFn: async (): Promise<{ id: string; host: string; first_seen_at: string }[]> => {
+      const { data, error } = await supabase.rpc("domain_new_subs", {
+        _domain_id: domainId!,
+        since,
+        lim: limit,
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as { id: string; host: string; first_seen_at: string }[];
+    },
+  });
+
+export const updatesSparklineQuery = (since: string, hours: number) =>
+  queryOptions({
+    queryKey: ["updates-sparkline", since, hours],
+    queryFn: async (): Promise<{ ts: string; new_subdomains: number }[]> => {
+      const bucket: Bucket = hours <= 48 ? "hour" : hours <= 24 * 60 ? "day" : "week";
+      const { data, error } = await supabase.rpc("discovery_timeseries", { bucket, since });
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((r: { ts: string; new_subdomains: number }) => ({
+        ts: r.ts,
+        new_subdomains: Number(r.new_subdomains),
+      }));
+    },
+  });
+
