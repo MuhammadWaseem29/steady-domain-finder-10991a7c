@@ -100,12 +100,13 @@ export const Route = createFileRoute("/api/public/export")({
                     .range(from, from + PAGE - 1);
                   if (ids) q = q.in("domain_id", ids);
                   if (search) q = q.ilike("host", `%${search}%`);
+                  if (keyword) q = q.ilike("host", `%${keyword}%`);
                   if (scope === "inactive") q = q.eq("is_active", false);
-                  if (scope === "new")
-                    q = q.gte(
-                      "first_seen_at",
-                      new Date(Date.now() - hours * 3600_000).toISOString(),
-                    );
+                  if (scope === "new") {
+                    q = q.gte("first_seen_at", sinceIso);
+                    if (untilIso) q = q.lte("first_seen_at", untilIso);
+                  }
+
                   const { data, error } = await q;
                   if (error) throw new Error(error.message || "database error");
                   if (!data || data.length === 0) break;
