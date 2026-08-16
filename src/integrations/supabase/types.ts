@@ -573,14 +573,22 @@ export type Database = {
         }[]
       }
       domain_updates_count: {
-        Args: { _platform_id?: string; _search?: string }
+        Args: {
+          _keyword?: string
+          _only_new?: boolean
+          _platform_id?: string
+          _search?: string
+          _since?: string
+        }
         Returns: number
       }
       domain_updates_page: {
         Args: {
           _dir?: string
+          _keyword?: string
           _limit?: number
           _offset?: number
+          _only_new?: boolean
           _platform_id?: string
           _search?: string
           _since: string
@@ -596,6 +604,21 @@ export type Database = {
           platform_id: string
           platform_name: string
           platform_slug: string
+          total_subdomains: number
+        }[]
+      }
+      domain_updates_summary: {
+        Args: {
+          _keyword?: string
+          _only_new?: boolean
+          _platform_id?: string
+          _search?: string
+          _since: string
+        }
+        Returns: {
+          companies: number
+          companies_with_new: number
+          new_hosts: number
           total_subdomains: number
         }[]
       }
