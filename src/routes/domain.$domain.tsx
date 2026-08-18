@@ -209,6 +209,7 @@ function DomainDetail() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
+              aria-label="Filter hosts"
               placeholder="filter hosts…"
               className="w-56 rounded-full border border-input bg-background py-2 pr-4 pl-9 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
             />
