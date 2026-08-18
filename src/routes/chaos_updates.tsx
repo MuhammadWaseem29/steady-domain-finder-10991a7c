@@ -355,7 +355,7 @@ function ChaosUpdatesPage() {
         {(spark?.length ?? 0) > 1 && (
           <div className="mt-4 h-24 rounded-lg border border-border bg-card p-2">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={spark}>
+              <AreaChart data={spark ?? []}>
                 <defs>
                   <linearGradient id="updSpark" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.5} />
@@ -533,7 +533,15 @@ function ChaosUpdatesPage() {
           {/* platform chips */}
           <div className="flex flex-wrap gap-1.5 border-b border-border p-4">
             <button
-              onClick={() => set({ pf: undefined })}
+              onClick={() =>
+                navigate({
+                  search: (prev) => {
+                    const { pf, ...rest } = prev;
+                    return { ...rest, page: 0 };
+                  },
+                  replace: true,
+                })
+              }
               className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                 !s.pf
                   ? "border-foreground bg-foreground text-background"
