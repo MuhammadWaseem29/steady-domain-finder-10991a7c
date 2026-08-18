@@ -20,6 +20,7 @@ import { Route as NotesRouteImport } from './routes/notes'
 import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as QueueRouteImport } from './routes/queue'
 import { Route as RecentsubsRouteImport } from './routes/recentsubs'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as UpdatesRouteImport } from './routes/updates'
 import { Route as DocsApiRouteImport } from './routes/docs/api'
@@ -86,6 +87,11 @@ const QueueRoute = QueueRouteImport.update({
 const RecentsubsRoute = RecentsubsRouteImport.update({
   id: '/recentsubs',
   path: '/recentsubs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StatsRoute = StatsRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/programs': typeof ProgramsRoute
   '/queue': typeof QueueRoute
   '/recentsubs': typeof RecentsubsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
   '/docs/api': typeof DocsApiRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/programs': typeof ProgramsRoute
   '/queue': typeof QueueRoute
   '/recentsubs': typeof RecentsubsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
   '/docs/api': typeof DocsApiRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/programs': typeof ProgramsRoute
   '/queue': typeof QueueRoute
   '/recentsubs': typeof RecentsubsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
   '/docs/api': typeof DocsApiRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/programs'
     | '/queue'
     | '/recentsubs'
+    | '/sitemap.xml'
     | '/stats'
     | '/updates'
     | '/docs/api'
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/programs'
     | '/queue'
     | '/recentsubs'
+    | '/sitemap.xml'
     | '/stats'
     | '/updates'
     | '/docs/api'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/programs'
     | '/queue'
     | '/recentsubs'
+    | '/sitemap.xml'
     | '/stats'
     | '/updates'
     | '/docs/api'
@@ -316,6 +328,7 @@ export interface RootRouteChildren {
   ProgramsRoute: typeof ProgramsRoute
   QueueRoute: typeof QueueRoute
   RecentsubsRoute: typeof RecentsubsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatsRoute: typeof StatsRoute
   UpdatesRoute: typeof UpdatesRoute
   DocsApiRoute: typeof DocsApiRoute
@@ -407,6 +420,13 @@ declare module '@tanstack/react-router' {
       path: '/recentsubs'
       fullPath: '/recentsubs'
       preLoaderRoute: typeof RecentsubsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/stats': {
@@ -508,6 +528,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProgramsRoute: ProgramsRoute,
   QueueRoute: QueueRoute,
   RecentsubsRoute: RecentsubsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatsRoute: StatsRoute,
   UpdatesRoute: UpdatesRoute,
   DocsApiRoute: DocsApiRoute,
