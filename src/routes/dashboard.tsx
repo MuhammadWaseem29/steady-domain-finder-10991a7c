@@ -297,6 +297,7 @@ function Dashboard() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               rows={3}
+              aria-label="Add root domains"
               placeholder={"example.com\nanother.com"}
               className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
             />
