@@ -305,6 +305,7 @@ function Dashboard() {
               <select
                 value={platformSlug}
                 onChange={(e) => setPlatformSlug(e.target.value)}
+                aria-label="Platform for added domains"
                 className="h-fit rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">No platform</option>
