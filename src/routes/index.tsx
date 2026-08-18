@@ -112,6 +112,7 @@ function Index() {
 
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
+        <h2 className="sr-only">Core features</h2>
         <div className="grid overflow-hidden rounded-lg border border-border md:grid-cols-2">
           <Feature
             icon={<Globe className="size-4 text-destructive" />}
