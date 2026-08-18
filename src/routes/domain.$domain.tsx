@@ -150,7 +150,7 @@ function DomainDetail() {
 
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-mono text-4xl font-extrabold">{domain}</h1>
+            <h1 className="font-mono text-4xl font-extrabold">{domain} subdomains</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Last scanned <LiveTime iso={row?.last_scanned_at ?? null} mode="full" /> · full re-scan sweep every 30 minutes
             </p>
@@ -209,6 +209,7 @@ function DomainDetail() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
+              aria-label="Filter hosts"
               placeholder="filter hosts…"
               className="w-56 rounded-full border border-input bg-background py-2 pr-4 pl-9 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
             />

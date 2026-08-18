@@ -297,6 +297,7 @@ function Dashboard() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               rows={3}
+              aria-label="Add root domains"
               placeholder={"example.com\nanother.com"}
               className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
             />
@@ -304,6 +305,7 @@ function Dashboard() {
               <select
                 value={platformSlug}
                 onChange={(e) => setPlatformSlug(e.target.value)}
+                aria-label="Platform for added domains"
                 className="h-fit rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">No platform</option>
@@ -378,6 +380,7 @@ function Dashboard() {
                 setFilterPlatform(e.target.value);
                 setPage(0);
               }}
+              aria-label="Filter root domains by platform"
               className="rounded-full border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">All platforms</option>
@@ -395,6 +398,7 @@ function Dashboard() {
                   setSearch(e.target.value);
                   setPage(0);
                 }}
+                aria-label="Search root domains"
                 placeholder="search domains…"
                 className="w-64 rounded-full border border-input bg-background py-2 pr-4 pl-9 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
               />
