@@ -22,7 +22,6 @@ import { Route as QueueRouteImport } from './routes/queue'
 import { Route as RecentsubsRouteImport } from './routes/recentsubs'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StatsRouteImport } from './routes/stats'
-import { Route as SubdomainFinderApiRouteImport } from './routes/subdomain-finder-api'
 import { Route as UpdatesRouteImport } from './routes/updates'
 import { Route as DocsApiRouteImport } from './routes/docs/api'
 import { Route as DocsApiKeyRouteImport } from './routes/docs/api-key'
@@ -100,11 +99,6 @@ const StatsRoute = StatsRouteImport.update({
   path: '/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SubdomainFinderApiRoute = SubdomainFinderApiRouteImport.update({
-  id: '/subdomain-finder-api',
-  path: '/subdomain-finder-api',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const UpdatesRoute = UpdatesRouteImport.update({
   id: '/updates',
   path: '/updates',
@@ -176,7 +170,6 @@ export interface FileRoutesByFullPath {
   '/recentsubs': typeof RecentsubsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
-  '/subdomain-finder-api': typeof SubdomainFinderApiRoute
   '/updates': typeof UpdatesRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/api-key': typeof DocsApiKeyRoute
@@ -203,7 +196,6 @@ export interface FileRoutesByTo {
   '/recentsubs': typeof RecentsubsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
-  '/subdomain-finder-api': typeof SubdomainFinderApiRoute
   '/updates': typeof UpdatesRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/api-key': typeof DocsApiKeyRoute
@@ -231,7 +223,6 @@ export interface FileRoutesById {
   '/recentsubs': typeof RecentsubsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
-  '/subdomain-finder-api': typeof SubdomainFinderApiRoute
   '/updates': typeof UpdatesRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/api-key': typeof DocsApiKeyRoute
@@ -260,7 +251,6 @@ export interface FileRouteTypes {
     | '/recentsubs'
     | '/sitemap.xml'
     | '/stats'
-    | '/subdomain-finder-api'
     | '/updates'
     | '/docs/api'
     | '/docs/api-key'
@@ -287,7 +277,6 @@ export interface FileRouteTypes {
     | '/recentsubs'
     | '/sitemap.xml'
     | '/stats'
-    | '/subdomain-finder-api'
     | '/updates'
     | '/docs/api'
     | '/docs/api-key'
@@ -314,7 +303,6 @@ export interface FileRouteTypes {
     | '/recentsubs'
     | '/sitemap.xml'
     | '/stats'
-    | '/subdomain-finder-api'
     | '/updates'
     | '/docs/api'
     | '/docs/api-key'
@@ -342,7 +330,6 @@ export interface RootRouteChildren {
   RecentsubsRoute: typeof RecentsubsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatsRoute: typeof StatsRoute
-  SubdomainFinderApiRoute: typeof SubdomainFinderApiRoute
   UpdatesRoute: typeof UpdatesRoute
   DocsApiRoute: typeof DocsApiRoute
   DocsApiKeyRoute: typeof DocsApiKeyRoute
@@ -449,13 +436,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/subdomain-finder-api': {
-      id: '/subdomain-finder-api'
-      path: '/subdomain-finder-api'
-      fullPath: '/subdomain-finder-api'
-      preLoaderRoute: typeof SubdomainFinderApiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/updates': {
       id: '/updates'
       path: '/updates'
@@ -550,7 +530,6 @@ const rootRouteChildren: RootRouteChildren = {
   RecentsubsRoute: RecentsubsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatsRoute: StatsRoute,
-  SubdomainFinderApiRoute: SubdomainFinderApiRoute,
   UpdatesRoute: UpdatesRoute,
   DocsApiRoute: DocsApiRoute,
   DocsApiKeyRoute: DocsApiKeyRoute,
