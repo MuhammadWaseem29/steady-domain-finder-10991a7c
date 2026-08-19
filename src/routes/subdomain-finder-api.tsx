@@ -101,7 +101,7 @@ const ENDPOINTS: { method: string; path: string; desc: string }[] = [
 function SubdomainFinderApi() {
   const { data: stats } = useQuery(globalStatsQuery);
   const [tab, setTab] = useState("curl");
-  const snippet = SNIPPETS.find((s) => s.id === tab) ?? SNIPPETS[0];
+  const snippet = SNIPPETS.find((s) => s.id === tab) ?? SNIPPETS[0]!;
 
   return (
     <SiteShell>
