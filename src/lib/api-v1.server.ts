@@ -4,8 +4,11 @@ import {
   apiJson,
   authenticateApiRequest,
   corsHeaders,
+  requireApiAdmin,
+  requireScope,
   type ApiCaller,
 } from "@/lib/api-auth.server";
+
 
 type Ctx = {
   url: URL;
@@ -282,13 +285,19 @@ async function scansRoute(ctx: Ctx): Promise<Response> {
 
   if (ctx.method !== "POST") return apiError(405, "method_not_allowed", "Use GET or POST.");
 
+  const scopeError = requireScope(ctx.caller, "write");
+  if (scopeError) return scopeError;
+
   if (sub === "rescan-all") {
+    const adminError = await requireApiAdmin(ctx.caller);
+    if (adminError) return adminError;
     const { data, error } = await db.rpc("mark_all_domains_due");
     if (error) return apiError(500, "query_failed", error.message);
     return apiJson({ data: { queued_domains: data ?? 0 } }, 202);
   }
 
   if (sub) return apiError(404, "not_found", "Use POST /scans or POST /scans/rescan-all.");
+
 
   let body: { domain?: unknown } = {};
   try {

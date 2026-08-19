@@ -4,9 +4,12 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const suppliedKey = request.headers.get("apikey");
-        const expectedKey = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
-        if (!expectedKey || suppliedKey !== expectedKey) {
+        // Authenticated with a dedicated cron secret that is never shipped to the
+        // browser (the Supabase publishable key is public and must not be used here).
+        const expectedKey = process.env["CRON_HOOK_SECRET"];
+        const suppliedKey =
+          request.headers.get("x-cron-secret") ?? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+        if (!expectedKey || !suppliedKey || suppliedKey !== expectedKey) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
         const url = new URL(request.url);
