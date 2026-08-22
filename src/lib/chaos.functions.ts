@@ -5,9 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const runScanNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ domainId: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
-    const { requireAdmin } = await import("@/lib/authz.server");
-    await requireAdmin(context.userId);
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { queueManualScan } = await import("@/lib/chaos.server");
 
@@ -61,9 +59,7 @@ export const addDomains = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data, context }) => {
-    const { requireAdmin } = await import("@/lib/authz.server");
-    await requireAdmin(context.userId);
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const list = Array.from(
@@ -118,9 +114,7 @@ export const savePlatform = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data, context }) => {
-    const { requireAdmin } = await import("@/lib/authz.server");
-    await requireAdmin(context.userId);
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const row = {
       name: data.name.trim(),
@@ -154,9 +148,7 @@ export const deletePlatform = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data, context }) => {
-    const { requireAdmin } = await import("@/lib/authz.server");
-    await requireAdmin(context.userId);
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     if (data.deleteDomains) {
@@ -203,9 +195,7 @@ export const updateDomain = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data, context }) => {
-    const { requireAdmin } = await import("@/lib/authz.server");
-    await requireAdmin(context.userId);
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const patch: {
       updated_at: string;
@@ -225,9 +215,7 @@ export const updateDomain = createServerFn({ method: "POST" })
 export const deleteDomain = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
-    const { requireAdmin } = await import("@/lib/authz.server");
-    await requireAdmin(context.userId);
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("subdomains").delete().eq("domain_id", data.id);
     await supabaseAdmin.from("scans").delete().eq("domain_id", data.id);
@@ -294,9 +282,7 @@ export const listScanQueue = createServerFn({ method: "POST" }).handler(async ()
 export const cancelScanJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ jobId: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
-    const { requireAdmin } = await import("@/lib/authz.server");
-    await requireAdmin(context.userId);
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("scan_jobs")
@@ -320,9 +306,7 @@ export const cancelScanJob = createServerFn({ method: "POST" })
  */
 export const triggerFullRescan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-  const { requireAdmin } = await import("@/lib/authz.server");
-  await requireAdmin(context.userId);
+  .handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { data, error } = await supabaseAdmin.rpc("mark_all_domains_due");

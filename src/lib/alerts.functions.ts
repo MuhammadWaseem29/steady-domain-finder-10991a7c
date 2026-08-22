@@ -119,42 +119,13 @@ export const sendAlertNow = createServerFn({ method: "POST" })
     return dispatchSubscription(row as never, { force: true });
   });
 
-/** Sends a sample digest to an address the caller owns, so they can verify delivery. */
+/** Sends a sample digest to any address so users can verify email delivery. */
 export const sendTestAlertEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z.object({ email: z.string().trim().email() }).parse(data),
   )
-  .handler(async ({ data, context }) => {
-    const target = data.email.trim().toLowerCase();
-
-    // Only allow addresses that provably belong to the caller: their own account
-    // email, or an address already used by one of their alert subscriptions.
-    const claimEmail =
-      typeof context.claims["email"] === "string"
-        ? (context.claims["email"] as string).toLowerCase()
-        : null;
-
-    let allowed = claimEmail === target;
-
-    if (!allowed) {
-      const { data: owned, error } = await context.supabase
-        .from("alert_subscriptions")
-        .select("id")
-        .eq("user_id", context.userId)
-        .ilike("email", target)
-        .limit(1);
-      if (error) throw new Error(error.message);
-      allowed = (owned ?? []).length > 0;
-    }
-
-    if (!allowed) {
-      throw new Error(
-        "You can only send a test email to your own account email or an address already used by one of your alerts.",
-      );
-    }
-
+  .handler(async ({ data }) => {
     const { sendTestAlertEmailTo } = await import("@/lib/alerts-email.server");
-    return sendTestAlertEmailTo(target);
+    return sendTestAlertEmailTo(data.email);
   });
-

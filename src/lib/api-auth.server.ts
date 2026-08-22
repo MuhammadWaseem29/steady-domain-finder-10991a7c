@@ -18,7 +18,7 @@ export async function hashApiKey(key: string): Promise<string> {
     .join("");
 }
 
-export type ApiCaller = { keyId: string; userId: string; scopes: string[] };
+export type ApiCaller = { keyId: string; userId: string };
 
 export async function authenticateApiRequest(
   request: Request,
@@ -40,7 +40,7 @@ export async function authenticateApiRequest(
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("api_keys")
-    .select("id, user_id, revoked, scopes")
+    .select("id, user_id, revoked")
     .eq("key_hash", await hashApiKey(token))
     .maybeSingle();
 
@@ -54,32 +54,8 @@ export async function authenticateApiRequest(
     .eq("id", data.id)
     .then(() => undefined);
 
-  return {
-    caller: {
-      keyId: data.id,
-      userId: data.user_id,
-      scopes: Array.isArray(data.scopes) ? (data.scopes as string[]) : ["read"],
-    },
-  };
+  return { caller: { keyId: data.id, userId: data.user_id } };
 }
-
-/** Returns an error response when the caller's key lacks the required scope. */
-export function requireScope(caller: ApiCaller, scope: string): Response | null {
-  if (caller.scopes.includes(scope)) return null;
-  return apiError(
-    403,
-    "insufficient_scope",
-    `This API token does not have the "${scope}" scope required for this endpoint.`,
-  );
-}
-
-/** Returns an error response when the caller is not an administrator. */
-export async function requireApiAdmin(caller: ApiCaller): Promise<Response | null> {
-  const { isAdmin } = await import("@/lib/authz.server");
-  if (await isAdmin(caller.userId)) return null;
-  return apiError(403, "forbidden", "This endpoint requires an administrator account.");
-}
-
 
 export function apiError(status: number, code: string, message: string): Response {
   return Response.json({ error: { code, message } }, { status, headers: corsHeaders() });
