@@ -141,7 +141,10 @@ export function MonacoWorkbench({
   };
 
   const copyOutput = async () => {
-    if (!output) return toast.error("Nothing to copy — load hosts first");
+    if (!output) {
+      toast.error("Nothing to copy — load hosts first");
+      return;
+    }
     await navigator.clipboard.writeText(output);
     toast.success(`Copied ${stats?.kept.toLocaleString() ?? ""} hosts`);
   };
