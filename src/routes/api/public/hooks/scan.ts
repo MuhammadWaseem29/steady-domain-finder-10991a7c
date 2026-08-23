@@ -6,9 +6,15 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
       POST: async ({ request }) => {
         const suppliedKey = request.headers.get("apikey");
         const expectedKey = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
-        if (!expectedKey || suppliedKey !== expectedKey) {
+        const suppliedSecret = request.headers.get("x-cron-secret");
+        const expectedSecret = process.env["CRON_HOOK_SECRET"];
+        const authorized =
+          (!!expectedKey && suppliedKey === expectedKey) ||
+          (!!expectedSecret && suppliedSecret === expectedSecret);
+        if (!authorized) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
+
         const url = new URL(request.url);
         const limit = Number(url.searchParams.get("limit") ?? 400);
         const concurrency = Number(url.searchParams.get("concurrency") ?? 40);
