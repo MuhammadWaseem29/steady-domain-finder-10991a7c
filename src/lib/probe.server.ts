@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const BATCH = 1500;
-const CONCURRENCY = 400;
+const CONCURRENCY = 120;
 const FLUSH_EVERY = 300;
 const TIMEOUT_MS = 5000;
 const DNS_TIMEOUT_MS = 2500;
@@ -252,7 +252,7 @@ export async function processProbeJobs(budgetMs: number): Promise<{ jobId: strin
 
   const { data: job } = await supabaseAdmin.rpc("claim_probe_job");
   const j = Array.isArray(job) ? job[0] : job;
-  if (!j) return { jobId: null, probed: 0 };
+  if (!j || !j.id) return { jobId: null, probed: 0 };
 
   const timeLeft = () => budgetMs - (Date.now() - started);
 
@@ -286,46 +286,47 @@ export async function processProbeJobs(budgetMs: number): Promise<{ jobId: strin
     // so one slow host can never hold up the rest of the batch.
     let index = 0;
     let pending: ProbeRow[] = [];
-    let flushed = 0;
-    const writes: Array<Promise<unknown>> = [];
+    // Writes are chained so results stream into the database as they land,
+    // without competing with the probe requests for outbound sockets.
+    let writeChain: Promise<void> = Promise.resolve();
 
     const flush = (cursor: string, finished: boolean) => {
       const rows = pending;
       pending = [];
       if (!rows.length && !finished) return;
-      flushed += rows.length;
-      writes.push(
-        Promise.resolve(supabaseAdmin
-          .rpc("record_probe_batch", {
-            _job_id: j.id,
-            _results: rows,
-            _cursor_host: cursor,
-            _done: finished,
-          })
-          .then(({ error }: { error: { message: string } | null }) => {
-            if (error) console.error("record_probe_batch failed:", error.message);
-          })),
-      );
+      writeChain = writeChain.then(async () => {
+        const { error } = await supabaseAdmin.rpc("record_probe_batch", {
+          _job_id: j.id,
+          _results: rows,
+          _cursor_host: cursor,
+          _done: finished,
+        });
+        if (error) console.error("record_probe_batch failed:", error.message);
+      });
     };
 
     const worker = async () => {
       for (;;) {
         const i = index++;
         if (i >= hosts.length) return;
+        if (timeLeft() < 1500) return;
         const h = hosts[i]!;
         const row = await probeHost(h.domainId, h.host);
         pending.push(row);
         probed++;
-        if (pending.length >= FLUSH_EVERY) flush(h.host, false);
+        // Intermediate flushes keep the cursor where it was: hosts finish out of
+        // order, so only the end of the page is a safe resume point.
+        if (pending.length >= FLUSH_EVERY) flush(j.cursor_host, false);
       }
     };
 
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, hosts.length) }, worker));
-    flush(lastHost, done);
-    await Promise.all(writes);
-    void flushed;
+    const complete = index >= hosts.length;
+    flush(complete ? lastHost : j.cursor_host, done && complete);
+    await writeChain;
+    if (complete) j.cursor_host = lastHost;
 
-    if (done) break;
+    if (done || !complete) break;
   }
 
   return { jobId: j.id, probed };
