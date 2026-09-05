@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, ShieldAlert, Activity, Server } from "lucide-react";
 
 import { SiteShell, Stat } from "@/components/site/chrome";
 import { CountUp, EASE_SIGNATURE, Skeleton } from "@/components/site/motion";
@@ -52,7 +51,7 @@ function group(code: number) {
 function LiveMapPage() {
   const [platform, setPlatform] = useState("");
 
-  const platforms = useQuery(platformsQuery());
+  const platforms = useQuery(platformsQuery);
 
   const args = platform ? { platformSlug: platform } : {};
 
@@ -114,22 +113,22 @@ function LiveMapPage() {
             className="h-9 rounded-md border border-border bg-card px-3 font-mono text-xs"
           >
             <option value="">All platforms</option>
-            {(platforms.data ?? []).map((p: { slug: string; name: string }) => (
+            {(platforms.data ?? []).map((p) => (
               <option key={p.slug} value={p.slug}>
                 {p.name}
               </option>
             ))}
           </select>
-          <Link to="/live" className="story-link font-mono text-xs text-muted-foreground hover:text-foreground">
+          <Link to="/live" search={{}} className="story-link font-mono text-xs text-muted-foreground hover:text-foreground">
             open live hosts
           </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Live hosts" value={<CountUp value={stats.data?.totals.liveHosts ?? 0} />} icon={<Activity className="h-4 w-4" />} />
-          <Stat label="Programs live" value={<CountUp value={stats.data?.totals.programs ?? 0} />} icon={<Server className="h-4 w-4" />} />
-          <Stat label="Takeover risk" value={<CountUp value={stats.data?.totals.takeover ?? 0} />} icon={<ShieldAlert className="h-4 w-4" />} />
-          <Stat label="Located IPs" value={<CountUp value={map.data?.mapped ?? 0} />} icon={<Globe className="h-4 w-4" />} />
+          <Stat label="Live hosts" value={<CountUp value={stats.data?.totals.liveHosts ?? 0} />} />
+          <Stat label="Programs live" value={<CountUp value={stats.data?.totals.programs ?? 0} />} />
+          <Stat label="Takeover risk" value={<CountUp value={stats.data?.totals.takeover ?? 0} />} />
+          <Stat label="Located IPs" value={<CountUp value={map.data?.mapped ?? 0} />} />
         </div>
 
         <section className="mt-8">
