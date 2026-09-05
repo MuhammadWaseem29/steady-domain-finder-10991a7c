@@ -44,13 +44,29 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
           const { processProbeJobs, ensureAutoProbeJob } = await import("@/lib/probe.server");
           await ensureAutoProbeJob();
           const probeBudget = Math.min(Math.max(budgetMs - (Date.now() - started), 3000), 15000);
-          const rounds = await Promise.all([
+          // Fan the probe work out into sibling invocations so several batches of
+          // hosts are checked at the same time, then do one batch here too.
+          const origin = new URL(request.url).origin;
+          const probeUrl = `${origin}/api/public/hooks/probe?workers=4&budgetMs=${probeBudget}`;
+          const headers: Record<string, string> = {};
+          const apikey = request.headers.get("apikey");
+          const cronSecret = request.headers.get("x-cron-secret");
+          if (apikey) headers["apikey"] = apikey;
+          if (cronSecret) headers["x-cron-secret"] = cronSecret;
+          const siblings = Array.from({ length: 5 }, () =>
+            fetch(probeUrl, { method: "POST", headers })
+              .then((r) => (r.ok ? (r.json() as Promise<{ probed?: number }>) : null))
+              .catch(() => null),
+          );
+          const [mine, ...rest] = await Promise.all([
             processProbeJobs(probeBudget),
-            processProbeJobs(probeBudget),
+            ...siblings,
           ]);
           probe = {
-            jobId: rounds.find((r) => r.jobId)?.jobId ?? null,
-            probed: rounds.reduce((sum, r) => sum + r.probed, 0),
+            jobId: (mine as { jobId: string | null }).jobId,
+            probed:
+              (mine as { probed: number }).probed +
+              rest.reduce((sum, r) => sum + ((r as { probed?: number } | null)?.probed ?? 0), 0),
           };
         } catch (err) {
           console.error("probe tick failed:", err);
