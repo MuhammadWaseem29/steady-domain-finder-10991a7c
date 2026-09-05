@@ -63,6 +63,12 @@ function AlertsPage() {
   const [domainText, setDomainText] = useState("");
   const [keywordText, setKeywordText] = useState("");
   const [notifyLive, setNotifyLive] = useState(false);
+  const [liveCodes, setLiveCodes] = useState<number[]>([]);
+
+  const toggleCode = (code: number) =>
+    setLiveCodes((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code].sort((a, b) => a - b),
+    );
 
   useEffect(() => {
     if (user?.email && !email) setEmail(user.email);
