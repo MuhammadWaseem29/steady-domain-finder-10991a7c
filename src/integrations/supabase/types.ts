@@ -918,6 +918,14 @@ export type Database = {
           id: string
         }[]
       }
+      platform_live_stats: {
+        Args: never
+        Returns: {
+          live_hosts: number
+          platform_id: string
+          takeover_count: number
+        }[]
+      }
       platform_recent_subdomains: {
         Args: { _platform_id: string; lim?: number; since: string }
         Returns: {

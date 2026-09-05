@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Copy, Loader2, Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { SiteShell, Stat } from "@/components/site/chrome";
 import { LiveHostsPanel, ProbeButton } from "@/components/site/probe";
-import { domainsPageQuery, platformsQuery, timeAgo, PAGE_SIZE } from "@/lib/chaos-data";
+import { domainsPageQuery, platformsQuery, platformLiveStatsQuery, timeAgo, PAGE_SIZE } from "@/lib/chaos-data";
 import { addDomains } from "@/lib/chaos.functions";
 
 export const Route = createFileRoute("/program/$slug")({
@@ -37,6 +37,8 @@ function ProgramDetail() {
 
   const { data: platforms } = useQuery(platformsQuery);
   const platform = (platforms ?? []).find((p) => p.slug === slug);
+  const { data: liveStats } = useQuery(platformLiveStatsQuery);
+  const live = (liveStats ?? []).find((s) => s.platform_id === platform?.platform_id);
   const { data: pageData, isLoading } = useQuery({
     ...domainsPageQuery(search, page, platform?.platform_id),
     enabled: Boolean(platform?.platform_id),
@@ -79,7 +81,7 @@ function ProgramDetail() {
           Root domains in this program's scope. Every one is rescanned on the rolling hourly cycle.
         </p>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+        <div className="mt-8 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Stat label="Domains" value={Number(platform?.domain_count ?? 0).toLocaleString()} index={0} />
           <Stat
             label="Subdomains"
@@ -87,6 +89,12 @@ function ProgramDetail() {
             index={1}
           />
           <Stat label="New (24h)" value={Number(platform?.new_24h ?? 0).toLocaleString()} index={2} />
+          <Stat label="Live hosts" value={Number(live?.live_hosts ?? 0).toLocaleString()} index={3} />
+          <Stat
+            label="Takeover flags"
+            value={Number(live?.takeover_count ?? 0).toLocaleString()}
+            index={4}
+          />
         </div>
 
         <div className="mt-8 rounded-lg border border-border bg-card p-5">
