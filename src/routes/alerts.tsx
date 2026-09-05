@@ -62,6 +62,7 @@ function AlertsPage() {
   const [platformIds, setPlatformIds] = useState<string[]>([]);
   const [domainText, setDomainText] = useState("");
   const [keywordText, setKeywordText] = useState("");
+  const [notifyLive, setNotifyLive] = useState(false);
 
   useEffect(() => {
     if (user?.email && !email) setEmail(user.email);
@@ -90,6 +91,7 @@ function AlertsPage() {
             .split(/[\s,]+/)
             .map((k) => k.trim())
             .filter(Boolean),
+          notify_live: notifyLive,
         },
       }),
     onSuccess: () => {
