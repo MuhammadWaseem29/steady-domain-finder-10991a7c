@@ -11,8 +11,10 @@ export type AlertSubscription = {
   domain_ids: string[];
   keywords: string[];
   is_active: boolean;
+  notify_live: boolean;
   last_sent_at: string | null;
   last_host_seen_at: string;
+  last_live_seen_at: string;
   sent_count: number;
 };
 
@@ -73,6 +75,49 @@ export async function pendingHosts(sub: AlertSubscription): Promise<AlertHost[]>
       domain: r.domains?.domain ?? "",
       platform: r.domains?.platforms?.name ?? null,
       first_seen_at: r.first_seen_at,
+    }));
+}
+
+/** Hosts that answered a live probe since the subscription's live high-water mark. */
+export async function pendingLiveHosts(sub: AlertSubscription): Promise<AlertHost[]> {
+  const platformScoped = sub.scope === "platforms" && sub.platform_ids.length;
+  let query = supabaseAdmin
+    .from("probe_results")
+    .select(
+      platformScoped
+        ? "host, probed_at, domains!inner(domain, platform_id, platforms(name))"
+        : "host, probed_at, domains(domain, platform_id, platforms(name))",
+    )
+    .eq("failed", false)
+    .gt("probed_at", sub.last_live_seen_at)
+    .order("probed_at", { ascending: false })
+    .limit(FETCH_LIMIT);
+
+  if (sub.scope === "domains" && sub.domain_ids.length) {
+    query = query.in("domain_id", sub.domain_ids);
+  } else if (platformScoped) {
+    query = query.in("domains.platform_id", sub.platform_ids);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  const rows = (data ?? []) as unknown as {
+    host: string;
+    probed_at: string;
+    domains: { domain: string; platforms: { name: string } | null } | null;
+  }[];
+
+  const keywords = (sub.keywords ?? []).map((k) => k.toLowerCase()).filter(Boolean);
+
+  return rows
+    .filter((r) => r.domains)
+    .filter((r) => !keywords.length || keywords.some((k) => r.host.toLowerCase().includes(k)))
+    .map((r) => ({
+      host: r.host,
+      domain: r.domains?.domain ?? "",
+      platform: r.domains?.platforms?.name ?? null,
+      first_seen_at: r.probed_at,
     }));
 }
 
