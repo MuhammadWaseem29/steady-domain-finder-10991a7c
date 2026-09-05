@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as Chaos_updatesRouteImport } from './routes/chaos_updates'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LiveRouteImport } from './routes/live'
+import { Route as LivemapRouteImport } from './routes/livemap'
 import { Route as LivesubsRouteImport } from './routes/livesubs'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as NotesRouteImport } from './routes/notes'
@@ -82,6 +83,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const LiveRoute = LiveRouteImport.update({
   id: '/live',
   path: '/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LivemapRoute = LivemapRouteImport.update({
+  id: '/livemap',
+  path: '/livemap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LivesubsRoute = LivesubsRouteImport.update({
@@ -255,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
   '/live': typeof LiveRoute
+  '/livemap': typeof LivemapRoute
   '/livesubs': typeof LivesubsRoute
   '/new': typeof NewRoute
   '/notes': typeof NotesRoute
@@ -296,6 +303,7 @@ export interface FileRoutesByTo {
   '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
   '/live': typeof LiveRoute
+  '/livemap': typeof LivemapRoute
   '/livesubs': typeof LivesubsRoute
   '/new': typeof NewRoute
   '/notes': typeof NotesRoute
@@ -337,6 +345,7 @@ export interface FileRoutesById {
   '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
   '/live': typeof LiveRoute
+  '/livemap': typeof LivemapRoute
   '/livesubs': typeof LivesubsRoute
   '/new': typeof NewRoute
   '/notes': typeof NotesRoute
@@ -380,6 +389,7 @@ export interface FileRouteTypes {
     | '/chaos_updates'
     | '/dashboard'
     | '/live'
+    | '/livemap'
     | '/livesubs'
     | '/new'
     | '/notes'
@@ -421,6 +431,7 @@ export interface FileRouteTypes {
     | '/chaos_updates'
     | '/dashboard'
     | '/live'
+    | '/livemap'
     | '/livesubs'
     | '/new'
     | '/notes'
@@ -461,6 +472,7 @@ export interface FileRouteTypes {
     | '/chaos_updates'
     | '/dashboard'
     | '/live'
+    | '/livemap'
     | '/livesubs'
     | '/new'
     | '/notes'
@@ -503,6 +515,7 @@ export interface RootRouteChildren {
   Chaos_updatesRoute: typeof Chaos_updatesRoute
   DashboardRoute: typeof DashboardRoute
   LiveRoute: typeof LiveRoute
+  LivemapRoute: typeof LivemapRoute
   LivesubsRoute: typeof LivesubsRoute
   NewRoute: typeof NewRoute
   NotesRoute: typeof NotesRoute
@@ -576,6 +589,13 @@ declare module '@tanstack/react-router' {
       path: '/live'
       fullPath: '/live'
       preLoaderRoute: typeof LiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/livemap': {
+      id: '/livemap'
+      path: '/livemap'
+      fullPath: '/livemap'
+      preLoaderRoute: typeof LivemapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/livesubs': {
@@ -842,6 +862,7 @@ const rootRouteChildren: RootRouteChildren = {
   Chaos_updatesRoute: Chaos_updatesRoute,
   DashboardRoute: DashboardRoute,
   LiveRoute: LiveRoute,
+  LivemapRoute: LivemapRoute,
   LivesubsRoute: LivesubsRoute,
   NewRoute: NewRoute,
   NotesRoute: NotesRoute,
