@@ -15,6 +15,7 @@ const NAV = [
   { to: "/programs", label: "Programs" },
   { to: "/updates", label: "Updates" },
   { to: "/chaos_updates", label: "Chaos updates" },
+  { to: "/live", label: "Live" },
 
   { to: "/recentsubs", label: "Recent subs" },
   { to: "/new", label: "New subs" },
