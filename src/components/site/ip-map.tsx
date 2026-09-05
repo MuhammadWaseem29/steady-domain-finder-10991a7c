@@ -7,16 +7,13 @@ function project(lat: number, lon: number) {
   return { x: lon + 180, y: 90 - lat };
 }
 
-const LAND =
-  "M 30 40 L 55 30 L 95 28 L 130 33 L 150 45 L 140 60 L 120 62 L 100 58 L 70 60 L 45 55 Z";
-
 export function IpWorldMap({ points }: { points: MapPoint[] }) {
   const [active, setActive] = useState<MapPoint | null>(null);
   const max = useMemo(() => Math.max(1, ...points.map((p) => p.hosts)), [points]);
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-border bg-terminal">
-      <svg viewBox="0 0 360 180" className="h-[420px] w-full" role="img" aria-label="World map of live host IP addresses">
+      <svg viewBox="0 0 360 180" className="w-full" style={{ aspectRatio: "2 / 1" }} role="img" aria-label="World map of live host IP addresses">
         <defs>
           <pattern id="grid" width="15" height="15" patternUnits="userSpaceOnUse">
             <path d="M 15 0 L 0 0 0 15" fill="none" stroke="currentColor" strokeWidth="0.2" className="text-terminal-foreground/20" />
@@ -27,10 +24,12 @@ export function IpWorldMap({ points }: { points: MapPoint[] }) {
           </radialGradient>
         </defs>
         <rect width="360" height="180" fill="url(#grid)" />
-        <path d={LAND} fill="none" stroke="none" />
         {/* latitude guides */}
-        {[30, 60, 90, 120, 150].map((y) => (
-          <line key={y} x1="0" x2="360" y1={y} y2={y} stroke="currentColor" strokeWidth="0.15" className="text-terminal-foreground/15" />
+        {[45, 90, 135].map((y) => (
+          <line key={y} x1="0" x2="360" y1={y} y2={y} stroke="currentColor" strokeWidth="0.25" className="text-terminal-foreground/25" />
+        ))}
+        {[90, 180, 270].map((x) => (
+          <line key={x} x1={x} x2={x} y1="0" y2="180" stroke="currentColor" strokeWidth="0.25" className="text-terminal-foreground/25" />
         ))}
 
         {points.map((p, i) => {
