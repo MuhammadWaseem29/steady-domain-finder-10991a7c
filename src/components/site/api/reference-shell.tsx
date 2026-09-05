@@ -100,7 +100,7 @@ export function ReferenceShell({
           </details>
 
           <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] xl:gap-10">
-            <div className="min-w-0 animate-fade-in">
+            <div className="min-w-0">
               {eyebrow && <p className="label-mono text-muted-foreground">{eyebrow}</p>}
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
                 {title}
