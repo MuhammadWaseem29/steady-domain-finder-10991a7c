@@ -15,6 +15,7 @@ import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as Chaos_updatesRouteImport } from './routes/chaos_updates'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as LiveRouteImport } from './routes/live'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as NotesRouteImport } from './routes/notes'
 import { Route as ProgramsRouteImport } from './routes/programs'
@@ -36,9 +37,11 @@ import { Route as DocsApiAuthenticationRouteImport } from './routes/docs/api.aut
 import { Route as DocsApiChangelogRouteImport } from './routes/docs/api.changelog'
 import { Route as DocsApiErrorsRouteImport } from './routes/docs/api.errors'
 import { Route as DocsApiGuidesRouteImport } from './routes/docs/api.guides'
+import { Route as DocsApiLiveRouteImport } from './routes/docs/api.live'
 import { Route as DocsApiPaginationRouteImport } from './routes/docs/api.pagination'
 import { Route as DocsApiQuickstartRouteImport } from './routes/docs/api.quickstart'
 import { Route as DocsApiRawRouteImport } from './routes/docs/api.raw'
+import { Route as ApiPublicHooksProbeRouteImport } from './routes/api/public/hooks/probe'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
 import { Route as ApiPublicRawSplatRouteImport } from './routes/api/public/raw/$'
 import { Route as ApiPublicV1SplatRouteImport } from './routes/api/public/v1/$'
@@ -73,6 +76,11 @@ const Chaos_updatesRoute = Chaos_updatesRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveRoute = LiveRouteImport.update({
+  id: '/live',
+  path: '/live',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewRoute = NewRouteImport.update({
@@ -180,6 +188,11 @@ const DocsApiGuidesRoute = DocsApiGuidesRouteImport.update({
   path: '/guides',
   getParentRoute: () => DocsApiRoute,
 } as any)
+const DocsApiLiveRoute = DocsApiLiveRouteImport.update({
+  id: '/live',
+  path: '/live',
+  getParentRoute: () => DocsApiRoute,
+} as any)
 const DocsApiPaginationRoute = DocsApiPaginationRouteImport.update({
   id: '/pagination',
   path: '/pagination',
@@ -194,6 +207,11 @@ const DocsApiRawRoute = DocsApiRawRouteImport.update({
   id: '/raw',
   path: '/raw',
   getParentRoute: () => DocsApiRoute,
+} as any)
+const ApiPublicHooksProbeRoute = ApiPublicHooksProbeRouteImport.update({
+  id: '/api/public/hooks/probe',
+  path: '/api/public/hooks/probe',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
   id: '/api/public/hooks/scan',
@@ -230,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
+  '/live': typeof LiveRoute
   '/new': typeof NewRoute
   '/notes': typeof NotesRoute
   '/programs': typeof ProgramsRoute
@@ -250,10 +269,12 @@ export interface FileRoutesByFullPath {
   '/docs/api/changelog': typeof DocsApiChangelogRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
   '/docs/api/guides': typeof DocsApiGuidesRoute
+  '/docs/api/live': typeof DocsApiLiveRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api/': typeof DocsApiIndexRoute
+  '/api/public/hooks/probe': typeof ApiPublicHooksProbeRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/raw/$': typeof ApiPublicRawSplatRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -267,6 +288,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
+  '/live': typeof LiveRoute
   '/new': typeof NewRoute
   '/notes': typeof NotesRoute
   '/programs': typeof ProgramsRoute
@@ -286,10 +308,12 @@ export interface FileRoutesByTo {
   '/docs/api/changelog': typeof DocsApiChangelogRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
   '/docs/api/guides': typeof DocsApiGuidesRoute
+  '/docs/api/live': typeof DocsApiLiveRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api': typeof DocsApiIndexRoute
+  '/api/public/hooks/probe': typeof ApiPublicHooksProbeRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/raw/$': typeof ApiPublicRawSplatRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -304,6 +328,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
+  '/live': typeof LiveRoute
   '/new': typeof NewRoute
   '/notes': typeof NotesRoute
   '/programs': typeof ProgramsRoute
@@ -324,10 +349,12 @@ export interface FileRoutesById {
   '/docs/api/changelog': typeof DocsApiChangelogRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
   '/docs/api/guides': typeof DocsApiGuidesRoute
+  '/docs/api/live': typeof DocsApiLiveRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api/': typeof DocsApiIndexRoute
+  '/api/public/hooks/probe': typeof ApiPublicHooksProbeRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/raw/$': typeof ApiPublicRawSplatRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -343,6 +370,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chaos_updates'
     | '/dashboard'
+    | '/live'
     | '/new'
     | '/notes'
     | '/programs'
@@ -363,10 +391,12 @@ export interface FileRouteTypes {
     | '/docs/api/changelog'
     | '/docs/api/errors'
     | '/docs/api/guides'
+    | '/docs/api/live'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
     | '/docs/api/raw'
     | '/docs/api/'
+    | '/api/public/hooks/probe'
     | '/api/public/hooks/scan'
     | '/api/public/raw/$'
     | '/api/public/v1/$'
@@ -380,6 +410,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chaos_updates'
     | '/dashboard'
+    | '/live'
     | '/new'
     | '/notes'
     | '/programs'
@@ -399,10 +430,12 @@ export interface FileRouteTypes {
     | '/docs/api/changelog'
     | '/docs/api/errors'
     | '/docs/api/guides'
+    | '/docs/api/live'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
     | '/docs/api/raw'
     | '/docs/api'
+    | '/api/public/hooks/probe'
     | '/api/public/hooks/scan'
     | '/api/public/raw/$'
     | '/api/public/v1/$'
@@ -416,6 +449,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chaos_updates'
     | '/dashboard'
+    | '/live'
     | '/new'
     | '/notes'
     | '/programs'
@@ -436,10 +470,12 @@ export interface FileRouteTypes {
     | '/docs/api/changelog'
     | '/docs/api/errors'
     | '/docs/api/guides'
+    | '/docs/api/live'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
     | '/docs/api/raw'
     | '/docs/api/'
+    | '/api/public/hooks/probe'
     | '/api/public/hooks/scan'
     | '/api/public/raw/$'
     | '/api/public/v1/$'
@@ -454,6 +490,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   Chaos_updatesRoute: typeof Chaos_updatesRoute
   DashboardRoute: typeof DashboardRoute
+  LiveRoute: typeof LiveRoute
   NewRoute: typeof NewRoute
   NotesRoute: typeof NotesRoute
   ProgramsRoute: typeof ProgramsRoute
@@ -470,6 +507,7 @@ export interface RootRouteChildren {
   RawSplatRoute: typeof RawSplatRoute
   ApiPublicExportRoute: typeof ApiPublicExportRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
+  ApiPublicHooksProbeRoute: typeof ApiPublicHooksProbeRoute
   ApiPublicHooksScanRoute: typeof ApiPublicHooksScanRoute
   ApiPublicRawSplatRoute: typeof ApiPublicRawSplatRoute
   ApiPublicV1SplatRoute: typeof ApiPublicV1SplatRoute
@@ -518,6 +556,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live': {
+      id: '/live'
+      path: '/live'
+      fullPath: '/live'
+      preLoaderRoute: typeof LiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new': {
@@ -667,6 +712,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsApiGuidesRouteImport
       parentRoute: typeof DocsApiRoute
     }
+    '/docs/api/live': {
+      id: '/docs/api/live'
+      path: '/live'
+      fullPath: '/docs/api/live'
+      preLoaderRoute: typeof DocsApiLiveRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/docs/api/pagination': {
       id: '/docs/api/pagination'
       path: '/pagination'
@@ -687,6 +739,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/docs/api/raw'
       preLoaderRoute: typeof DocsApiRawRouteImport
       parentRoute: typeof DocsApiRoute
+    }
+    '/api/public/hooks/probe': {
+      id: '/api/public/hooks/probe'
+      path: '/api/public/hooks/probe'
+      fullPath: '/api/public/hooks/probe'
+      preLoaderRoute: typeof ApiPublicHooksProbeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/scan': {
       id: '/api/public/hooks/scan'
@@ -731,6 +790,7 @@ interface DocsApiRouteChildren {
   DocsApiChangelogRoute: typeof DocsApiChangelogRoute
   DocsApiErrorsRoute: typeof DocsApiErrorsRoute
   DocsApiGuidesRoute: typeof DocsApiGuidesRoute
+  DocsApiLiveRoute: typeof DocsApiLiveRoute
   DocsApiPaginationRoute: typeof DocsApiPaginationRoute
   DocsApiQuickstartRoute: typeof DocsApiQuickstartRoute
   DocsApiRawRoute: typeof DocsApiRawRoute
@@ -743,6 +803,7 @@ const DocsApiRouteChildren: DocsApiRouteChildren = {
   DocsApiChangelogRoute: DocsApiChangelogRoute,
   DocsApiErrorsRoute: DocsApiErrorsRoute,
   DocsApiGuidesRoute: DocsApiGuidesRoute,
+  DocsApiLiveRoute: DocsApiLiveRoute,
   DocsApiPaginationRoute: DocsApiPaginationRoute,
   DocsApiQuickstartRoute: DocsApiQuickstartRoute,
   DocsApiRawRoute: DocsApiRawRoute,
@@ -760,6 +821,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   Chaos_updatesRoute: Chaos_updatesRoute,
   DashboardRoute: DashboardRoute,
+  LiveRoute: LiveRoute,
   NewRoute: NewRoute,
   NotesRoute: NotesRoute,
   ProgramsRoute: ProgramsRoute,
@@ -776,6 +838,7 @@ const rootRouteChildren: RootRouteChildren = {
   RawSplatRoute: RawSplatRoute,
   ApiPublicExportRoute: ApiPublicExportRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
+  ApiPublicHooksProbeRoute: ApiPublicHooksProbeRoute,
   ApiPublicHooksScanRoute: ApiPublicHooksScanRoute,
   ApiPublicRawSplatRoute: ApiPublicRawSplatRoute,
   ApiPublicV1SplatRoute: ApiPublicV1SplatRoute,

@@ -321,6 +321,176 @@ export type Database = {
         }
         Relationships: []
       }
+      probe_jobs: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          cursor_host: string
+          domain_id: string | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          live_hosts: number
+          platform_slug: string | null
+          probed_hosts: number
+          program: string | null
+          requested_by: string | null
+          scope: string
+          search: string | null
+          started_at: string | null
+          status: string
+          total_hosts: number
+          updated_at: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          cursor_host?: string
+          domain_id?: string | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          live_hosts?: number
+          platform_slug?: string | null
+          probed_hosts?: number
+          program?: string | null
+          requested_by?: string | null
+          scope?: string
+          search?: string | null
+          started_at?: string | null
+          status?: string
+          total_hosts?: number
+          updated_at?: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          cursor_host?: string
+          domain_id?: string | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          live_hosts?: number
+          platform_slug?: string | null
+          probed_hosts?: number
+          program?: string | null
+          requested_by?: string | null
+          scope?: string
+          search?: string | null
+          started_at?: string | null
+          status?: string
+          total_hosts?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "probe_jobs_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      probe_results: {
+        Row: {
+          asn: string | null
+          body_hash: string | null
+          cdn: string | null
+          cname: string | null
+          content_length: number | null
+          content_type: string | null
+          created_at: string
+          domain_id: string | null
+          error: string | null
+          failed: boolean
+          final_url: string | null
+          host: string
+          id: string
+          ip: string | null
+          job_id: string
+          probed_at: string
+          redirect_chain: string[]
+          response_time_ms: number | null
+          status_code: number | null
+          technologies: string[]
+          title: string | null
+          tls_expires_at: string | null
+          tls_issuer: string | null
+          url: string
+          webserver: string | null
+        }
+        Insert: {
+          asn?: string | null
+          body_hash?: string | null
+          cdn?: string | null
+          cname?: string | null
+          content_length?: number | null
+          content_type?: string | null
+          created_at?: string
+          domain_id?: string | null
+          error?: string | null
+          failed?: boolean
+          final_url?: string | null
+          host: string
+          id?: string
+          ip?: string | null
+          job_id: string
+          probed_at?: string
+          redirect_chain?: string[]
+          response_time_ms?: number | null
+          status_code?: number | null
+          technologies?: string[]
+          title?: string | null
+          tls_expires_at?: string | null
+          tls_issuer?: string | null
+          url: string
+          webserver?: string | null
+        }
+        Update: {
+          asn?: string | null
+          body_hash?: string | null
+          cdn?: string | null
+          cname?: string | null
+          content_length?: number | null
+          content_type?: string | null
+          created_at?: string
+          domain_id?: string | null
+          error?: string | null
+          failed?: boolean
+          final_url?: string | null
+          host?: string
+          id?: string
+          ip?: string | null
+          job_id?: string
+          probed_at?: string
+          redirect_chain?: string[]
+          response_time_ms?: number | null
+          status_code?: number | null
+          technologies?: string[]
+          title?: string | null
+          tls_expires_at?: string | null
+          tls_issuer?: string | null
+          url?: string
+          webserver?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "probe_results_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "domains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "probe_results_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "probe_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -537,6 +707,35 @@ export type Database = {
       bump_daily_stats: {
         Args: { _errors: number; _new: number }
         Returns: undefined
+      }
+      claim_probe_job: {
+        Args: never
+        Returns: {
+          claimed_at: string | null
+          created_at: string
+          cursor_host: string
+          domain_id: string | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          live_hosts: number
+          platform_slug: string | null
+          probed_hosts: number
+          program: string | null
+          requested_by: string | null
+          scope: string
+          search: string | null
+          started_at: string | null
+          status: string
+          total_hosts: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "probe_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       count_new_subs: { Args: { since: string }; Returns: number }
       discovery_timeseries: {
@@ -765,6 +964,15 @@ export type Database = {
         }[]
       }
       reconcile_scan_counts: { Args: { _since?: string }; Returns: number }
+      record_probe_batch: {
+        Args: {
+          _cursor_host: string
+          _done: boolean
+          _job_id: string
+          _results: Json
+        }
+        Returns: undefined
+      }
       running_scans_detail: {
         Args: { lim?: number }
         Returns: {

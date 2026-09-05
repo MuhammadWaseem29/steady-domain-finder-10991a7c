@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Copy, Loader2, Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { LiveHostsPanel, ProbeButton } from "@/components/site/probe";
 import { domainsPageQuery, platformsQuery, timeAgo, PAGE_SIZE } from "@/lib/chaos-data";
 import { addDomains } from "@/lib/chaos.functions";
 
@@ -218,6 +219,19 @@ function ProgramDetail() {
               Next <ChevronRight className="size-3" />
             </button>
           </div>
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-bold">Live hosts</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Probe every host in this program with real HTTP/HTTPS requests.
+            </p>
+          </div>
+          <ProbeButton target={{ platformSlug: slug }} />
+        </div>
+        <div className="mt-4">
+          <LiveHostsPanel target={{ platformSlug: slug }} />
         </div>
       </div>
     </SiteShell>

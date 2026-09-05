@@ -38,6 +38,15 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
           _since: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
         });
 
+        // Live-host probes: work one batch per tick within the leftover budget.
+        let probe: { jobId: string | null; probed: number } = { jobId: null, probed: 0 };
+        try {
+          const { processProbeJobs } = await import("@/lib/probe.server");
+          probe = await processProbeJobs(Math.min(Math.max(budgetMs - (Date.now() - started), 3000), 15000));
+        } catch (err) {
+          console.error("probe tick failed:", err);
+        }
+
         // Email alerts for freshly discovered hosts, within the leftover budget.
         let alerts: { processed: number; sent: number } = { processed: 0, sent: 0 };
         try {
@@ -51,7 +60,7 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
         const newCount = results.reduce((a, r) => a + r.newCount, 0);
         const errors = results.filter((r) => r.status === "error").length;
 
-        return Response.json({ ok: true, job, scanned, newCount, errors, reconciled, alerts });
+        return Response.json({ ok: true, job, scanned, newCount, errors, reconciled, probe, alerts });
 
 
       },
