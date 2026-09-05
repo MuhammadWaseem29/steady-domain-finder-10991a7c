@@ -70,6 +70,90 @@ function makeWriter(format: Format, controller: ReadableStreamDefaultController,
   };
 }
 
+type LiveRow = {
+  host: string;
+  url: string;
+  status_code: number | null;
+  title: string | null;
+  probed_at: string;
+};
+
+async function streamLiveHosts(
+  supabaseAdmin: Awaited<ReturnType<typeof getAdmin>>,
+  domainIds: string[],
+  format: Format,
+  source: string,
+): Promise<Response> {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const enc = encoder;
+      let emitted = 0;
+      const writeRows = (rows: LiveRow[]) => {
+        if (!rows.length) return;
+        if (format === "csv") {
+          if (emitted === 0) controller.enqueue(enc.encode("host,url,status_code,title,probed_at\n"));
+          controller.enqueue(
+            enc.encode(
+              rows
+                .map(
+                  (r) =>
+                    `${r.host},${r.url},${r.status_code ?? ""},"${(r.title ?? "").replace(/"/g, '""')}",${r.probed_at}`,
+                )
+                .join("\n") + "\n",
+            ),
+          );
+        } else if (format === "json") {
+          const body = rows.map((r) => JSON.stringify(r)).join(",\n");
+          controller.enqueue(enc.encode((emitted === 0 ? "[\n" : ",\n") + body));
+        } else {
+          controller.enqueue(enc.encode(rows.map((r) => r.host).join("\n") + "\n"));
+        }
+        emitted += rows.length;
+      };
+      try {
+        for (let i = 0; i < domainIds.length; i += 20) {
+          const ids = domainIds.slice(i, i + 20);
+          let from = 0;
+          for (let page = 0; page < 5000; page++) {
+            const { data, error } = await supabaseAdmin
+              .from("probe_results")
+              .select("host, url, status_code, title, probed_at")
+              .in("domain_id", ids)
+              .eq("failed", false)
+              .order("host", { ascending: true })
+              .range(from, from + PAGE - 1);
+            if (error) throw new Error(error.message || "database error");
+            if (!data || data.length === 0) break;
+            writeRows(data as LiveRow[]);
+            if (data.length < PAGE) break;
+            from += PAGE;
+          }
+        }
+      } catch (e) {
+        controller.enqueue(
+          enc.encode(`\n# error: ${e instanceof Error ? e.message : String(e)}\n`),
+        );
+      }
+      if (format === "json" && emitted === 0) controller.enqueue(enc.encode("[]\n"));
+      else if (format === "json") controller.enqueue(enc.encode("\n]\n"));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      "Content-Type": contentType(format),
+      "Access-Control-Allow-Origin": "*",
+      "X-Chaos-Source": source,
+    },
+  });
+}
+
+async function getAdmin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
 export async function handleRawExport(request: Request, splat: string): Promise<Response> {
   if (request.method === "OPTIONS") {
     return new Response(null, {
