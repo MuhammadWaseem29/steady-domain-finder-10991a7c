@@ -372,6 +372,7 @@ async function platformsRoute(ctx: Ctx): Promise<Response> {
       _platform_id: platform.id,
       _lim: limit,
       _active_only: activeOnly,
+      ...(program ? { _domain_filter: program } : {}),
       ...(afterDomain ? { _after_domain: afterDomain, _after_host: afterHost ?? "" } : {}),
     });
     if (error) return apiError(500, "query_failed", error.message, ctx.meta);
