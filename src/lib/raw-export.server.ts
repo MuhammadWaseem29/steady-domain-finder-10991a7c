@@ -112,7 +112,8 @@ export async function handleRawExport(request: Request, splat: string): Promise<
     Date.now() - (Number.isFinite(hours) && hours > 0 ? hours : 24) * 3600_000,
   ).toISOString();
 
-  const [first, second] = segments;
+  const first = segments[0] ?? "";
+  const second = segments[1];
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const encoder = new TextEncoder();
 
