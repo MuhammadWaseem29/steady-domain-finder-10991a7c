@@ -119,7 +119,7 @@ function LiveMapPage() {
               </option>
             ))}
           </select>
-          <Link to="/live" search={{}} className="story-link font-mono text-xs text-muted-foreground hover:text-foreground">
+          <Link to="/live" search={{ job: undefined }} className="story-link font-mono text-xs text-muted-foreground hover:text-foreground">
             open live hosts
           </Link>
         </div>
