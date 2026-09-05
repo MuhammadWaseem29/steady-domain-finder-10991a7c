@@ -41,8 +41,17 @@ export const Route = createFileRoute("/api/public/hooks/scan")({
         // Live-host probes: work one batch per tick within the leftover budget.
         let probe: { jobId: string | null; probed: number } = { jobId: null, probed: 0 };
         try {
-          const { processProbeJobs } = await import("@/lib/probe.server");
-          probe = await processProbeJobs(Math.min(Math.max(budgetMs - (Date.now() - started), 3000), 15000));
+          const { processProbeJobs, ensureAutoProbeJob } = await import("@/lib/probe.server");
+          await ensureAutoProbeJob();
+          const probeBudget = Math.min(Math.max(budgetMs - (Date.now() - started), 3000), 15000);
+          const rounds = await Promise.all([
+            processProbeJobs(probeBudget),
+            processProbeJobs(probeBudget),
+          ]);
+          probe = {
+            jobId: rounds.find((r) => r.jobId)?.jobId ?? null,
+            probed: rounds.reduce((sum, r) => sum + r.probed, 0),
+          };
         } catch (err) {
           console.error("probe tick failed:", err);
         }
