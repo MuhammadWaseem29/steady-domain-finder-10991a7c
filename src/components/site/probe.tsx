@@ -221,7 +221,9 @@ export function LiveHostsPanel({ target }: { target: Target }) {
 
   const copyAll = async () => {
     try {
-      const all = await pageFn({ data: { ...target, preset, search: search || undefined, limit: 500 } });
+      const all = await pageFn({
+        data: { ...target, preset, status: status ?? undefined, search: search || undefined, limit: 500 },
+      });
       await navigator.clipboard.writeText(all.rows.map((r) => r.url).join("\n"));
       toast.success(`Copied ${all.rows.length.toLocaleString()} live URLs`);
     } catch {
@@ -249,6 +251,22 @@ export function LiveHostsPanel({ target }: { target: Target }) {
             {label}
           </button>
         ))}
+        <select
+          value={status ?? ""}
+          onChange={(e) => {
+            setStatus(e.target.value ? Number(e.target.value) : null);
+            setOffset(0);
+          }}
+          aria-label="Filter by status code"
+          className="rounded-full border border-input bg-background px-3 py-1.5 font-mono text-xs outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">Any status</option>
+          {STATUS_CODES.map((code) => (
+            <option key={code} value={code}>
+              {code}
+            </option>
+          ))}
+        </select>
         <input
           value={search}
           onChange={(e) => {
