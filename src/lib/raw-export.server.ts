@@ -212,6 +212,9 @@ export async function handleRawExport(request: Request, splat: string): Promise<
     if (!domainRow) return textResponse("", 404);
 
     const rawScope = (second ?? url.searchParams.get("scope") ?? "all").toLowerCase();
+    if (rawScope === "live") {
+      return streamLiveHosts(supabaseAdmin, [domainRow.id], format, `live:${domainRow.domain}`);
+    }
     const scope = rawScope === "new" || rawScope === "inactive" ? rawScope : "all";
 
     const stream = new ReadableStream({
@@ -264,6 +267,19 @@ export async function handleRawExport(request: Request, splat: string): Promise<
 
   const program = second ?? url.searchParams.get("program")?.trim().toLowerCase() ?? null;
   const activeOnly = url.searchParams.get("active") !== "false";
+
+  const wantsLive = url.searchParams.get("scope") === "live";
+  if (wantsLive) {
+    let dq = supabaseAdmin.from("domains").select("id").eq("platform_id", platform.id);
+    if (program) dq = dq.ilike("domain", `%${program}%`);
+    const ids: string[] = [];
+    for (let page = 0; page < 200; page++) {
+      const { data } = await dq.range(page * PAGE, page * PAGE + PAGE - 1);
+      ids.push(...(data ?? []).map((d) => d.id));
+      if (!data || data.length < PAGE) break;
+    }
+    return streamLiveHosts(supabaseAdmin, ids, format, program ? `live:${platform.slug}/${program}` : `live:${platform.slug}`);
+  }
 
   const stream = new ReadableStream({
     async start(controller) {
