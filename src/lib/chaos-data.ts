@@ -86,6 +86,22 @@ export const platformsQuery = queryOptions({
   refetchInterval: 60_000,
 });
 
+export type PlatformLiveStat = {
+  platform_id: string | null;
+  live_hosts: number;
+  takeover_count: number;
+};
+
+export const platformLiveStatsQuery = queryOptions({
+  queryKey: ["platform-live-stats"],
+  queryFn: async (): Promise<PlatformLiveStat[]> => {
+    const { data, error } = await supabase.rpc("platform_live_stats");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as PlatformLiveStat[];
+  },
+  refetchInterval: 60_000,
+});
+
 export type Bucket = "hour" | "day" | "week" | "month";
 
 export const RANGES = {
