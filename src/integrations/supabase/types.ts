@@ -24,7 +24,9 @@ export type Database = {
           is_active: boolean
           keywords: string[]
           last_host_seen_at: string
+          last_live_seen_at: string
           last_sent_at: string | null
+          notify_live: boolean
           platform_ids: string[]
           scope: string
           sent_count: number
@@ -40,7 +42,9 @@ export type Database = {
           is_active?: boolean
           keywords?: string[]
           last_host_seen_at?: string
+          last_live_seen_at?: string
           last_sent_at?: string | null
+          notify_live?: boolean
           platform_ids?: string[]
           scope?: string
           sent_count?: number
@@ -56,7 +60,9 @@ export type Database = {
           is_active?: boolean
           keywords?: string[]
           last_host_seen_at?: string
+          last_live_seen_at?: string
           last_sent_at?: string | null
+          notify_live?: boolean
           platform_ids?: string[]
           scope?: string
           sent_count?: number
