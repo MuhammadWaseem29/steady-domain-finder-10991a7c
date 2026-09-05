@@ -295,7 +295,7 @@ export async function processProbeJobs(budgetMs: number): Promise<{ jobId: strin
       if (!rows.length && !finished) return;
       flushed += rows.length;
       writes.push(
-        supabaseAdmin
+        Promise.resolve(supabaseAdmin
           .rpc("record_probe_batch", {
             _job_id: j.id,
             _results: rows,
@@ -304,7 +304,7 @@ export async function processProbeJobs(budgetMs: number): Promise<{ jobId: strin
           })
           .then(({ error }: { error: { message: string } | null }) => {
             if (error) console.error("record_probe_batch failed:", error.message);
-          }),
+          })),
       );
     };
 
