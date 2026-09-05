@@ -199,15 +199,21 @@ const PRESETS = [
   ["takeover", "Takeover risk"],
 ] as const;
 
+const STATUS_CODES = [200, 201, 204, 301, 302, 307, 308, 400, 401, 403, 404, 500, 502, 503];
+
 export function LiveHostsPanel({ target }: { target: Target }) {
   const [preset, setPreset] = useState<(typeof PRESETS)[number][0]>("all");
+  const [status, setStatus] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
   const pageFn = useServerFn(liveHostsPage);
 
   const { data, isFetching } = useQuery({
-    queryKey: ["live-hosts", target, preset, search, offset],
-    queryFn: () => pageFn({ data: { ...target, preset, search: search || undefined, offset } }),
+    queryKey: ["live-hosts", target, preset, status, search, offset],
+    queryFn: () =>
+      pageFn({
+        data: { ...target, preset, status: status ?? undefined, search: search || undefined, offset },
+      }),
     refetchInterval: 15000,
   });
   const rows = (data?.rows ?? []) as unknown as LiveRow[];
