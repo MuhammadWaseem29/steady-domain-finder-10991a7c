@@ -64,7 +64,10 @@ export async function sendAlertEmail(
     const { html, subject } = await renderDigest(data);
     const result = await sendResendEmail({
       to: sub.email,
-      subject: kind === "live" ? subject.replace(/new subdomains/i, "subdomains just went live") : subject,
+      subject:
+        kind === "live"
+          ? `${hosts.length.toLocaleString()} subdomains just went live`
+          : subject,
       html,
       idempotencyKey: `new-subdomains-${kind}-${sub.id}-${newest}`,
     });
