@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { SiteShell, Stat } from "@/components/site/chrome";
 import { SignInNotice } from "@/components/site/chrome";
 import { CountUp, EASE_SIGNATURE, Spotlight } from "@/components/site/motion";
-import { platformsQuery } from "@/lib/chaos-data";
+import { platformsQuery, platformLiveStatsQuery } from "@/lib/chaos-data";
 import { savePlatform, deletePlatform } from "@/lib/chaos.functions";
 
 
@@ -36,6 +36,8 @@ type Draft = { id?: string; name: string; slug: string; color: string; website: 
 function Programs() {
   const qc = useQueryClient();
   const { data: platforms } = useQuery(platformsQuery);
+  const { data: liveStats } = useQuery(platformLiveStatsQuery);
+  const liveByPlatform = new Map((liveStats ?? []).map((s) => [s.platform_id, s]));
   const list = platforms ?? [];
   const [editing, setEditing] = useState<Draft | null>(null);
   const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
