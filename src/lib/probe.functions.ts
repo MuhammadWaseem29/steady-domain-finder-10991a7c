@@ -116,6 +116,7 @@ const livePageSchema = z.object({
   program: z.string().trim().toLowerCase().optional(),
   search: z.string().trim().max(200).optional(),
   preset: z.enum(["all", "ok", "redirect", "auth", "interesting", "takeover"]).default("all"),
+  status: z.number().int().min(100).max(599).optional(),
   limit: z.number().int().min(1).max(500).default(100),
   offset: z.number().int().min(0).default(0),
 });
@@ -162,6 +163,7 @@ export const liveHostsPage = createServerFn({ method: "GET" })
       q = q.in("domain_id", domainIds);
     }
     if (data.search) q = q.or(`host.ilike.%${data.search}%,title.ilike.%${data.search}%`);
+    if (data.status) q = q.eq("status_code", data.status);
     if (data.preset === "ok") q = q.eq("status_code", 200);
     if (data.preset === "redirect") q = q.gte("status_code", 300).lt("status_code", 400);
     if (data.preset === "auth") q = q.in("status_code", [401, 403]);
