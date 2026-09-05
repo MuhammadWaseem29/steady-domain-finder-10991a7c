@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.platform_subdomains_page(uuid, uuid, text, integer, boolean, text) FROM PUBLIC, anon, authenticated;

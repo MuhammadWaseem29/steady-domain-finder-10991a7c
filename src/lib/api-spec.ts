@@ -353,6 +353,15 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
       },
       limit(1000, 10000),
       {
+        name: "program",
+        in: "query",
+        type: "string",
+        required: false,
+        description:
+          "Filter to a single program by name — matches any program whose domain contains the text (e.g. tesla returns tesla.com subdomains only). Omit for the whole platform.",
+        example: "tesla",
+      },
+      {
         name: "active",
         in: "query",
         type: "boolean",

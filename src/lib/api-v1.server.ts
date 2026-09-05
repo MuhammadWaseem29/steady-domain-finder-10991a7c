@@ -356,6 +356,7 @@ async function platformsRoute(ctx: Ctx): Promise<Response> {
     const activeOnly = ctx.url.searchParams.get("active") !== "false";
     const format = (ctx.url.searchParams.get("format") ?? "json").toLowerCase();
     const cursor = ctx.url.searchParams.get("cursor");
+    const program = ctx.url.searchParams.get("program")?.trim() || null;
     let afterDomain: string | null = null;
     let afterHost: string | null = null;
     if (cursor) {
@@ -371,6 +372,7 @@ async function platformsRoute(ctx: Ctx): Promise<Response> {
       _platform_id: platform.id,
       _lim: limit,
       _active_only: activeOnly,
+      ...(program ? { _domain_filter: program } : {}),
       ...(afterDomain ? { _after_domain: afterDomain, _after_host: afterHost ?? "" } : {}),
     });
     if (error) return apiError(500, "query_failed", error.message, ctx.meta);
@@ -408,6 +410,7 @@ async function platformsRoute(ctx: Ctx): Promise<Response> {
         })),
         meta: {
           platform: platform.slug,
+          program: program,
           limit,
           count: rows.length,
           active_only: activeOnly,

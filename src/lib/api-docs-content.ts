@@ -134,6 +134,23 @@ while True:
 print(len(hosts), "hosts")`,
   },
   {
+    id: "single-program-dump",
+    title: "Fetch one program by name (any platform)",
+    intro:
+      "Pass the program name as the program filter on the platform feed to get just that program's subdomains — works on hackerone, bugcrowd, intigriti, yeswehack and self. The name matches any program domain containing the text.",
+    language: "bash",
+    code: `# every tesla.com subdomain tracked on hackerone
+BASE="https://chaos.thescope.top/api/v1"
+curl -s "$BASE/platforms/hackerone/subdomains?program=tesla&limit=10000" \\
+  -H "Authorization: Bearer $CHAOS_TOKEN" | jq -r '.data[].host' > tesla.txt
+
+# plain host list, one line per host
+curl -s "$BASE/platforms/bugcrowd/subdomains?program=binance&format=txt" \\
+  -H "Authorization: Bearer $CHAOS_TOKEN" > binance.txt
+
+wc -l tesla.txt binance.txt`,
+  },
+  {
     id: "platform-full-dump",
     title: "Collect every subdomain on a platform (all programs)",
     intro:
