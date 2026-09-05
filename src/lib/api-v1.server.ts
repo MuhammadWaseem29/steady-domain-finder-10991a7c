@@ -410,6 +410,7 @@ async function platformsRoute(ctx: Ctx): Promise<Response> {
         })),
         meta: {
           platform: platform.slug,
+          program: program,
           limit,
           count: rows.length,
           active_only: activeOnly,
