@@ -138,26 +138,48 @@ export async function dispatchSubscription(
   if (!opts.force && !isDue(sub)) return { sent: false, hosts: 0, reason: "not_due" };
 
   const hosts = await pendingHosts(sub);
-  if (!hosts.length) return { sent: false, hosts: 0, reason: "nothing_new" };
+  const liveHosts = sub.notify_live ? await pendingLiveHosts(sub) : [];
+  if (!hosts.length && !liveHosts.length) return { sent: false, hosts: 0, reason: "nothing_new" };
 
   const { sendAlertEmail } = await import("@/lib/alerts-email.server");
-  const result = await sendAlertEmail(sub, hosts);
+  let anySent = false;
+  let lastReason: string | undefined;
 
-  const newest = hosts.reduce(
+  if (hosts.length) {
+    const result = await sendAlertEmail(sub, hosts, "discovered");
+    anySent = anySent || result.sent;
+    if (!result.sent) lastReason = result.reason;
+  }
+  if (liveHosts.length) {
+    const result = await sendAlertEmail(sub, liveHosts, "live");
+    anySent = anySent || result.sent;
+    if (!result.sent) lastReason = result.reason;
+  }
+
+  const newestHost = hosts.reduce(
     (max, h) => (h.first_seen_at > max ? h.first_seen_at : max),
     sub.last_host_seen_at,
+  );
+  const newestLive = liveHosts.reduce(
+    (max, h) => (h.first_seen_at > max ? h.first_seen_at : max),
+    sub.last_live_seen_at,
   );
 
   await supabaseAdmin
     .from("alert_subscriptions")
     .update({
       last_sent_at: new Date().toISOString(),
-      last_host_seen_at: newest,
-      sent_count: sub.sent_count + (result.sent ? hosts.length : 0),
+      last_host_seen_at: newestHost,
+      last_live_seen_at: newestLive,
+      sent_count: sub.sent_count + (anySent ? hosts.length + liveHosts.length : 0),
     })
     .eq("id", sub.id);
 
-  return { sent: result.sent, hosts: hosts.length, ...(result.reason ? { reason: result.reason } : {}) };
+  return {
+    sent: anySent,
+    hosts: hosts.length + liveHosts.length,
+    ...(lastReason ? { reason: lastReason } : {}),
+  };
 }
 
 /** Called from the background scan tick; processes every due subscription. */
