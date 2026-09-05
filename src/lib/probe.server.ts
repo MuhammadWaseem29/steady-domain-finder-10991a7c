@@ -196,37 +196,51 @@ async function probeHost(domainId: string | null, host: string): Promise<ProbeRo
     error: null,
   };
 
-  const dns = await lookupDns(host);
+  // DNS runs in parallel with the first request instead of blocking it.
+  const dnsPromise = lookupDns(host);
+
+  const attempt = async (scheme: "https" | "http", retry: boolean): Promise<boolean> => {
+    for (let tries = 0; tries <= (retry ? 1 : 0); tries++) {
+      const url = `${scheme}://${host}`;
+      try {
+        const { final, finalUrl, chain, bodyText, timeMs } = await fetchChain(url);
+        base.url = url;
+        base.final_url = finalUrl;
+        base.status_code = final.status;
+        base.response_time_ms = timeMs;
+        base.redirect_chain = chain;
+        base.webserver = final.headers.get("server");
+        base.content_type = final.headers.get("content-type")?.split(";")[0] ?? null;
+        base.cdn = detectCdn(final.headers);
+        base.technologies = detectTech(final.headers, bodyText);
+        const bodyBytes = new TextEncoder().encode(bodyText);
+        base.content_length = bodyBytes.length;
+        base.title = extractTitle(bodyText);
+        base.body_hash = await sha256Hex(bodyBytes);
+        base.failed = false;
+        base.error = null;
+        return true;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message.slice(0, 200) : "request_failed";
+        base.error = msg;
+        // Only retry transient network/timeout errors, never hard DNS/TLS failures.
+        if (!/timeout|timed out|reset|network|socket|EAI_AGAIN|fetch failed/i.test(msg)) break;
+      }
+    }
+    return false;
+  };
+
+  let ok = await attempt("https", true);
+  if (!ok) ok = await attempt("http", false);
+
+  const dns = await dnsPromise;
   base.ip = dns.ip;
   base.cname = dns.cname;
-  base.asn = dns.asn;
-  if (!dns.ip && !dns.cname) {
-    return { ...base, failed: true, error: "no_dns" };
-  }
+  if (ok && dns.ip) base.asn = await lookupAsn(dns.ip);
 
-  for (const scheme of ["https", "http"] as const) {
-    const url = `${scheme}://${host}`;
-    try {
-      const { final, finalUrl, chain, bodyText, timeMs } = await fetchChain(url);
-      base.url = url;
-      base.final_url = finalUrl;
-      base.status_code = final.status;
-      base.response_time_ms = timeMs;
-      base.redirect_chain = chain;
-      base.webserver = final.headers.get("server");
-      base.content_type = final.headers.get("content-type")?.split(";")[0] ?? null;
-      base.cdn = detectCdn(final.headers);
-      base.technologies = detectTech(final.headers, bodyText);
-      const bodyBytes = new TextEncoder().encode(bodyText);
-      base.content_length = bodyBytes.length;
-      base.title = extractTitle(bodyText);
-      base.body_hash = await sha256Hex(bodyBytes);
-      base.failed = false;
-      return base;
-    } catch (e) {
-      base.error = e instanceof Error ? e.message.slice(0, 200) : "request_failed";
-      if (scheme === "http") base.failed = true;
-    }
+  if (!ok) {
+    base.failed = true;
+    if (!dns.ip && !dns.cname) base.error = "no_dns";
   }
   return base;
 }
