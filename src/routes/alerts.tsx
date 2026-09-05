@@ -62,6 +62,7 @@ function AlertsPage() {
   const [platformIds, setPlatformIds] = useState<string[]>([]);
   const [domainText, setDomainText] = useState("");
   const [keywordText, setKeywordText] = useState("");
+  const [notifyLive, setNotifyLive] = useState(false);
 
   useEffect(() => {
     if (user?.email && !email) setEmail(user.email);
@@ -90,6 +91,7 @@ function AlertsPage() {
             .split(/[\s,]+/)
             .map((k) => k.trim())
             .filter(Boolean),
+          notify_live: notifyLive,
         },
       }),
     onSuccess: () => {
@@ -334,6 +336,21 @@ function AlertsPage() {
                   />
                 </label>
 
+                <label className="flex items-start gap-2.5 rounded-lg border border-border bg-background px-3 py-2.5">
+                  <input
+                    type="checkbox"
+                    checked={notifyLive}
+                    onChange={(e) => setNotifyLive(e.target.checked)}
+                    className="mt-0.5 accent-primary"
+                  />
+                  <span className="text-sm">
+                    Also notify me when subdomains <strong>go live</strong>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      You'll get a second email when a host starts answering HTTP/HTTPS probes.
+                    </span>
+                  </span>
+                </label>
+
                 <div>
                   <button
                     type="submit"
@@ -369,6 +386,7 @@ function AlertsPage() {
                               ? `${s.platform_ids?.length ?? 0} programs`
                               : `${s.domain_ids?.length ?? 0} root domains`}
                           {s.keywords?.length ? ` · keywords: ${s.keywords.join(", ")}` : ""}
+                          {(s as { notify_live?: boolean }).notify_live ? " · live alerts" : ""}
                         </p>
                       </div>
                       <div className="text-xs text-muted-foreground">

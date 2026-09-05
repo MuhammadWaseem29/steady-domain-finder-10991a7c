@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity } from "lucide-react";
 import { SiteShell } from "@/components/site/chrome";
-import { LiveHostsPanel, ProbeButton } from "@/components/site/probe";
+import { LiveAlertButton, LiveHostsPanel, ProbeButton } from "@/components/site/probe";
 import { probeJobStatus, recentProbeJobs } from "@/lib/probe.functions";
 
 export const Route = createFileRoute("/live")({
@@ -65,6 +65,13 @@ function LivePage() {
           Real HTTP/HTTPS checks against discovered subdomains — status code, page title, server,
           technologies, CDN and IP for every host that answers.
         </p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <LiveAlertButton target={target ?? {}} />
+          <span className="text-xs text-muted-foreground">
+            Get an email whenever a subdomain starts answering
+            {target?.domain ? ` on ${target.domain}` : ""}.
+          </span>
+        </div>
 
         {current && (
           <div className="mt-6 rounded-xl border border-border bg-card p-4">

@@ -40,18 +40,23 @@ async function renderDigest(data: DigestData): Promise<{ html: string; subject: 
 export async function sendAlertEmail(
   sub: AlertSubscription,
   hosts: AlertHost[],
+  kind: "discovered" | "live" = "discovered",
 ): Promise<SendResult> {
   const shown = hosts.slice(0, PREVIEW_LIMIT);
+  const watermark = kind === "live" ? sub.last_live_seen_at : sub.last_host_seen_at;
   const newest = hosts.reduce(
     (max, h) => (h.first_seen_at > max ? h.first_seen_at : max),
-    sub.last_host_seen_at,
+    watermark,
   );
 
   const data: DigestData = {
     hosts: shown.map((h) => ({ host: h.host, domain: h.domain, platform: h.platform })),
     totalCount: hosts.length,
     shownCount: shown.length,
-    frequencyLabel: FREQUENCY_LABELS[sub.frequency],
+    frequencyLabel:
+      kind === "live"
+        ? `${FREQUENCY_LABELS[sub.frequency]} · went live`
+        : FREQUENCY_LABELS[sub.frequency],
     siteUrl: SITE_URL,
   };
 
@@ -59,9 +64,12 @@ export async function sendAlertEmail(
     const { html, subject } = await renderDigest(data);
     const result = await sendResendEmail({
       to: sub.email,
-      subject,
+      subject:
+        kind === "live"
+          ? `${hosts.length.toLocaleString()} subdomains just went live`
+          : subject,
       html,
-      idempotencyKey: `new-subdomains-${sub.id}-${newest}`,
+      idempotencyKey: `new-subdomains-${kind}-${sub.id}-${newest}`,
     });
     return { sent: true, id: result.id };
   } catch (err) {
