@@ -369,10 +369,9 @@ async function platformsRoute(ctx: Ctx): Promise<Response> {
     }
     const { data, error } = await db.rpc("platform_subdomains_page", {
       _platform_id: platform.id,
-      _after_domain: afterDomain ?? undefined,
-      _after_host: afterHost ?? undefined,
       _lim: limit,
       _active_only: activeOnly,
+      ...(afterDomain ? { _after_domain: afterDomain, _after_host: afterHost ?? "" } : {}),
     });
     if (error) return apiError(500, "query_failed", error.message, ctx.meta);
     const rows = (data ?? []) as Array<{
