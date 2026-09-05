@@ -31,6 +31,7 @@ import { Route as ProgramSlugRouteImport } from './routes/program.$slug'
 import { Route as ApiPublicExportRouteImport } from './routes/api/public/export'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
 import { Route as DocsApiIndexRouteImport } from './routes/docs/api.index'
+import { Route as DocsApiAuthenticationRouteImport } from './routes/docs/api.authentication'
 import { Route as DocsApiErrorsRouteImport } from './routes/docs/api.errors'
 import { Route as DocsApiGuidesRouteImport } from './routes/docs/api.guides'
 import { Route as DocsApiPaginationRouteImport } from './routes/docs/api.pagination'
@@ -151,6 +152,11 @@ const DocsApiIndexRoute = DocsApiIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DocsApiRoute,
 } as any)
+const DocsApiAuthenticationRoute = DocsApiAuthenticationRouteImport.update({
+  id: '/authentication',
+  path: '/authentication',
+  getParentRoute: () => DocsApiRoute,
+} as any)
 const DocsApiErrorsRoute = DocsApiErrorsRouteImport.update({
   id: '/errors',
   path: '/errors',
@@ -221,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/program/$slug': typeof ProgramSlugRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
+  '/docs/api/authentication': typeof DocsApiAuthenticationRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
@@ -253,6 +260,7 @@ export interface FileRoutesByTo {
   '/program/$slug': typeof ProgramSlugRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
+  '/docs/api/authentication': typeof DocsApiAuthenticationRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
@@ -287,6 +295,7 @@ export interface FileRoutesById {
   '/program/$slug': typeof ProgramSlugRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
+  '/docs/api/authentication': typeof DocsApiAuthenticationRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
@@ -322,6 +331,7 @@ export interface FileRouteTypes {
     | '/program/$slug'
     | '/api/public/export'
     | '/api/v1/$'
+    | '/docs/api/authentication'
     | '/docs/api/errors'
     | '/docs/api/guides'
     | '/docs/api/pagination'
@@ -354,6 +364,7 @@ export interface FileRouteTypes {
     | '/program/$slug'
     | '/api/public/export'
     | '/api/v1/$'
+    | '/docs/api/authentication'
     | '/docs/api/errors'
     | '/docs/api/guides'
     | '/docs/api/pagination'
@@ -387,6 +398,7 @@ export interface FileRouteTypes {
     | '/program/$slug'
     | '/api/public/export'
     | '/api/v1/$'
+    | '/docs/api/authentication'
     | '/docs/api/errors'
     | '/docs/api/guides'
     | '/docs/api/pagination'
@@ -582,6 +594,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsApiIndexRouteImport
       parentRoute: typeof DocsApiRoute
     }
+    '/docs/api/authentication': {
+      id: '/docs/api/authentication'
+      path: '/authentication'
+      fullPath: '/docs/api/authentication'
+      preLoaderRoute: typeof DocsApiAuthenticationRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/docs/api/errors': {
       id: '/docs/api/errors'
       path: '/errors'
@@ -649,6 +668,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface DocsApiRouteChildren {
+  DocsApiAuthenticationRoute: typeof DocsApiAuthenticationRoute
   DocsApiErrorsRoute: typeof DocsApiErrorsRoute
   DocsApiGuidesRoute: typeof DocsApiGuidesRoute
   DocsApiPaginationRoute: typeof DocsApiPaginationRoute
@@ -659,6 +679,7 @@ interface DocsApiRouteChildren {
 }
 
 const DocsApiRouteChildren: DocsApiRouteChildren = {
+  DocsApiAuthenticationRoute: DocsApiAuthenticationRoute,
   DocsApiErrorsRoute: DocsApiErrorsRoute,
   DocsApiGuidesRoute: DocsApiGuidesRoute,
   DocsApiPaginationRoute: DocsApiPaginationRoute,
