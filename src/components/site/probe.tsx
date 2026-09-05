@@ -8,9 +8,9 @@ import { createProbeJob, liveHostsPage, probeJobStatus } from "@/lib/probe.funct
 import { useSession } from "@/lib/use-session";
 
 type Target = {
-  domain?: string;
-  platformSlug?: string;
-  program?: string;
+  domain?: string | undefined;
+  platformSlug?: string | undefined;
+  program?: string | undefined;
 };
 
 export function ProbeButton({ target, search }: { target: Target; search?: string }) {
@@ -50,7 +50,7 @@ export function ProbeButton({ target, search }: { target: Target; search?: strin
       <button
         type="button"
         onClick={() => void start()}
-        disabled={busy || (job?.status === "running" ?? false)}
+        disabled={busy || job?.status === "running"}
         className="label-mono inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
       >
         {busy ? <Loader2 className="size-3 animate-spin" /> : <Play className="size-3" />}
