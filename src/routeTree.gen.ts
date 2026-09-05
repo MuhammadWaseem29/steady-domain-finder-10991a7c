@@ -30,6 +30,7 @@ import { Route as DomainDomainRouteImport } from './routes/domain.$domain'
 import { Route as ProgramSlugRouteImport } from './routes/program.$slug'
 import { Route as ApiPublicExportRouteImport } from './routes/api/public/export'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
+import { Route as DocsApiIndexRouteImport } from './routes/docs/api.index'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
 import { Route as ApiPublicV1SplatRouteImport } from './routes/api/public/v1/$'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -139,6 +140,11 @@ const ApiV1SplatRoute = ApiV1SplatRouteImport.update({
   path: '/api/v1/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsApiIndexRoute = DocsApiIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DocsApiRoute,
+} as any)
 const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
   id: '/api/public/hooks/scan',
   path: '/api/public/hooks/scan',
@@ -171,13 +177,14 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
-  '/docs/api': typeof DocsApiRoute
+  '/docs/api': typeof DocsApiRouteWithChildren
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
   '/program/$slug': typeof ProgramSlugRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
+  '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -197,13 +204,13 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
-  '/docs/api': typeof DocsApiRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
   '/program/$slug': typeof ProgramSlugRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
+  '/docs/api': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -224,13 +231,14 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
-  '/docs/api': typeof DocsApiRoute
+  '/docs/api': typeof DocsApiRouteWithChildren
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
   '/program/$slug': typeof ProgramSlugRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
+  '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -259,6 +267,7 @@ export interface FileRouteTypes {
     | '/program/$slug'
     | '/api/public/export'
     | '/api/v1/$'
+    | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
     | '/lovable/email/transactional/preview'
@@ -278,13 +287,13 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stats'
     | '/updates'
-    | '/docs/api'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
     | '/program/$slug'
     | '/api/public/export'
     | '/api/v1/$'
+    | '/docs/api'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
     | '/lovable/email/transactional/preview'
@@ -311,6 +320,7 @@ export interface FileRouteTypes {
     | '/program/$slug'
     | '/api/public/export'
     | '/api/v1/$'
+    | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
     | '/lovable/email/transactional/preview'
@@ -331,7 +341,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatsRoute: typeof StatsRoute
   UpdatesRoute: typeof UpdatesRoute
-  DocsApiRoute: typeof DocsApiRoute
+  DocsApiRoute: typeof DocsApiRouteWithChildren
   DocsApiKeyRoute: typeof DocsApiKeyRoute
   DocsFetchSubdomainsRoute: typeof DocsFetchSubdomainsRoute
   DomainDomainRoute: typeof DomainDomainRoute
@@ -492,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/api/': {
+      id: '/docs/api/'
+      path: '/'
+      fullPath: '/docs/api/'
+      preLoaderRoute: typeof DocsApiIndexRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/api/public/hooks/scan': {
       id: '/api/public/hooks/scan'
       path: '/api/public/hooks/scan'
@@ -516,6 +533,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DocsApiRouteChildren {
+  DocsApiIndexRoute: typeof DocsApiIndexRoute
+}
+
+const DocsApiRouteChildren: DocsApiRouteChildren = {
+  DocsApiIndexRoute: DocsApiIndexRoute,
+}
+
+const DocsApiRouteWithChildren =
+  DocsApiRoute._addFileChildren(DocsApiRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
@@ -531,7 +559,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatsRoute: StatsRoute,
   UpdatesRoute: UpdatesRoute,
-  DocsApiRoute: DocsApiRoute,
+  DocsApiRoute: DocsApiRouteWithChildren,
   DocsApiKeyRoute: DocsApiKeyRoute,
   DocsFetchSubdomainsRoute: DocsFetchSubdomainsRoute,
   DomainDomainRoute: DomainDomainRoute,
