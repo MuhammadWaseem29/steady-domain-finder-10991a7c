@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const BATCH = 1500;
-const CONCURRENCY = 120;
+const CONCURRENCY = 250;
 const FLUSH_EVERY = 300;
 const TIMEOUT_MS = 5000;
 const DNS_TIMEOUT_MS = 2500;
