@@ -308,9 +308,23 @@ export function LiveHostsPanel({ target }: { target: Target }) {
                     {r.host}
                     <ExternalLink className="size-3 opacity-50" />
                   </a>
+                  {r.takeover_risk && (
+                    <span
+                      title={r.takeover_evidence ?? "Possible subdomain takeover"}
+                      className="ml-2 inline-flex items-center gap-1 rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] text-red-400"
+                    >
+                      <ShieldAlert className="size-3" /> takeover?
+                    </span>
+                  )}
                 </td>
                 <td className="max-w-56 truncate px-3 py-1.5 text-muted-foreground">
                   {r.title ?? ""}
+                </td>
+                <td
+                  className="max-w-48 truncate px-3 py-1.5 text-muted-foreground"
+                  title={r.takeover_evidence ?? r.cname ?? ""}
+                >
+                  {r.takeover_service ?? r.cname ?? ""}
                 </td>
                 <td className="px-3 py-1.5 text-muted-foreground">
                   {[r.webserver, r.cdn].filter(Boolean).join(" · ")}
@@ -326,9 +340,12 @@ export function LiveHostsPanel({ target }: { target: Target }) {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
-                  No live hosts yet — run a probe to check which hosts answer.
+                <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
+                  {preset === "takeover"
+                    ? "No takeover candidates found in the hosts probed so far."
+                    : "No live hosts yet — run a probe to check which hosts answer."}
                 </td>
+
               </tr>
             )}
           </tbody>
