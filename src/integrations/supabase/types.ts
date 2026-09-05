@@ -419,6 +419,9 @@ export type Database = {
           redirect_chain: string[]
           response_time_ms: number | null
           status_code: number | null
+          takeover_evidence: string | null
+          takeover_risk: boolean
+          takeover_service: string | null
           technologies: string[]
           title: string | null
           tls_expires_at: string | null
@@ -446,6 +449,9 @@ export type Database = {
           redirect_chain?: string[]
           response_time_ms?: number | null
           status_code?: number | null
+          takeover_evidence?: string | null
+          takeover_risk?: boolean
+          takeover_service?: string | null
           technologies?: string[]
           title?: string | null
           tls_expires_at?: string | null
@@ -473,6 +479,9 @@ export type Database = {
           redirect_chain?: string[]
           response_time_ms?: number | null
           status_code?: number | null
+          takeover_evidence?: string | null
+          takeover_risk?: boolean
+          takeover_service?: string | null
           technologies?: string[]
           title?: string | null
           tls_expires_at?: string | null
