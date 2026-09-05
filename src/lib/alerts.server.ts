@@ -12,6 +12,7 @@ export type AlertSubscription = {
   keywords: string[];
   is_active: boolean;
   notify_live: boolean;
+  live_status_codes: number[];
   last_sent_at: string | null;
   last_host_seen_at: string;
   last_live_seen_at: string;
@@ -98,6 +99,11 @@ export async function pendingLiveHosts(sub: AlertSubscription): Promise<AlertHos
   } else if (platformScoped) {
     query = query.in("domains.platform_id", sub.platform_ids);
   }
+
+  const codes = (sub.live_status_codes ?? []).filter(
+    (c) => Number.isInteger(c) && c >= 100 && c <= 599,
+  );
+  if (codes.length) query = query.in("status_code", codes);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);

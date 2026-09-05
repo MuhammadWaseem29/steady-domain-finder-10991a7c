@@ -12,6 +12,7 @@ import {
   FREQUENCIES,
   FREQUENCY_LABELS,
   type Frequency,
+  LIVE_STATUS_CODES,
   createAlertSubscription,
   deleteAlertSubscription,
   listAlertSubscriptions,
@@ -63,6 +64,12 @@ function AlertsPage() {
   const [domainText, setDomainText] = useState("");
   const [keywordText, setKeywordText] = useState("");
   const [notifyLive, setNotifyLive] = useState(false);
+  const [liveCodes, setLiveCodes] = useState<number[]>([]);
+
+  const toggleCode = (code: number) =>
+    setLiveCodes((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code].sort((a, b) => a - b),
+    );
 
   useEffect(() => {
     if (user?.email && !email) setEmail(user.email);
@@ -92,6 +99,7 @@ function AlertsPage() {
             .map((k) => k.trim())
             .filter(Boolean),
           notify_live: notifyLive,
+          live_status_codes: notifyLive ? liveCodes : [],
         },
       }),
     onSuccess: () => {
@@ -351,6 +359,31 @@ function AlertsPage() {
                   </span>
                 </label>
 
+                {notifyLive && (
+                  <div className="rounded-lg border border-border bg-background px-3 py-2.5">
+                    <span className="label-mono text-muted-foreground">
+                      Only these status codes (none selected = all live hosts)
+                    </span>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {LIVE_STATUS_CODES.map((code) => (
+                        <button
+                          key={code}
+                          type="button"
+                          aria-pressed={liveCodes.includes(code)}
+                          onClick={() => toggleCode(code)}
+                          className={`rounded-full border px-2.5 py-1 font-mono text-xs transition-colors ${
+                            liveCodes.includes(code)
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border hover:bg-accent"
+                          }`}
+                        >
+                          {code}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <button
                     type="submit"
@@ -386,7 +419,12 @@ function AlertsPage() {
                               ? `${s.platform_ids?.length ?? 0} programs`
                               : `${s.domain_ids?.length ?? 0} root domains`}
                           {s.keywords?.length ? ` · keywords: ${s.keywords.join(", ")}` : ""}
-                          {(s as { notify_live?: boolean }).notify_live ? " · live alerts" : ""}
+                          {(s as { notify_live?: boolean }).notify_live
+                            ? ` · live alerts${(() => {
+                                const codes = (s as { live_status_codes?: number[] }).live_status_codes;
+                                return codes?.length ? ` (${codes.join(", ")})` : "";
+                              })()}`
+                            : ""}
                         </p>
                       </div>
                       <div className="text-xs text-muted-foreground">

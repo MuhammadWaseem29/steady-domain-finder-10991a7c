@@ -20,7 +20,13 @@ const subscriptionInput = z.object({
   domains: z.array(z.string().trim().min(1).max(253)).max(200).default([]),
   keywords: z.array(z.string().trim().min(1).max(40)).max(30).default([]),
   notify_live: z.boolean().default(false),
+  live_status_codes: z
+    .array(z.number().int().min(100).max(599))
+    .max(20)
+    .default([]),
 });
+
+export const LIVE_STATUS_CODES = [200, 201, 204, 301, 302, 307, 308, 400, 401, 403, 404, 500, 502, 503] as const;
 
 export const listAlertSubscriptions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -69,6 +75,7 @@ export const createAlertSubscription = createServerFn({ method: "POST" })
       domain_ids,
       keywords: data.keywords.map((k) => k.toLowerCase()),
       notify_live: data.notify_live,
+      live_status_codes: data.live_status_codes,
       last_host_seen_at: new Date().toISOString(),
       last_live_seen_at: new Date().toISOString(),
     });
