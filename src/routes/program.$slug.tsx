@@ -205,6 +205,7 @@ function ProgramDetail() {
           </span>
           <div className="flex gap-2">
             <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
               className="label-mono inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent disabled:opacity-40"
             >
