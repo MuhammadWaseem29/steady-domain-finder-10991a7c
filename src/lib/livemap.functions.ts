@@ -40,7 +40,7 @@ export const liveDashboardStats = createServerFn({ method: "GET" })
   .inputValidator((input) => filterSchema.parse(input))
   .handler(async ({ data }) => {
     const sb = publicClient();
-    const slug = data.platformSlug ?? null;
+    const slug = data.platformSlug ?? undefined;
     const [programs, statuses] = await Promise.all([
       sb.rpc("live_program_stats", { _limit: 40, _platform_slug: slug }),
       sb.rpc("live_status_stats", { _platform_slug: slug }),
@@ -171,7 +171,7 @@ export const liveIpMap = createServerFn({ method: "GET" })
     const sb = publicClient();
     const { data: rows, error } = await sb.rpc("live_ip_points", {
       _limit: data.limit,
-      _platform_slug: data.platformSlug ?? null,
+      _platform_slug: data.platformSlug ?? undefined,
     });
     if (error) throw new Error(error.message);
 
