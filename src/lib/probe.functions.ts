@@ -27,13 +27,16 @@ const createJobSchema = z.object({
   program: z.string().trim().toLowerCase().max(255).optional(),
   scope: z.enum(["all", "new", "active"]).default("all"),
   search: z.string().trim().max(200).optional(),
+  everything: z.boolean().optional(),
 });
 
 export const createProbeJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => createJobSchema.parse(input))
   .handler(async ({ data, context }) => {
-    if (!data.domain && !data.platformSlug) throw new Error("domain or platformSlug required");
+    if (!data.domain && !data.platformSlug && !data.everything) {
+      throw new Error("domain or platformSlug required");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     let domainId: string | null = null;
@@ -60,6 +63,14 @@ export const createProbeJob = createServerFn({ method: "POST" })
       .select("id, status")
       .single();
     if (error) throw new Error(error.message);
+
+    // Counting every host across every platform would take longer than the
+    // probe itself, so a whole-database job reports progress without a total.
+    if (data.everything && !data.domain && !data.platformSlug) {
+      const { processProbeJobs: kick } = await import("@/lib/probe.server");
+      void kick(20000).catch(() => undefined);
+      return { id: job.id, total: 0 };
+    }
 
     // Count targets so the UI can show a denominator.
     const { probeJobTargets } = await import("@/lib/probe.server");
