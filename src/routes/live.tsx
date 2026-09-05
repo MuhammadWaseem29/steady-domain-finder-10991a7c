@@ -3,7 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity } from "lucide-react";
 import { SiteShell } from "@/components/site/chrome";
-import { LiveAlertButton, LiveHostsPanel, ProbeButton } from "@/components/site/probe";
+import {
+  LiveAlertButton,
+  LiveHostsPanel,
+  ProbeButton,
+  ProbeEverythingButton,
+} from "@/components/site/probe";
 import { probeJobStatus, recentProbeJobs } from "@/lib/probe.functions";
 
 export const Route = createFileRoute("/live")({
@@ -66,6 +71,19 @@ function LivePage() {
           technologies, CDN and IP for every host that answers.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
+          <ProbeEverythingButton />
+          <a
+            href="/raw/mainlive.txt"
+            className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
+          >
+            mainlive.txt
+          </a>
+          <a
+            href="/raw/mainlive.txt/new?hours=24"
+            className="label-mono inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent"
+          >
+            new live (24h)
+          </a>
           <LiveAlertButton target={target ?? {}} />
           <span className="text-xs text-muted-foreground">
             Get an email whenever a subdomain starts answering

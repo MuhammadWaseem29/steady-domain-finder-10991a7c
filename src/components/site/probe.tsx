@@ -77,6 +77,40 @@ export function LiveAlertButton({ target }: { target: Target }) {
   );
 }
 
+export function ProbeEverythingButton() {
+  const { user } = useSession();
+  const run = useServerFn(createProbeJob);
+  const [busy, setBusy] = useState(false);
+
+  const start = async () => {
+    if (!user) {
+      toast.error("Sign in to run a live probe");
+      return;
+    }
+    setBusy(true);
+    try {
+      await run({ data: { everything: true, scope: "active" } });
+      toast.success("Probing every platform — results appear below as hosts answer");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not start probe");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void start()}
+      disabled={busy}
+      className="label-mono inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+    >
+      {busy ? <Loader2 className="size-3 animate-spin" /> : <Play className="size-3" />}
+      Probe every platform
+    </button>
+  );
+}
+
 export function ProbeButton({ target, search }: { target: Target; search?: string }) {
   const { user } = useSession();
   const run = useServerFn(createProbeJob);
