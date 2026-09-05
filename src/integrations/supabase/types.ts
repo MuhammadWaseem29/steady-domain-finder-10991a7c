@@ -724,23 +724,42 @@ export type Database = {
           subdomain_count: number
         }[]
       }
-      platform_subdomains_page: {
-        Args: {
-          _active_only?: boolean
-          _after_domain?: string
-          _after_host?: string
-          _lim?: number
-          _platform_id: string
-        }
-        Returns: {
-          domain: string
-          domain_id: string
-          first_seen_at: string
-          host: string
-          is_active: boolean
-          last_seen_at: string
-        }[]
-      }
+      platform_subdomains_page:
+        | {
+            Args: {
+              _active_only?: boolean
+              _after_domain?: string
+              _after_host?: string
+              _domain_filter?: string
+              _lim?: number
+              _platform_id: string
+            }
+            Returns: {
+              domain: string
+              domain_id: string
+              first_seen_at: string
+              host: string
+              is_active: boolean
+              last_seen_at: string
+            }[]
+          }
+        | {
+            Args: {
+              _active_only?: boolean
+              _after_domain?: string
+              _after_host?: string
+              _lim?: number
+              _platform_id: string
+            }
+            Returns: {
+              domain: string
+              domain_id: string
+              first_seen_at: string
+              host: string
+              is_active: boolean
+              last_seen_at: string
+            }[]
+          }
       platform_updates: {
         Args: { since: string }
         Returns: {
