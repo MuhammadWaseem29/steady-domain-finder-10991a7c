@@ -254,9 +254,17 @@ export async function processProbeJobs(budgetMs: number): Promise<{ jobId: strin
   const j = Array.isArray(job) ? job[0] : job;
   if (!j) return { jobId: null, probed: 0 };
 
-  // Resolve the target host list lazily from the cursor.
-  for (let pass = 0; pass < 200 && Date.now() - started < budgetMs; pass++) {
-    const hosts = await fetchHostBatch(supabaseAdmin, j, BATCH);
+  const timeLeft = () => budgetMs - (Date.now() - started);
+
+  // Keep the next page of hosts loading while the current one is being probed.
+  let nextBatch: Promise<Array<{ host: string; domainId: string | null }>> = fetchHostBatch(
+    supabaseAdmin,
+    j,
+    BATCH,
+  );
+
+  for (let pass = 0; pass < 500 && timeLeft() > 2000; pass++) {
+    const hosts = await nextBatch;
     if (hosts.length === 0) {
       await supabaseAdmin.rpc("record_probe_batch", {
         _job_id: j.id,
@@ -267,22 +275,56 @@ export async function processProbeJobs(budgetMs: number): Promise<{ jobId: strin
       break;
     }
 
-    const results: ProbeRow[] = [];
-    for (let i = 0; i < hosts.length; i += CONCURRENCY) {
-      const slice = hosts.slice(i, i + CONCURRENCY);
-      const rows = await Promise.all(slice.map((h) => probeHost(h.domainId, h.host)));
-      results.push(...rows);
-    }
-
+    const lastHost = hosts[hosts.length - 1]!.host;
     const done = hosts.length < BATCH;
-    const { error } = await supabaseAdmin.rpc("record_probe_batch", {
-      _job_id: j.id,
-      _results: results,
-      _cursor_host: hosts[hosts.length - 1]!.host,
-      _done: done,
-    });
-    if (error) throw new Error(error.message);
-    probed += results.length;
+    // Prefetch the following page immediately (cursor advances to this page's end).
+    nextBatch = done
+      ? Promise.resolve([])
+      : fetchHostBatch(supabaseAdmin, { ...j, cursor_host: lastHost }, BATCH);
+
+    // Continuous worker pool: a finished worker grabs the next host straight away,
+    // so one slow host can never hold up the rest of the batch.
+    let index = 0;
+    let pending: ProbeRow[] = [];
+    let flushed = 0;
+    const writes: Array<Promise<unknown>> = [];
+
+    const flush = (cursor: string, finished: boolean) => {
+      const rows = pending;
+      pending = [];
+      if (!rows.length && !finished) return;
+      flushed += rows.length;
+      writes.push(
+        supabaseAdmin
+          .rpc("record_probe_batch", {
+            _job_id: j.id,
+            _results: rows,
+            _cursor_host: cursor,
+            _done: finished,
+          })
+          .then(({ error }: { error: { message: string } | null }) => {
+            if (error) console.error("record_probe_batch failed:", error.message);
+          }),
+      );
+    };
+
+    const worker = async () => {
+      for (;;) {
+        const i = index++;
+        if (i >= hosts.length) return;
+        const h = hosts[i]!;
+        const row = await probeHost(h.domainId, h.host);
+        pending.push(row);
+        probed++;
+        if (pending.length >= FLUSH_EVERY) flush(h.host, false);
+      }
+    };
+
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, hosts.length) }, worker));
+    flush(lastHost, done);
+    await Promise.all(writes);
+    void flushed;
+
     if (done) break;
   }
 
