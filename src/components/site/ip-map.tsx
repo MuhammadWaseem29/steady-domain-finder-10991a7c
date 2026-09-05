@@ -19,7 +19,7 @@ export function IpWorldMap({ points }: { points: MapPoint[] }) {
       <svg viewBox="0 0 360 180" className="h-[420px] w-full" role="img" aria-label="World map of live host IP addresses">
         <defs>
           <pattern id="grid" width="15" height="15" patternUnits="userSpaceOnUse">
-            <path d="M 15 0 L 0 0 0 15" fill="none" stroke="currentColor" strokeWidth="0.2" className="text-primary/15" />
+            <path d="M 15 0 L 0 0 0 15" fill="none" stroke="currentColor" strokeWidth="0.2" className="text-terminal-foreground/20" />
           </pattern>
           <radialGradient id="glow">
             <stop offset="0%" stopColor="currentColor" stopOpacity="0.55" />
@@ -30,7 +30,7 @@ export function IpWorldMap({ points }: { points: MapPoint[] }) {
         <path d={LAND} fill="none" stroke="none" />
         {/* latitude guides */}
         {[30, 60, 90, 120, 150].map((y) => (
-          <line key={y} x1="0" x2="360" y1={y} y2={y} stroke="currentColor" strokeWidth="0.15" className="text-muted-foreground/30" />
+          <line key={y} x1="0" x2="360" y1={y} y2={y} stroke="currentColor" strokeWidth="0.15" className="text-terminal-foreground/15" />
         ))}
 
         {points.map((p, i) => {
@@ -42,7 +42,7 @@ export function IpWorldMap({ points }: { points: MapPoint[] }) {
               key={`${p.ip}-${i}`}
               onMouseEnter={() => setActive(p)}
               onMouseLeave={() => setActive(null)}
-              className={danger ? "text-destructive" : "text-primary"}
+              className={danger ? "text-destructive" : "text-terminal-foreground"}
             >
               <circle cx={x} cy={y} r={r * 3} fill="url(#glow)" />
               <motion.circle
