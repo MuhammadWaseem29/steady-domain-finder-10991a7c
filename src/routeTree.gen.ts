@@ -33,6 +33,7 @@ import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
 import { Route as DocsApiIndexRouteImport } from './routes/docs/api.index'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
 import { Route as ApiPublicV1SplatRouteImport } from './routes/api/public/v1/$'
+import { Route as DocsApiReferenceEndpointRouteImport } from './routes/docs/api.reference.$endpoint'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -155,6 +156,12 @@ const ApiPublicV1SplatRoute = ApiPublicV1SplatRouteImport.update({
   path: '/api/public/v1/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsApiReferenceEndpointRoute =
+  DocsApiReferenceEndpointRouteImport.update({
+    id: '/reference/$endpoint',
+    path: '/reference/$endpoint',
+    getParentRoute: () => DocsApiRoute,
+  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -187,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
+  '/docs/api/reference/$endpoint': typeof DocsApiReferenceEndpointRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -213,6 +221,7 @@ export interface FileRoutesByTo {
   '/docs/api': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
+  '/docs/api/reference/$endpoint': typeof DocsApiReferenceEndpointRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
@@ -241,6 +250,7 @@ export interface FileRoutesById {
   '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
+  '/docs/api/reference/$endpoint': typeof DocsApiReferenceEndpointRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
+    | '/docs/api/reference/$endpoint'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '/docs/api'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
+    | '/docs/api/reference/$endpoint'
     | '/lovable/email/transactional/preview'
   id:
     | '__root__'
@@ -323,6 +335,7 @@ export interface FileRouteTypes {
     | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
+    | '/docs/api/reference/$endpoint'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
@@ -523,6 +536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/api/reference/$endpoint': {
+      id: '/docs/api/reference/$endpoint'
+      path: '/reference/$endpoint'
+      fullPath: '/docs/api/reference/$endpoint'
+      preLoaderRoute: typeof DocsApiReferenceEndpointRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -535,10 +555,12 @@ declare module '@tanstack/react-router' {
 
 interface DocsApiRouteChildren {
   DocsApiIndexRoute: typeof DocsApiIndexRoute
+  DocsApiReferenceEndpointRoute: typeof DocsApiReferenceEndpointRoute
 }
 
 const DocsApiRouteChildren: DocsApiRouteChildren = {
   DocsApiIndexRoute: DocsApiIndexRoute,
+  DocsApiReferenceEndpointRoute: DocsApiReferenceEndpointRoute,
 }
 
 const DocsApiRouteWithChildren =
