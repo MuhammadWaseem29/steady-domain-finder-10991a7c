@@ -179,6 +179,7 @@ export async function handleRawExport(request: Request, splat: string): Promise<
         "",
         "/raw/{domain}                 all hosts for one root domain",
         "/raw/{domain}/new             hosts first seen in the last 24h (?hours=N)",
+        "/raw/{domain}/live            hosts that answered a live probe",
         "/raw/{platform}               all hosts across a platform",
         "/raw/{platform}/{program}     all hosts for one program on that platform",
         "",
