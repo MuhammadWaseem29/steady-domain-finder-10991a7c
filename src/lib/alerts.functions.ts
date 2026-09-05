@@ -92,7 +92,15 @@ export const createLiveAlert = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const email = (context.claims?.email as string | undefined) ?? null;
+    let email = (context.claims?.email as string | undefined) ?? null;
+    if (!email) {
+      const { data: profile } = await context.supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", context.userId)
+        .maybeSingle();
+      email = (profile as { email: string | null } | null)?.email ?? null;
+    }
     if (!email) throw new Error("Your account has no email address");
 
     let scope: "all" | "platforms" | "domains" = "all";
