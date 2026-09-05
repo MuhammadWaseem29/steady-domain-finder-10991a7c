@@ -220,6 +220,19 @@ function ProgramDetail() {
             </button>
           </div>
         </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-bold">Live hosts</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Probe every host in this program with real HTTP/HTTPS requests.
+            </p>
+          </div>
+          <ProbeButton target={{ platformSlug: slug }} />
+        </div>
+        <div className="mt-4">
+          <LiveHostsPanel target={{ platformSlug: slug }} />
+        </div>
       </div>
     </SiteShell>
   );
