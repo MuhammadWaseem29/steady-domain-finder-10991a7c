@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Copy, Loader2, Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { SiteShell, Stat } from "@/components/site/chrome";
 import { LiveHostsPanel, ProbeButton } from "@/components/site/probe";
-import { domainsPageQuery, platformsQuery, timeAgo, PAGE_SIZE } from "@/lib/chaos-data";
+import { domainsPageQuery, platformsQuery, platformLiveStatsQuery, timeAgo, PAGE_SIZE } from "@/lib/chaos-data";
 import { addDomains } from "@/lib/chaos.functions";
 
 export const Route = createFileRoute("/program/$slug")({
@@ -37,6 +37,8 @@ function ProgramDetail() {
 
   const { data: platforms } = useQuery(platformsQuery);
   const platform = (platforms ?? []).find((p) => p.slug === slug);
+  const { data: liveStats } = useQuery(platformLiveStatsQuery);
+  const live = (liveStats ?? []).find((s) => s.platform_id === platform?.platform_id);
   const { data: pageData, isLoading } = useQuery({
     ...domainsPageQuery(search, page, platform?.platform_id),
     enabled: Boolean(platform?.platform_id),
