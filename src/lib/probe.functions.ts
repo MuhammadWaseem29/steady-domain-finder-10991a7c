@@ -115,7 +115,7 @@ const livePageSchema = z.object({
   platformSlug: z.string().trim().toLowerCase().optional(),
   program: z.string().trim().toLowerCase().optional(),
   search: z.string().trim().max(200).optional(),
-  preset: z.enum(["all", "ok", "redirect", "auth", "interesting"]).default("all"),
+  preset: z.enum(["all", "ok", "redirect", "auth", "interesting", "takeover"]).default("all"),
   limit: z.number().int().min(1).max(500).default(100),
   offset: z.number().int().min(0).default(0),
 });
