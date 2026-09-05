@@ -98,6 +98,7 @@ function AlertsPage() {
             .map((k) => k.trim())
             .filter(Boolean),
           notify_live: notifyLive,
+          live_status_codes: notifyLive ? liveCodes : [],
         },
       }),
     onSuccess: () => {
@@ -356,6 +357,31 @@ function AlertsPage() {
                     </span>
                   </span>
                 </label>
+
+                {notifyLive && (
+                  <div className="rounded-lg border border-border bg-background px-3 py-2.5">
+                    <span className="label-mono text-muted-foreground">
+                      Only these status codes (none selected = all live hosts)
+                    </span>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {LIVE_STATUS_CODES.map((code) => (
+                        <button
+                          key={code}
+                          type="button"
+                          aria-pressed={liveCodes.includes(code)}
+                          onClick={() => toggleCode(code)}
+                          className={`rounded-full border px-2.5 py-1 font-mono text-xs transition-colors ${
+                            liveCodes.includes(code)
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border hover:bg-accent"
+                          }`}
+                        >
+                          {code}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <button
