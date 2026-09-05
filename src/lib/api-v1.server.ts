@@ -211,76 +211,6 @@ async function domainsRoute(ctx: Ctx): Promise<Response> {
     return apiJson({ data: { ...domain, stats: row ?? null } }, 200, ctx.meta);
   }
 
-  if (sub === "subdomains" && !subSub) {
-    const limit = num(ctx.url, "limit", 1000, 1, 10000);
-    const activeOnly = ctx.url.searchParams.get("active") !== "false";
-    const format = (ctx.url.searchParams.get("format") ?? "json").toLowerCase();
-    const cursor = ctx.url.searchParams.get("cursor");
-    let afterDomain: string | null = null;
-    let afterHost: string | null = null;
-    if (cursor) {
-      try {
-        const [d, h] = atob(cursor.replace(/-/g, "+").replace(/_/g, "/")).split("|");
-        afterDomain = d ?? null;
-        afterHost = h ?? "";
-      } catch {
-        return apiError(400, "invalid_cursor", "The cursor value is malformed.", ctx.meta);
-      }
-    }
-    const { data, error } = await db.rpc("platform_subdomains_page", {
-      _platform_id: platform.id,
-      _after_domain: afterDomain,
-      _after_host: afterHost,
-      _lim: limit,
-      _active_only: activeOnly,
-    });
-    if (error) return apiError(500, "query_failed", error.message, ctx.meta);
-    const rows = (data ?? []) as Array<{
-      domain_id: string;
-      domain: string;
-      host: string;
-      is_active: boolean;
-      first_seen_at: string;
-      last_seen_at: string;
-    }>;
-    const last = rows.length === limit ? rows[rows.length - 1] : null;
-    const nextCursor = last
-      ? btoa(`${last.domain_id}|${last.host}`).replace(/\+/g, "-").replace(/\//g, "_")
-      : null;
-
-    if (format === "txt") {
-      const headers = new Headers({
-        ...corsHeaders(),
-        "Content-Type": "text/plain; charset=utf-8",
-        "X-Request-Id": ctx.meta.requestId,
-      });
-      if (nextCursor) headers.set("X-Next-Cursor", nextCursor);
-      return new Response(rows.map((r) => r.host).join("\n"), { headers });
-    }
-
-    return apiJson(
-      {
-        data: rows.map((r) => ({
-          host: r.host,
-          domain: r.domain,
-          is_active: r.is_active,
-          first_seen_at: r.first_seen_at,
-          last_seen_at: r.last_seen_at,
-        })),
-        meta: {
-          platform: platform.slug,
-          limit,
-          count: rows.length,
-          active_only: activeOnly,
-          next_cursor: nextCursor,
-          has_more: Boolean(nextCursor),
-        },
-      },
-      200,
-      ctx.meta,
-    );
-  }
-
   if (sub === "subdomains" && subSub === "new") {
     if (ctx.method !== "GET") return apiError(405, "method_not_allowed", "Use GET.", ctx.meta);
     const since = sinceFrom(ctx.url);
@@ -419,6 +349,76 @@ async function platformsRoute(ctx: Ctx): Promise<Response> {
       .range(offset, offset + limit - 1);
     if (error) return apiError(500, "query_failed", error.message, ctx.meta);
     return apiJson({ data: data ?? [], meta: { limit, offset, total: count ?? null } }, 200, ctx.meta);
+  }
+
+  if (sub === "subdomains" && !subSub) {
+    const limit = num(ctx.url, "limit", 1000, 1, 10000);
+    const activeOnly = ctx.url.searchParams.get("active") !== "false";
+    const format = (ctx.url.searchParams.get("format") ?? "json").toLowerCase();
+    const cursor = ctx.url.searchParams.get("cursor");
+    let afterDomain: string | null = null;
+    let afterHost: string | null = null;
+    if (cursor) {
+      try {
+        const [d, h] = atob(cursor.replace(/-/g, "+").replace(/_/g, "/")).split("|");
+        afterDomain = d ?? null;
+        afterHost = h ?? "";
+      } catch {
+        return apiError(400, "invalid_cursor", "The cursor value is malformed.", ctx.meta);
+      }
+    }
+    const { data, error } = await db.rpc("platform_subdomains_page", {
+      _platform_id: platform.id,
+      _after_domain: afterDomain,
+      _after_host: afterHost,
+      _lim: limit,
+      _active_only: activeOnly,
+    });
+    if (error) return apiError(500, "query_failed", error.message, ctx.meta);
+    const rows = (data ?? []) as Array<{
+      domain_id: string;
+      domain: string;
+      host: string;
+      is_active: boolean;
+      first_seen_at: string;
+      last_seen_at: string;
+    }>;
+    const last = rows.length === limit ? rows[rows.length - 1] : null;
+    const nextCursor = last
+      ? btoa(`${last.domain_id}|${last.host}`).replace(/\+/g, "-").replace(/\//g, "_")
+      : null;
+
+    if (format === "txt") {
+      const headers = new Headers({
+        ...corsHeaders(),
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Request-Id": ctx.meta.requestId,
+      });
+      if (nextCursor) headers.set("X-Next-Cursor", nextCursor);
+      return new Response(rows.map((r) => r.host).join("\n"), { headers });
+    }
+
+    return apiJson(
+      {
+        data: rows.map((r) => ({
+          host: r.host,
+          domain: r.domain,
+          is_active: r.is_active,
+          first_seen_at: r.first_seen_at,
+          last_seen_at: r.last_seen_at,
+        })),
+        meta: {
+          platform: platform.slug,
+          limit,
+          count: rows.length,
+          active_only: activeOnly,
+          next_cursor: nextCursor,
+          has_more: Boolean(nextCursor),
+        },
+      },
+      200,
+      ctx.meta,
+    );
   }
 
   if (sub === "subdomains" && subSub === "new") {
