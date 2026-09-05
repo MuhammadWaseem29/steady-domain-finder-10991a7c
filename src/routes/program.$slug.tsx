@@ -81,7 +81,7 @@ function ProgramDetail() {
           Root domains in this program's scope. Every one is rescanned on the rolling hourly cycle.
         </p>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+        <div className="mt-8 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Stat label="Domains" value={Number(platform?.domain_count ?? 0).toLocaleString()} index={0} />
           <Stat
             label="Subdomains"
@@ -89,6 +89,12 @@ function ProgramDetail() {
             index={1}
           />
           <Stat label="New (24h)" value={Number(platform?.new_24h ?? 0).toLocaleString()} index={2} />
+          <Stat label="Live hosts" value={Number(live?.live_hosts ?? 0).toLocaleString()} index={3} />
+          <Stat
+            label="Takeover flags"
+            value={Number(live?.takeover_count ?? 0).toLocaleString()}
+            index={4}
+          />
         </div>
 
         <div className="mt-8 rounded-lg border border-border bg-card p-5">
