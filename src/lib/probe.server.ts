@@ -239,10 +239,14 @@ async function probeHost(domainId: string | null, host: string): Promise<ProbeRo
     body_hash: null,
     failed: false,
     error: null,
+    takeover_risk: false,
+    takeover_service: null,
+    takeover_evidence: null,
   };
 
   // DNS runs in parallel with the first request instead of blocking it.
   const dnsPromise = lookupDns(host);
+  let lastBody = "";
 
   const attempt = async (scheme: "https" | "http", retry: boolean): Promise<boolean> => {
     for (let tries = 0; tries <= (retry ? 1 : 0); tries++) {
@@ -262,6 +266,7 @@ async function probeHost(domainId: string | null, host: string): Promise<ProbeRo
         base.content_length = bodyBytes.length;
         base.title = extractTitle(bodyText);
         base.body_hash = await sha256Hex(bodyBytes);
+        lastBody = bodyText;
         base.failed = false;
         base.error = null;
         return true;
@@ -287,8 +292,58 @@ async function probeHost(domainId: string | null, host: string): Promise<ProbeRo
     base.failed = true;
     if (!dns.ip && !dns.cname) base.error = "no_dns";
   }
+
+  await assessTakeover(base, lastBody);
   return base;
 }
+
+// Flags subdomains delegated to an outside owner where that delegation looks
+// unclaimed — the classic subdomain-takeover setup.
+async function assessTakeover(row: ProbeRow, body: string): Promise<void> {
+  const cname = row.cname;
+  if (!cname) return;
+  const own = registrableDomain(row.host);
+  const target = registrableDomain(cname);
+  if (!target || target === own) return;
+
+  const hay = `${body.slice(0, 20000)}\n${row.title ?? ""}`;
+  const match = TAKEOVER_SERVICES.find((s) => s.cname.test(cname));
+
+  if (match) {
+    if (match.body && match.body.test(hay)) {
+      row.takeover_risk = true;
+      row.takeover_service = match.service;
+      row.takeover_evidence = `CNAME -> ${cname} and the service returns its "unclaimed" page`;
+      return;
+    }
+    // No answer at all from the vendor target: dangling delegation.
+    if (!row.ip) {
+      const status = await dohStatus(cname);
+      if (status === 3 || (match.nxdomain && !row.status_code)) {
+        row.takeover_risk = true;
+        row.takeover_service = match.service;
+        row.takeover_evidence = `CNAME -> ${cname} does not resolve (dangling delegation)`;
+        return;
+      }
+    }
+  }
+
+  // Not a known vendor, but the delegation target itself is gone.
+  if (!row.ip && row.failed) {
+    const status = await dohStatus(cname);
+    if (status === 3) {
+      row.takeover_risk = true;
+      row.takeover_service = target;
+      row.takeover_evidence = `CNAME -> ${cname} (${target}) returns NXDOMAIN`;
+      return;
+    }
+  }
+
+  // Points elsewhere but still resolves: informational only.
+  row.takeover_service = target;
+  row.takeover_evidence = `Points to third-party domain ${target}`;
+}
+
 
 export async function processProbeJobs(budgetMs: number): Promise<{ jobId: string | null; probed: number }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
