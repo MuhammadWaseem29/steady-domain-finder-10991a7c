@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Activity, BellRing, Copy, ExternalLink, Loader2, Play } from "lucide-react";
+import { Activity, BellRing, Copy, ExternalLink, Loader2, Play, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { createProbeJob, liveHostsPage, probeJobStatus } from "@/lib/probe.functions";
 import { createLiveAlert, FREQUENCIES, FREQUENCY_LABELS, type Frequency } from "@/lib/alerts.functions";
