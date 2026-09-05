@@ -1,6 +1,4 @@
 /** Server-only helpers for the public REST API's bearer-token authentication. */
-import { RATE_LIMIT_PER_MINUTE } from "@/lib/api-spec";
-
 const PREFIX = "chs_live_";
 
 export function generateApiKey(): string {
@@ -24,10 +22,9 @@ export type ApiCaller = {
   userId: string;
   name: string;
   scopes: string[];
-  rate: { limit: number; remaining: number; reset: string };
 };
 
-export type ApiResponseMeta = { requestId: string; rate?: ApiCaller["rate"] };
+export type ApiResponseMeta = { requestId: string };
 
 export async function authenticateApiRequest(
   request: Request,
@@ -66,27 +63,6 @@ export async function authenticateApiRequest(
   if (data.revoked)
     return { error: apiError(401, "revoked_token", "This API token was revoked.", meta) };
 
-  const rate = { limit: RATE_LIMIT_PER_MINUTE, remaining: RATE_LIMIT_PER_MINUTE, reset: "" };
-  const { data: rateRows } = await supabaseAdmin.rpc("api_rate_check", {
-    _key_id: data.id,
-    _limit: RATE_LIMIT_PER_MINUTE,
-  });
-  const row = Array.isArray(rateRows) ? rateRows[0] : null;
-  if (row) {
-    rate.remaining = Math.max(0, RATE_LIMIT_PER_MINUTE - Number(row.used ?? 0));
-    rate.reset = row.reset_at ?? "";
-    if (row.allowed === false) {
-      return {
-        error: apiError(
-          429,
-          "rate_limited",
-          `Rate limit of ${RATE_LIMIT_PER_MINUTE} requests/minute exceeded. Retry after ${row.reset_at}.`,
-          { ...meta, rate },
-        ),
-      };
-    }
-  }
-
   void supabaseAdmin
     .from("api_keys")
     .update({ last_used_at: new Date().toISOString() })
@@ -99,7 +75,6 @@ export async function authenticateApiRequest(
       userId: data.user_id,
       name: data.name,
       scopes: data.scopes ?? ["read"],
-      rate,
     },
   };
 }
@@ -147,11 +122,6 @@ export function apiJson(body: unknown, status = 200, meta?: ApiResponseMeta): Re
 function responseHeaders(meta?: ApiResponseMeta): Record<string, string> {
   const headers: Record<string, string> = { ...corsHeaders() };
   if (meta?.requestId) headers["X-Request-Id"] = meta.requestId;
-  if (meta?.rate) {
-    headers["X-RateLimit-Limit"] = String(meta.rate.limit);
-    headers["X-RateLimit-Remaining"] = String(meta.rate.remaining);
-    if (meta.rate.reset) headers["X-RateLimit-Reset"] = meta.rate.reset;
-  }
   return headers;
 }
 
@@ -160,8 +130,7 @@ export function corsHeaders(): Record<string, string> {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "authorization, x-api-key, content-type",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Expose-Headers":
-      "x-request-id, x-ratelimit-limit, x-ratelimit-remaining, x-ratelimit-reset",
+    "Access-Control-Expose-Headers": "x-request-id",
     "Cache-Control": "no-store",
   };
 }

@@ -1,5 +1,5 @@
 /** Builds an OpenAPI 3.1 document from the shared API spec. Client-safe. */
-import { API_ENDPOINTS, RATE_LIMIT_PER_MINUTE } from "@/lib/api-spec";
+import { API_ENDPOINTS } from "@/lib/api-spec";
 
 export function buildOpenApiDocument(origin: string) {
   const paths: Record<string, Record<string, unknown>> = {};
@@ -56,7 +56,6 @@ export function buildOpenApiDocument(origin: string) {
           "401": { description: "Missing, malformed, revoked or unknown token" },
           "403": { description: "Token lacks the required scope" },
           "404": { description: "Resource not found" },
-          "429": { description: "Rate limit exceeded" },
         },
       },
     };
@@ -67,7 +66,8 @@ export function buildOpenApiDocument(origin: string) {
     info: {
       title: "Chaos Subdomain Monitor API",
       version: "1.0.0",
-      description: `Token-authenticated REST API for tracked domains, subdomains, discoveries, scans, stats and bulk exports. Rate limit: ${RATE_LIMIT_PER_MINUTE} requests per minute per key.`,
+      description:
+        "Token-authenticated REST API for tracked domains, subdomains, discoveries, scans, stats and bulk exports. No rate limits: requests are unlimited.",
     },
     servers: [
       { url: `${origin}/api/v1`, description: "Primary" },

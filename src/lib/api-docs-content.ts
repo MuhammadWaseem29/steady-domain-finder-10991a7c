@@ -75,12 +75,6 @@ export const API_ERRORS: DocError[] = [
     fix: "Use the verb shown on the endpoint page.",
   },
   {
-    status: 429,
-    code: "rate_limited",
-    when: "More requests than the per-minute budget for this key.",
-    fix: "Back off until X-RateLimit-Reset, then retry with jitter.",
-  },
-  {
     status: 500,
     code: "query_failed",
     when: "A database query failed while serving the request.",
@@ -186,7 +180,7 @@ export const API_CHANGELOG: DocChange[] = [
     items: [
       "New documentation site with a runnable console on every endpoint.",
       "Added /stats, /stats/timeseries, /stats/top-domains, /subdomains/search, /scans/status, /scans/{id}, /platforms/{slug}/subdomains/new and /domains/{domain}/subdomains/new.",
-      "Every response now carries X-Request-Id and X-RateLimit-* headers.",
+      "Every response now carries an X-Request-Id header.",
       "Scope enforcement: queueing scans requires a key with the write scope.",
       "Machine-readable spec published at /api/v1/openapi.json.",
     ],

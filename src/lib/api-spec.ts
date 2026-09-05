@@ -89,10 +89,10 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     path: "/me",
     summary: "Current token",
     description:
-      "Identity behind the presented token: owner, key name, granted scopes and rate-limit budget.",
+      "Identity behind the presented token: owner, key name and granted scopes.",
     scope: "read",
     params: [],
-    responseExample: `{ "data": { "user_id": "…", "key": { "name": "recon-laptop", "scopes": ["read"] }, "rate_limit": { "limit": 120, "remaining": 119 } } }`,
+    responseExample: `{ "data": { "user_id": "…", "key": { "name": "recon-laptop", "scopes": ["read"] } } }`,
   },
   {
     id: "openapi",
@@ -513,7 +513,6 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
   },
 ];
 
-export const RATE_LIMIT_PER_MINUTE = 120;
 
 export function endpointById(id: string): ApiEndpoint | undefined {
   return API_ENDPOINTS.find((e) => e.id === id);

@@ -14,7 +14,6 @@ const GUIDE_PAGES: NavItem[] = [
   { kind: "page", to: "/docs/api/quickstart", label: "Quickstart" },
   { kind: "page", to: "/docs/api/authentication", label: "Authentication" },
   { kind: "page", to: "/docs/api/pagination", label: "Pagination" },
-  { kind: "page", to: "/docs/api/rate-limits", label: "Rate limits" },
   { kind: "page", to: "/docs/api/errors", label: "Errors" },
   { kind: "page", to: "/docs/api/guides", label: "Recipes" },
   { kind: "page", to: "/docs/api/changelog", label: "Changelog" },
