@@ -259,12 +259,13 @@ export const recentLiveAnalytics = createServerFn({ method: "GET" })
       return count ?? 0;
     };
 
-    const [total, hour, day, week, month, previous] = await Promise.all([
+    const [total, hour, day, week, month, current, doubleWindow] = await Promise.all([
       countSince(null),
       countSince(new Date(now - 3600_000).toISOString()),
       countSince(new Date(now - 24 * 3600_000).toISOString()),
       countSince(new Date(now - 7 * 24 * 3600_000).toISOString()),
       countSince(new Date(now - 30 * 24 * 3600_000).toISOString()),
+      countSince(since),
       countSince(new Date(now - data.hours * 2 * 3600_000).toISOString()),
     ]);
 
