@@ -19,6 +19,7 @@ const subscriptionInput = z.object({
   platform_ids: z.array(z.string().uuid()).max(50).default([]),
   domains: z.array(z.string().trim().min(1).max(253)).max(200).default([]),
   keywords: z.array(z.string().trim().min(1).max(40)).max(30).default([]),
+  notify_live: z.boolean().default(false),
 });
 
 export const listAlertSubscriptions = createServerFn({ method: "POST" })
@@ -67,10 +68,84 @@ export const createAlertSubscription = createServerFn({ method: "POST" })
       platform_ids: data.scope === "platforms" ? data.platform_ids : [],
       domain_ids,
       keywords: data.keywords.map((k) => k.toLowerCase()),
+      notify_live: data.notify_live,
       last_host_seen_at: new Date().toISOString(),
+      last_live_seen_at: new Date().toISOString(),
     });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/**
+ * One-click "notify me when new live hosts appear" from /live.
+ * Uses the signed-in user's account email; scope optional (domain or platform).
+ */
+export const createLiveAlert = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        frequency: z.enum(FREQUENCIES).default("hourly"),
+        domain: z.string().trim().min(1).max(253).optional(),
+        platformSlug: z.string().trim().min(1).max(100).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const email = (context.claims?.email as string | undefined) ?? null;
+    if (!email) throw new Error("Your account has no email address");
+
+    let scope: "all" | "platforms" | "domains" = "all";
+    let domain_ids: string[] = [];
+    let platform_ids: string[] = [];
+
+    if (data.domain) {
+      domain_ids = await resolveDomainIds(context.supabase, [data.domain]);
+      if (!domain_ids.length) throw new Error("That root domain is not being monitored yet");
+      scope = "domains";
+    } else if (data.platformSlug) {
+      const { data: platform, error } = await context.supabase
+        .from("platforms")
+        .select("id")
+        .eq("slug", data.platformSlug)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!platform) throw new Error("Unknown platform");
+      platform_ids = [(platform as { id: string }).id];
+      scope = "platforms";
+    }
+
+    // Reuse an existing identical live alert instead of duplicating it.
+    const { data: existing } = await context.supabase
+      .from("alert_subscriptions")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("notify_live", true)
+      .eq("scope", scope)
+      .limit(10);
+    const match = (existing ?? []).find(() => scope === "all"); // dedupe only for global alerts
+    if (match) {
+      await context.supabase
+        .from("alert_subscriptions")
+        .update({ is_active: true, frequency: data.frequency })
+        .eq("id", (match as { id: string }).id);
+      return { ok: true, reused: true };
+    }
+
+    const { error } = await context.supabase.from("alert_subscriptions").insert({
+      user_id: context.userId,
+      email,
+      frequency: data.frequency,
+      scope,
+      platform_ids,
+      domain_ids,
+      keywords: [],
+      notify_live: true,
+      last_host_seen_at: new Date().toISOString(),
+      last_live_seen_at: new Date().toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true, reused: false };
   });
 
 export const setAlertSubscriptionActive = createServerFn({ method: "POST" })
