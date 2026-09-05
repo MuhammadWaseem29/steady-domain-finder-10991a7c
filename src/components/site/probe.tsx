@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Activity, Copy, ExternalLink, Loader2, Play } from "lucide-react";
+import { Activity, BellRing, Copy, ExternalLink, Loader2, Play } from "lucide-react";
 import { toast } from "sonner";
 import { createProbeJob, liveHostsPage, probeJobStatus } from "@/lib/probe.functions";
+import { createLiveAlert, FREQUENCIES, FREQUENCY_LABELS, type Frequency } from "@/lib/alerts.functions";
 import { useSession } from "@/lib/use-session";
 
 type Target = {
@@ -12,6 +13,69 @@ type Target = {
   platformSlug?: string | undefined;
   program?: string | undefined;
 };
+
+/** "Notify me when hosts go live" — creates an email alert scoped to this target. */
+export function LiveAlertButton({ target }: { target: Target }) {
+  const { user } = useSession();
+  const create = useServerFn(createLiveAlert);
+  const [frequency, setFrequency] = useState<Frequency>("hourly");
+  const [busy, setBusy] = useState(false);
+  const [armed, setArmed] = useState(false);
+
+  const subscribe = async () => {
+    if (!user) {
+      toast.error("Sign in to get live-host alerts");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await create({
+        data: {
+          frequency,
+          domain: target.domain ?? undefined,
+          platformSlug: target.platformSlug ?? undefined,
+        },
+      });
+      setArmed(true);
+      toast.success(
+        res.reused
+          ? "Live-host alert re-enabled"
+          : "Alert on — you'll be emailed when subdomains go live",
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not create alert");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
+      <BellRing className={`ml-1 size-3 ${armed ? "text-primary" : "text-muted-foreground"}`} />
+      <select
+        aria-label="Alert frequency"
+        value={frequency}
+        onChange={(e) => setFrequency(e.target.value as Frequency)}
+        className="bg-transparent font-mono text-xs text-muted-foreground outline-none"
+      >
+        {FREQUENCIES.map((f) => (
+          <option key={f} value={f} className="bg-card">
+            {FREQUENCY_LABELS[f]}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={() => void subscribe()}
+        disabled={busy}
+        className="label-mono inline-flex items-center gap-1.5 rounded-full border border-primary/40 px-3 py-1 text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
+      >
+        {busy ? <Loader2 className="size-3 animate-spin" /> : null}
+        {armed ? "Alert on" : "Notify me"}
+      </button>
+    </div>
+  );
+}
 
 export function ProbeButton({ target, search }: { target: Target; search?: string }) {
   const { user } = useSession();
