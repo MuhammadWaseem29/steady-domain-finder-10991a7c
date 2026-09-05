@@ -39,6 +39,7 @@ import { Route as DocsApiGuidesRouteImport } from './routes/docs/api.guides'
 import { Route as DocsApiPaginationRouteImport } from './routes/docs/api.pagination'
 import { Route as DocsApiQuickstartRouteImport } from './routes/docs/api.quickstart'
 import { Route as DocsApiRawRouteImport } from './routes/docs/api.raw'
+import { Route as ApiPublicHooksProbeRouteImport } from './routes/api/public/hooks/probe'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
 import { Route as ApiPublicRawSplatRouteImport } from './routes/api/public/raw/$'
 import { Route as ApiPublicV1SplatRouteImport } from './routes/api/public/v1/$'
@@ -195,6 +196,11 @@ const DocsApiRawRoute = DocsApiRawRouteImport.update({
   path: '/raw',
   getParentRoute: () => DocsApiRoute,
 } as any)
+const ApiPublicHooksProbeRoute = ApiPublicHooksProbeRouteImport.update({
+  id: '/api/public/hooks/probe',
+  path: '/api/public/hooks/probe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
   id: '/api/public/hooks/scan',
   path: '/api/public/hooks/scan',
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api/': typeof DocsApiIndexRoute
+  '/api/public/hooks/probe': typeof ApiPublicHooksProbeRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/raw/$': typeof ApiPublicRawSplatRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -290,6 +297,7 @@ export interface FileRoutesByTo {
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api': typeof DocsApiIndexRoute
+  '/api/public/hooks/probe': typeof ApiPublicHooksProbeRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/raw/$': typeof ApiPublicRawSplatRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -328,6 +336,7 @@ export interface FileRoutesById {
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api/': typeof DocsApiIndexRoute
+  '/api/public/hooks/probe': typeof ApiPublicHooksProbeRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/raw/$': typeof ApiPublicRawSplatRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -367,6 +376,7 @@ export interface FileRouteTypes {
     | '/docs/api/quickstart'
     | '/docs/api/raw'
     | '/docs/api/'
+    | '/api/public/hooks/probe'
     | '/api/public/hooks/scan'
     | '/api/public/raw/$'
     | '/api/public/v1/$'
@@ -403,6 +413,7 @@ export interface FileRouteTypes {
     | '/docs/api/quickstart'
     | '/docs/api/raw'
     | '/docs/api'
+    | '/api/public/hooks/probe'
     | '/api/public/hooks/scan'
     | '/api/public/raw/$'
     | '/api/public/v1/$'
@@ -440,6 +451,7 @@ export interface FileRouteTypes {
     | '/docs/api/quickstart'
     | '/docs/api/raw'
     | '/docs/api/'
+    | '/api/public/hooks/probe'
     | '/api/public/hooks/scan'
     | '/api/public/raw/$'
     | '/api/public/v1/$'
@@ -470,6 +482,7 @@ export interface RootRouteChildren {
   RawSplatRoute: typeof RawSplatRoute
   ApiPublicExportRoute: typeof ApiPublicExportRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
+  ApiPublicHooksProbeRoute: typeof ApiPublicHooksProbeRoute
   ApiPublicHooksScanRoute: typeof ApiPublicHooksScanRoute
   ApiPublicRawSplatRoute: typeof ApiPublicRawSplatRoute
   ApiPublicV1SplatRoute: typeof ApiPublicV1SplatRoute
@@ -688,6 +701,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsApiRawRouteImport
       parentRoute: typeof DocsApiRoute
     }
+    '/api/public/hooks/probe': {
+      id: '/api/public/hooks/probe'
+      path: '/api/public/hooks/probe'
+      fullPath: '/api/public/hooks/probe'
+      preLoaderRoute: typeof ApiPublicHooksProbeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/scan': {
       id: '/api/public/hooks/scan'
       path: '/api/public/hooks/scan'
@@ -776,6 +796,7 @@ const rootRouteChildren: RootRouteChildren = {
   RawSplatRoute: RawSplatRoute,
   ApiPublicExportRoute: ApiPublicExportRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
+  ApiPublicHooksProbeRoute: ApiPublicHooksProbeRoute,
   ApiPublicHooksScanRoute: ApiPublicHooksScanRoute,
   ApiPublicRawSplatRoute: ApiPublicRawSplatRoute,
   ApiPublicV1SplatRoute: ApiPublicV1SplatRoute,
