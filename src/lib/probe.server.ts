@@ -1,10 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const BATCH = 150;
-const CONCURRENCY = 40;
-const TIMEOUT_MS = 8000;
-const MAX_REDIRECTS = 5;
-const BODY_CAP = 128 * 1024;
+const BATCH = 1500;
+const CONCURRENCY = 400;
+const FLUSH_EVERY = 300;
+const TIMEOUT_MS = 5000;
+const DNS_TIMEOUT_MS = 2500;
+const MAX_REDIRECTS = 3;
+const BODY_CAP = 64 * 1024;
 
 type ProbeRow = {
   domain_id: string | null;
