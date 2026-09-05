@@ -37,6 +37,7 @@ import { Route as DocsApiAuthenticationRouteImport } from './routes/docs/api.aut
 import { Route as DocsApiChangelogRouteImport } from './routes/docs/api.changelog'
 import { Route as DocsApiErrorsRouteImport } from './routes/docs/api.errors'
 import { Route as DocsApiGuidesRouteImport } from './routes/docs/api.guides'
+import { Route as DocsApiLiveRouteImport } from './routes/docs/api.live'
 import { Route as DocsApiPaginationRouteImport } from './routes/docs/api.pagination'
 import { Route as DocsApiQuickstartRouteImport } from './routes/docs/api.quickstart'
 import { Route as DocsApiRawRouteImport } from './routes/docs/api.raw'
@@ -187,6 +188,11 @@ const DocsApiGuidesRoute = DocsApiGuidesRouteImport.update({
   path: '/guides',
   getParentRoute: () => DocsApiRoute,
 } as any)
+const DocsApiLiveRoute = DocsApiLiveRouteImport.update({
+  id: '/live',
+  path: '/live',
+  getParentRoute: () => DocsApiRoute,
+} as any)
 const DocsApiPaginationRoute = DocsApiPaginationRouteImport.update({
   id: '/pagination',
   path: '/pagination',
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/docs/api/changelog': typeof DocsApiChangelogRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
   '/docs/api/guides': typeof DocsApiGuidesRoute
+  '/docs/api/live': typeof DocsApiLiveRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/raw': typeof DocsApiRawRoute
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/docs/api/changelog': typeof DocsApiChangelogRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
   '/docs/api/guides': typeof DocsApiGuidesRoute
+  '/docs/api/live': typeof DocsApiLiveRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/raw': typeof DocsApiRawRoute
@@ -341,6 +349,7 @@ export interface FileRoutesById {
   '/docs/api/changelog': typeof DocsApiChangelogRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
   '/docs/api/guides': typeof DocsApiGuidesRoute
+  '/docs/api/live': typeof DocsApiLiveRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/raw': typeof DocsApiRawRoute
@@ -382,6 +391,7 @@ export interface FileRouteTypes {
     | '/docs/api/changelog'
     | '/docs/api/errors'
     | '/docs/api/guides'
+    | '/docs/api/live'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
     | '/docs/api/raw'
@@ -420,6 +430,7 @@ export interface FileRouteTypes {
     | '/docs/api/changelog'
     | '/docs/api/errors'
     | '/docs/api/guides'
+    | '/docs/api/live'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
     | '/docs/api/raw'
@@ -459,6 +470,7 @@ export interface FileRouteTypes {
     | '/docs/api/changelog'
     | '/docs/api/errors'
     | '/docs/api/guides'
+    | '/docs/api/live'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
     | '/docs/api/raw'
@@ -700,6 +712,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsApiGuidesRouteImport
       parentRoute: typeof DocsApiRoute
     }
+    '/docs/api/live': {
+      id: '/docs/api/live'
+      path: '/live'
+      fullPath: '/docs/api/live'
+      preLoaderRoute: typeof DocsApiLiveRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/docs/api/pagination': {
       id: '/docs/api/pagination'
       path: '/pagination'
@@ -771,6 +790,7 @@ interface DocsApiRouteChildren {
   DocsApiChangelogRoute: typeof DocsApiChangelogRoute
   DocsApiErrorsRoute: typeof DocsApiErrorsRoute
   DocsApiGuidesRoute: typeof DocsApiGuidesRoute
+  DocsApiLiveRoute: typeof DocsApiLiveRoute
   DocsApiPaginationRoute: typeof DocsApiPaginationRoute
   DocsApiQuickstartRoute: typeof DocsApiQuickstartRoute
   DocsApiRawRoute: typeof DocsApiRawRoute
@@ -783,6 +803,7 @@ const DocsApiRouteChildren: DocsApiRouteChildren = {
   DocsApiChangelogRoute: DocsApiChangelogRoute,
   DocsApiErrorsRoute: DocsApiErrorsRoute,
   DocsApiGuidesRoute: DocsApiGuidesRoute,
+  DocsApiLiveRoute: DocsApiLiveRoute,
   DocsApiPaginationRoute: DocsApiPaginationRoute,
   DocsApiQuickstartRoute: DocsApiQuickstartRoute,
   DocsApiRawRoute: DocsApiRawRoute,
