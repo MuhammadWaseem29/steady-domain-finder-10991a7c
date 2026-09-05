@@ -183,6 +183,10 @@ type LiveRow = {
   cdn: string | null;
   ip: string | null;
   asn: string | null;
+  cname: string | null;
+  takeover_risk: boolean;
+  takeover_service: string | null;
+  takeover_evidence: string | null;
   probed_at: string;
 };
 
@@ -192,6 +196,7 @@ const PRESETS = [
   ["redirect", "Redirects"],
   ["auth", "401/403"],
   ["interesting", "Interesting"],
+  ["takeover", "Takeover risk"],
 ] as const;
 
 export function LiveHostsPanel({ target }: { target: Target }) {
