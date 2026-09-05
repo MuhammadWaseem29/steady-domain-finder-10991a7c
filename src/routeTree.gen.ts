@@ -30,8 +30,17 @@ import { Route as DomainDomainRouteImport } from './routes/domain.$domain'
 import { Route as ProgramSlugRouteImport } from './routes/program.$slug'
 import { Route as ApiPublicExportRouteImport } from './routes/api/public/export'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
+import { Route as DocsApiIndexRouteImport } from './routes/docs/api.index'
+import { Route as DocsApiAuthenticationRouteImport } from './routes/docs/api.authentication'
+import { Route as DocsApiChangelogRouteImport } from './routes/docs/api.changelog'
+import { Route as DocsApiErrorsRouteImport } from './routes/docs/api.errors'
+import { Route as DocsApiGuidesRouteImport } from './routes/docs/api.guides'
+import { Route as DocsApiPaginationRouteImport } from './routes/docs/api.pagination'
+import { Route as DocsApiQuickstartRouteImport } from './routes/docs/api.quickstart'
+import { Route as DocsApiRateLimitsRouteImport } from './routes/docs/api.rate-limits'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
 import { Route as ApiPublicV1SplatRouteImport } from './routes/api/public/v1/$'
+import { Route as DocsApiReferenceEndpointRouteImport } from './routes/docs/api.reference.$endpoint'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -139,6 +148,46 @@ const ApiV1SplatRoute = ApiV1SplatRouteImport.update({
   path: '/api/v1/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsApiIndexRoute = DocsApiIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DocsApiRoute,
+} as any)
+const DocsApiAuthenticationRoute = DocsApiAuthenticationRouteImport.update({
+  id: '/authentication',
+  path: '/authentication',
+  getParentRoute: () => DocsApiRoute,
+} as any)
+const DocsApiChangelogRoute = DocsApiChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
+  getParentRoute: () => DocsApiRoute,
+} as any)
+const DocsApiErrorsRoute = DocsApiErrorsRouteImport.update({
+  id: '/errors',
+  path: '/errors',
+  getParentRoute: () => DocsApiRoute,
+} as any)
+const DocsApiGuidesRoute = DocsApiGuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
+  getParentRoute: () => DocsApiRoute,
+} as any)
+const DocsApiPaginationRoute = DocsApiPaginationRouteImport.update({
+  id: '/pagination',
+  path: '/pagination',
+  getParentRoute: () => DocsApiRoute,
+} as any)
+const DocsApiQuickstartRoute = DocsApiQuickstartRouteImport.update({
+  id: '/quickstart',
+  path: '/quickstart',
+  getParentRoute: () => DocsApiRoute,
+} as any)
+const DocsApiRateLimitsRoute = DocsApiRateLimitsRouteImport.update({
+  id: '/rate-limits',
+  path: '/rate-limits',
+  getParentRoute: () => DocsApiRoute,
+} as any)
 const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
   id: '/api/public/hooks/scan',
   path: '/api/public/hooks/scan',
@@ -149,6 +198,12 @@ const ApiPublicV1SplatRoute = ApiPublicV1SplatRouteImport.update({
   path: '/api/public/v1/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsApiReferenceEndpointRoute =
+  DocsApiReferenceEndpointRouteImport.update({
+    id: '/reference/$endpoint',
+    path: '/reference/$endpoint',
+    getParentRoute: () => DocsApiRoute,
+  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -171,15 +226,24 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
-  '/docs/api': typeof DocsApiRoute
+  '/docs/api': typeof DocsApiRouteWithChildren
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
   '/program/$slug': typeof ProgramSlugRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
+  '/docs/api/authentication': typeof DocsApiAuthenticationRoute
+  '/docs/api/changelog': typeof DocsApiChangelogRoute
+  '/docs/api/errors': typeof DocsApiErrorsRoute
+  '/docs/api/guides': typeof DocsApiGuidesRoute
+  '/docs/api/pagination': typeof DocsApiPaginationRoute
+  '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/rate-limits': typeof DocsApiRateLimitsRoute
+  '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
+  '/docs/api/reference/$endpoint': typeof DocsApiReferenceEndpointRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -197,15 +261,23 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
-  '/docs/api': typeof DocsApiRoute
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
   '/program/$slug': typeof ProgramSlugRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
+  '/docs/api/authentication': typeof DocsApiAuthenticationRoute
+  '/docs/api/changelog': typeof DocsApiChangelogRoute
+  '/docs/api/errors': typeof DocsApiErrorsRoute
+  '/docs/api/guides': typeof DocsApiGuidesRoute
+  '/docs/api/pagination': typeof DocsApiPaginationRoute
+  '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/rate-limits': typeof DocsApiRateLimitsRoute
+  '/docs/api': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
+  '/docs/api/reference/$endpoint': typeof DocsApiReferenceEndpointRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
@@ -224,15 +296,24 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/updates': typeof UpdatesRoute
-  '/docs/api': typeof DocsApiRoute
+  '/docs/api': typeof DocsApiRouteWithChildren
   '/docs/api-key': typeof DocsApiKeyRoute
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
   '/program/$slug': typeof ProgramSlugRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
+  '/docs/api/authentication': typeof DocsApiAuthenticationRoute
+  '/docs/api/changelog': typeof DocsApiChangelogRoute
+  '/docs/api/errors': typeof DocsApiErrorsRoute
+  '/docs/api/guides': typeof DocsApiGuidesRoute
+  '/docs/api/pagination': typeof DocsApiPaginationRoute
+  '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/rate-limits': typeof DocsApiRateLimitsRoute
+  '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
+  '/docs/api/reference/$endpoint': typeof DocsApiReferenceEndpointRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
@@ -259,8 +340,17 @@ export interface FileRouteTypes {
     | '/program/$slug'
     | '/api/public/export'
     | '/api/v1/$'
+    | '/docs/api/authentication'
+    | '/docs/api/changelog'
+    | '/docs/api/errors'
+    | '/docs/api/guides'
+    | '/docs/api/pagination'
+    | '/docs/api/quickstart'
+    | '/docs/api/rate-limits'
+    | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
+    | '/docs/api/reference/$endpoint'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -278,15 +368,23 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stats'
     | '/updates'
-    | '/docs/api'
     | '/docs/api-key'
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
     | '/program/$slug'
     | '/api/public/export'
     | '/api/v1/$'
+    | '/docs/api/authentication'
+    | '/docs/api/changelog'
+    | '/docs/api/errors'
+    | '/docs/api/guides'
+    | '/docs/api/pagination'
+    | '/docs/api/quickstart'
+    | '/docs/api/rate-limits'
+    | '/docs/api'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
+    | '/docs/api/reference/$endpoint'
     | '/lovable/email/transactional/preview'
   id:
     | '__root__'
@@ -311,8 +409,17 @@ export interface FileRouteTypes {
     | '/program/$slug'
     | '/api/public/export'
     | '/api/v1/$'
+    | '/docs/api/authentication'
+    | '/docs/api/changelog'
+    | '/docs/api/errors'
+    | '/docs/api/guides'
+    | '/docs/api/pagination'
+    | '/docs/api/quickstart'
+    | '/docs/api/rate-limits'
+    | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
+    | '/docs/api/reference/$endpoint'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
@@ -331,7 +438,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatsRoute: typeof StatsRoute
   UpdatesRoute: typeof UpdatesRoute
-  DocsApiRoute: typeof DocsApiRoute
+  DocsApiRoute: typeof DocsApiRouteWithChildren
   DocsApiKeyRoute: typeof DocsApiKeyRoute
   DocsFetchSubdomainsRoute: typeof DocsFetchSubdomainsRoute
   DomainDomainRoute: typeof DomainDomainRoute
@@ -492,6 +599,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/api/': {
+      id: '/docs/api/'
+      path: '/'
+      fullPath: '/docs/api/'
+      preLoaderRoute: typeof DocsApiIndexRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
+    '/docs/api/authentication': {
+      id: '/docs/api/authentication'
+      path: '/authentication'
+      fullPath: '/docs/api/authentication'
+      preLoaderRoute: typeof DocsApiAuthenticationRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
+    '/docs/api/changelog': {
+      id: '/docs/api/changelog'
+      path: '/changelog'
+      fullPath: '/docs/api/changelog'
+      preLoaderRoute: typeof DocsApiChangelogRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
+    '/docs/api/errors': {
+      id: '/docs/api/errors'
+      path: '/errors'
+      fullPath: '/docs/api/errors'
+      preLoaderRoute: typeof DocsApiErrorsRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
+    '/docs/api/guides': {
+      id: '/docs/api/guides'
+      path: '/guides'
+      fullPath: '/docs/api/guides'
+      preLoaderRoute: typeof DocsApiGuidesRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
+    '/docs/api/pagination': {
+      id: '/docs/api/pagination'
+      path: '/pagination'
+      fullPath: '/docs/api/pagination'
+      preLoaderRoute: typeof DocsApiPaginationRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
+    '/docs/api/quickstart': {
+      id: '/docs/api/quickstart'
+      path: '/quickstart'
+      fullPath: '/docs/api/quickstart'
+      preLoaderRoute: typeof DocsApiQuickstartRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
+    '/docs/api/rate-limits': {
+      id: '/docs/api/rate-limits'
+      path: '/rate-limits'
+      fullPath: '/docs/api/rate-limits'
+      preLoaderRoute: typeof DocsApiRateLimitsRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/api/public/hooks/scan': {
       id: '/api/public/hooks/scan'
       path: '/api/public/hooks/scan'
@@ -506,6 +669,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/api/reference/$endpoint': {
+      id: '/docs/api/reference/$endpoint'
+      path: '/reference/$endpoint'
+      fullPath: '/docs/api/reference/$endpoint'
+      preLoaderRoute: typeof DocsApiReferenceEndpointRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -515,6 +685,33 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface DocsApiRouteChildren {
+  DocsApiAuthenticationRoute: typeof DocsApiAuthenticationRoute
+  DocsApiChangelogRoute: typeof DocsApiChangelogRoute
+  DocsApiErrorsRoute: typeof DocsApiErrorsRoute
+  DocsApiGuidesRoute: typeof DocsApiGuidesRoute
+  DocsApiPaginationRoute: typeof DocsApiPaginationRoute
+  DocsApiQuickstartRoute: typeof DocsApiQuickstartRoute
+  DocsApiRateLimitsRoute: typeof DocsApiRateLimitsRoute
+  DocsApiIndexRoute: typeof DocsApiIndexRoute
+  DocsApiReferenceEndpointRoute: typeof DocsApiReferenceEndpointRoute
+}
+
+const DocsApiRouteChildren: DocsApiRouteChildren = {
+  DocsApiAuthenticationRoute: DocsApiAuthenticationRoute,
+  DocsApiChangelogRoute: DocsApiChangelogRoute,
+  DocsApiErrorsRoute: DocsApiErrorsRoute,
+  DocsApiGuidesRoute: DocsApiGuidesRoute,
+  DocsApiPaginationRoute: DocsApiPaginationRoute,
+  DocsApiQuickstartRoute: DocsApiQuickstartRoute,
+  DocsApiRateLimitsRoute: DocsApiRateLimitsRoute,
+  DocsApiIndexRoute: DocsApiIndexRoute,
+  DocsApiReferenceEndpointRoute: DocsApiReferenceEndpointRoute,
+}
+
+const DocsApiRouteWithChildren =
+  DocsApiRoute._addFileChildren(DocsApiRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -531,7 +728,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatsRoute: StatsRoute,
   UpdatesRoute: UpdatesRoute,
-  DocsApiRoute: DocsApiRoute,
+  DocsApiRoute: DocsApiRouteWithChildren,
   DocsApiKeyRoute: DocsApiKeyRoute,
   DocsFetchSubdomainsRoute: DocsFetchSubdomainsRoute,
   DomainDomainRoute: DomainDomainRoute,

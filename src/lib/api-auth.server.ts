@@ -1,4 +1,5 @@
 /** Server-only helpers for the public REST API's bearer-token authentication. */
+import { RATE_LIMIT_PER_MINUTE } from "@/lib/api-spec";
 
 const PREFIX = "chs_live_";
 
@@ -18,35 +19,73 @@ export async function hashApiKey(key: string): Promise<string> {
     .join("");
 }
 
-export type ApiCaller = { keyId: string; userId: string };
+export type ApiCaller = {
+  keyId: string;
+  userId: string;
+  name: string;
+  scopes: string[];
+  rate: { limit: number; remaining: number; reset: string };
+};
+
+export type ApiResponseMeta = { requestId: string; rate?: ApiCaller["rate"] };
 
 export async function authenticateApiRequest(
   request: Request,
+  requestId?: string,
 ): Promise<{ caller: ApiCaller } | { error: Response }> {
   const header = request.headers.get("authorization") ?? "";
   const token = header.toLowerCase().startsWith("bearer ")
     ? header.slice(7).trim()
     : (request.headers.get("x-api-key") ?? "").trim();
 
+  const meta: ApiResponseMeta = { requestId: requestId ?? crypto.randomUUID() };
+
   if (!token) {
     return {
-      error: apiError(401, "missing_token", "Provide an API token: Authorization: Bearer chs_live_…"),
+      error: apiError(
+        401,
+        "missing_token",
+        "Provide an API token: Authorization: Bearer chs_live_…",
+        meta,
+      ),
     };
   }
   if (!token.startsWith(PREFIX)) {
-    return { error: apiError(401, "invalid_token", "Malformed API token.") };
+    return { error: apiError(401, "invalid_token", "Malformed API token.", meta) };
   }
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("api_keys")
-    .select("id, user_id, revoked")
+    .select("id, user_id, revoked, name, scopes")
     .eq("key_hash", await hashApiKey(token))
     .maybeSingle();
 
-  if (error) return { error: apiError(500, "auth_failed", "Could not verify the API token.") };
-  if (!data) return { error: apiError(401, "invalid_token", "Unknown API token.") };
-  if (data.revoked) return { error: apiError(401, "revoked_token", "This API token was revoked.") };
+  if (error) return { error: apiError(500, "auth_failed", "Could not verify the API token.", meta) };
+  if (!data) return { error: apiError(401, "invalid_token", "Unknown API token.", meta) };
+  if (data.revoked)
+    return { error: apiError(401, "revoked_token", "This API token was revoked.", meta) };
+
+  const rate = { limit: RATE_LIMIT_PER_MINUTE, remaining: RATE_LIMIT_PER_MINUTE, reset: "" };
+  const { data: rateRows } = await supabaseAdmin.rpc("api_rate_check", {
+    _key_id: data.id,
+    _limit: RATE_LIMIT_PER_MINUTE,
+  });
+  const row = Array.isArray(rateRows) ? rateRows[0] : null;
+  if (row) {
+    rate.remaining = Math.max(0, RATE_LIMIT_PER_MINUTE - Number(row.used ?? 0));
+    rate.reset = row.reset_at ?? "";
+    if (row.allowed === false) {
+      return {
+        error: apiError(
+          429,
+          "rate_limited",
+          `Rate limit of ${RATE_LIMIT_PER_MINUTE} requests/minute exceeded. Retry after ${row.reset_at}.`,
+          { ...meta, rate },
+        ),
+      };
+    }
+  }
 
   void supabaseAdmin
     .from("api_keys")
@@ -54,15 +93,66 @@ export async function authenticateApiRequest(
     .eq("id", data.id)
     .then(() => undefined);
 
-  return { caller: { keyId: data.id, userId: data.user_id } };
+  return {
+    caller: {
+      keyId: data.id,
+      userId: data.user_id,
+      name: data.name,
+      scopes: data.scopes ?? ["read"],
+      rate,
+    },
+  };
 }
 
-export function apiError(status: number, code: string, message: string): Response {
-  return Response.json({ error: { code, message } }, { status, headers: corsHeaders() });
+export async function logApiRequest(input: {
+  caller: ApiCaller;
+  method: string;
+  path: string;
+  status: number;
+  durationMs: number;
+  requestId: string;
+}): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("api_request_logs").insert({
+      key_id: input.caller.keyId,
+      user_id: input.caller.userId,
+      method: input.method,
+      path: input.path.slice(0, 300),
+      status: input.status,
+      duration_ms: Math.round(input.durationMs),
+      request_id: input.requestId,
+    });
+  } catch {
+    /* logging must never break a response */
+  }
 }
 
-export function apiJson(body: unknown, status = 200): Response {
-  return Response.json(body, { status, headers: corsHeaders() });
+export function apiError(
+  status: number,
+  code: string,
+  message: string,
+  meta?: ApiResponseMeta,
+): Response {
+  return Response.json(
+    { error: { code, message, request_id: meta?.requestId } },
+    { status, headers: responseHeaders(meta) },
+  );
+}
+
+export function apiJson(body: unknown, status = 200, meta?: ApiResponseMeta): Response {
+  return Response.json(body, { status, headers: responseHeaders(meta) });
+}
+
+function responseHeaders(meta?: ApiResponseMeta): Record<string, string> {
+  const headers: Record<string, string> = { ...corsHeaders() };
+  if (meta?.requestId) headers["X-Request-Id"] = meta.requestId;
+  if (meta?.rate) {
+    headers["X-RateLimit-Limit"] = String(meta.rate.limit);
+    headers["X-RateLimit-Remaining"] = String(meta.rate.remaining);
+    if (meta.rate.reset) headers["X-RateLimit-Reset"] = meta.rate.reset;
+  }
+  return headers;
 }
 
 export function corsHeaders(): Record<string, string> {
@@ -70,6 +160,8 @@ export function corsHeaders(): Record<string, string> {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "authorization, x-api-key, content-type",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Expose-Headers":
+      "x-request-id, x-ratelimit-limit, x-ratelimit-remaining, x-ratelimit-reset",
     "Cache-Control": "no-store",
   };
 }

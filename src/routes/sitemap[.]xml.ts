@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { API_ENDPOINTS } from "@/lib/api-spec";
 
 const BASE_URL = "https://chaos.thescope.top";
 
@@ -23,6 +24,20 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/queue", changefreq: "hourly", priority: "0.5" },
           { path: "/new", changefreq: "hourly", priority: "0.6" },
           { path: "/docs/api", changefreq: "weekly", priority: "0.7" },
+          { path: "/docs/api/quickstart", changefreq: "weekly", priority: "0.6" },
+          { path: "/docs/api/authentication", changefreq: "weekly", priority: "0.6" },
+          { path: "/docs/api/pagination", changefreq: "weekly", priority: "0.5" },
+          { path: "/docs/api/rate-limits", changefreq: "weekly", priority: "0.5" },
+          { path: "/docs/api/errors", changefreq: "weekly", priority: "0.5" },
+          { path: "/docs/api/guides", changefreq: "weekly", priority: "0.6" },
+          { path: "/docs/api/changelog", changefreq: "weekly", priority: "0.4" },
+          ...API_ENDPOINTS.map(
+            (e): SitemapEntry => ({
+              path: `/docs/api/reference/${e.id}`,
+              changefreq: "weekly",
+              priority: "0.5",
+            }),
+          ),
           { path: "/docs/api-key", changefreq: "weekly", priority: "0.6" },
           { path: "/docs/fetch-subdomains", changefreq: "weekly", priority: "0.6" },
           { path: "/auth", changefreq: "monthly", priority: "0.3" },
