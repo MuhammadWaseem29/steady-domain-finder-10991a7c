@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.platform_subdomains_page(uuid, uuid, text, integer, boolean);

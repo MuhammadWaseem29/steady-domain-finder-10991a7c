@@ -28,6 +28,7 @@ import { Route as DocsApiKeyRouteImport } from './routes/docs/api-key'
 import { Route as DocsFetchSubdomainsRouteImport } from './routes/docs/fetch-subdomains'
 import { Route as DomainDomainRouteImport } from './routes/domain.$domain'
 import { Route as ProgramSlugRouteImport } from './routes/program.$slug'
+import { Route as RawSplatRouteImport } from './routes/raw.$'
 import { Route as ApiPublicExportRouteImport } from './routes/api/public/export'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
 import { Route as DocsApiIndexRouteImport } from './routes/docs/api.index'
@@ -37,7 +38,9 @@ import { Route as DocsApiErrorsRouteImport } from './routes/docs/api.errors'
 import { Route as DocsApiGuidesRouteImport } from './routes/docs/api.guides'
 import { Route as DocsApiPaginationRouteImport } from './routes/docs/api.pagination'
 import { Route as DocsApiQuickstartRouteImport } from './routes/docs/api.quickstart'
+import { Route as DocsApiRawRouteImport } from './routes/docs/api.raw'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
+import { Route as ApiPublicRawSplatRouteImport } from './routes/api/public/raw/$'
 import { Route as ApiPublicV1SplatRouteImport } from './routes/api/public/v1/$'
 import { Route as DocsApiReferenceEndpointRouteImport } from './routes/docs/api.reference.$endpoint'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -137,6 +140,11 @@ const ProgramSlugRoute = ProgramSlugRouteImport.update({
   path: '/program/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RawSplatRoute = RawSplatRouteImport.update({
+  id: '/raw/$',
+  path: '/raw/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicExportRoute = ApiPublicExportRouteImport.update({
   id: '/api/public/export',
   path: '/api/public/export',
@@ -182,9 +190,19 @@ const DocsApiQuickstartRoute = DocsApiQuickstartRouteImport.update({
   path: '/quickstart',
   getParentRoute: () => DocsApiRoute,
 } as any)
+const DocsApiRawRoute = DocsApiRawRouteImport.update({
+  id: '/raw',
+  path: '/raw',
+  getParentRoute: () => DocsApiRoute,
+} as any)
 const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
   id: '/api/public/hooks/scan',
   path: '/api/public/hooks/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicRawSplatRoute = ApiPublicRawSplatRouteImport.update({
+  id: '/api/public/raw/$',
+  path: '/api/public/raw/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicV1SplatRoute = ApiPublicV1SplatRouteImport.update({
@@ -225,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
   '/program/$slug': typeof ProgramSlugRoute
+  '/raw/$': typeof RawSplatRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/docs/api/authentication': typeof DocsApiAuthenticationRoute
@@ -233,8 +252,10 @@ export interface FileRoutesByFullPath {
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
+  '/api/public/raw/$': typeof ApiPublicRawSplatRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
   '/docs/api/reference/$endpoint': typeof DocsApiReferenceEndpointRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -258,6 +279,7 @@ export interface FileRoutesByTo {
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
   '/program/$slug': typeof ProgramSlugRoute
+  '/raw/$': typeof RawSplatRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/docs/api/authentication': typeof DocsApiAuthenticationRoute
@@ -266,8 +288,10 @@ export interface FileRoutesByTo {
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
+  '/api/public/raw/$': typeof ApiPublicRawSplatRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
   '/docs/api/reference/$endpoint': typeof DocsApiReferenceEndpointRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -293,6 +317,7 @@ export interface FileRoutesById {
   '/docs/fetch-subdomains': typeof DocsFetchSubdomainsRoute
   '/domain/$domain': typeof DomainDomainRoute
   '/program/$slug': typeof ProgramSlugRoute
+  '/raw/$': typeof RawSplatRoute
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/docs/api/authentication': typeof DocsApiAuthenticationRoute
@@ -301,8 +326,10 @@ export interface FileRoutesById {
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
+  '/api/public/raw/$': typeof ApiPublicRawSplatRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
   '/docs/api/reference/$endpoint': typeof DocsApiReferenceEndpointRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -329,6 +356,7 @@ export interface FileRouteTypes {
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
     | '/program/$slug'
+    | '/raw/$'
     | '/api/public/export'
     | '/api/v1/$'
     | '/docs/api/authentication'
@@ -337,8 +365,10 @@ export interface FileRouteTypes {
     | '/docs/api/guides'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
+    | '/docs/api/raw'
     | '/docs/api/'
     | '/api/public/hooks/scan'
+    | '/api/public/raw/$'
     | '/api/public/v1/$'
     | '/docs/api/reference/$endpoint'
     | '/lovable/email/transactional/preview'
@@ -362,6 +392,7 @@ export interface FileRouteTypes {
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
     | '/program/$slug'
+    | '/raw/$'
     | '/api/public/export'
     | '/api/v1/$'
     | '/docs/api/authentication'
@@ -370,8 +401,10 @@ export interface FileRouteTypes {
     | '/docs/api/guides'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
+    | '/docs/api/raw'
     | '/docs/api'
     | '/api/public/hooks/scan'
+    | '/api/public/raw/$'
     | '/api/public/v1/$'
     | '/docs/api/reference/$endpoint'
     | '/lovable/email/transactional/preview'
@@ -396,6 +429,7 @@ export interface FileRouteTypes {
     | '/docs/fetch-subdomains'
     | '/domain/$domain'
     | '/program/$slug'
+    | '/raw/$'
     | '/api/public/export'
     | '/api/v1/$'
     | '/docs/api/authentication'
@@ -404,8 +438,10 @@ export interface FileRouteTypes {
     | '/docs/api/guides'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
+    | '/docs/api/raw'
     | '/docs/api/'
     | '/api/public/hooks/scan'
+    | '/api/public/raw/$'
     | '/api/public/v1/$'
     | '/docs/api/reference/$endpoint'
     | '/lovable/email/transactional/preview'
@@ -431,9 +467,11 @@ export interface RootRouteChildren {
   DocsFetchSubdomainsRoute: typeof DocsFetchSubdomainsRoute
   DomainDomainRoute: typeof DomainDomainRoute
   ProgramSlugRoute: typeof ProgramSlugRoute
+  RawSplatRoute: typeof RawSplatRoute
   ApiPublicExportRoute: typeof ApiPublicExportRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiPublicHooksScanRoute: typeof ApiPublicHooksScanRoute
+  ApiPublicRawSplatRoute: typeof ApiPublicRawSplatRoute
   ApiPublicV1SplatRoute: typeof ApiPublicV1SplatRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
@@ -573,6 +611,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgramSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/raw/$': {
+      id: '/raw/$'
+      path: '/raw/$'
+      fullPath: '/raw/$'
+      preLoaderRoute: typeof RawSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/export': {
       id: '/api/public/export'
       path: '/api/public/export'
@@ -636,11 +681,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsApiQuickstartRouteImport
       parentRoute: typeof DocsApiRoute
     }
+    '/docs/api/raw': {
+      id: '/docs/api/raw'
+      path: '/raw'
+      fullPath: '/docs/api/raw'
+      preLoaderRoute: typeof DocsApiRawRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/api/public/hooks/scan': {
       id: '/api/public/hooks/scan'
       path: '/api/public/hooks/scan'
       fullPath: '/api/public/hooks/scan'
       preLoaderRoute: typeof ApiPublicHooksScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/raw/$': {
+      id: '/api/public/raw/$'
+      path: '/api/public/raw/$'
+      fullPath: '/api/public/raw/$'
+      preLoaderRoute: typeof ApiPublicRawSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/v1/$': {
@@ -674,6 +733,7 @@ interface DocsApiRouteChildren {
   DocsApiGuidesRoute: typeof DocsApiGuidesRoute
   DocsApiPaginationRoute: typeof DocsApiPaginationRoute
   DocsApiQuickstartRoute: typeof DocsApiQuickstartRoute
+  DocsApiRawRoute: typeof DocsApiRawRoute
   DocsApiIndexRoute: typeof DocsApiIndexRoute
   DocsApiReferenceEndpointRoute: typeof DocsApiReferenceEndpointRoute
 }
@@ -685,6 +745,7 @@ const DocsApiRouteChildren: DocsApiRouteChildren = {
   DocsApiGuidesRoute: DocsApiGuidesRoute,
   DocsApiPaginationRoute: DocsApiPaginationRoute,
   DocsApiQuickstartRoute: DocsApiQuickstartRoute,
+  DocsApiRawRoute: DocsApiRawRoute,
   DocsApiIndexRoute: DocsApiIndexRoute,
   DocsApiReferenceEndpointRoute: DocsApiReferenceEndpointRoute,
 }
@@ -712,9 +773,11 @@ const rootRouteChildren: RootRouteChildren = {
   DocsFetchSubdomainsRoute: DocsFetchSubdomainsRoute,
   DomainDomainRoute: DomainDomainRoute,
   ProgramSlugRoute: ProgramSlugRoute,
+  RawSplatRoute: RawSplatRoute,
   ApiPublicExportRoute: ApiPublicExportRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiPublicHooksScanRoute: ApiPublicHooksScanRoute,
+  ApiPublicRawSplatRoute: ApiPublicRawSplatRoute,
   ApiPublicV1SplatRoute: ApiPublicV1SplatRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
