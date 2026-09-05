@@ -130,6 +130,21 @@ async function doh(name: string, type: string, timeoutMs = DNS_TIMEOUT_MS): Prom
 
 const asnCache = new Map<string, string | null>();
 
+// DNS rcode for a name: 0 = ok, 3 = NXDOMAIN, null = lookup failed.
+async function dohStatus(name: string, timeoutMs = DNS_TIMEOUT_MS): Promise<number | null> {
+  try {
+    const res = await fetch(`https://1.1.1.1/dns-query?name=${encodeURIComponent(name)}&type=A`, {
+      headers: { accept: "application/dns-json" },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { Status?: number };
+    return typeof json.Status === "number" ? json.Status : null;
+  } catch {
+    return null;
+  }
+}
+
 async function lookupAsn(ip: string): Promise<string | null> {
   const key = ip.split(".").slice(0, 3).join(".");
   if (asnCache.has(key)) return asnCache.get(key) ?? null;
