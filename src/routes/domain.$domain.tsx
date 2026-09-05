@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { RefreshCw, Copy, Download, Loader2, ArrowLeft, Search } from "lucide-react";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { LiveHostsPanel, ProbeButton } from "@/components/site/probe";
 import {
   domainQuery,
   domainStatsQuery,
@@ -235,6 +236,7 @@ function DomainDetail() {
           >
             Raw list
           </a>
+          <ProbeButton target={{ domain }} />
         </div>
 
         <p className="mt-3 text-xs text-muted-foreground">
@@ -363,6 +365,16 @@ function DomainDetail() {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold">Live hosts</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Hosts that answered a real HTTP/HTTPS probe — status, title, server and tech.
+          </p>
+          <div className="mt-4">
+            <LiveHostsPanel target={{ domain }} />
+          </div>
         </div>
       </div>
     </SiteShell>

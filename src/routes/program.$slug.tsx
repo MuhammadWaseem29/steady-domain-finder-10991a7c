@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Copy, Loader2, Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { SiteShell, Stat } from "@/components/site/chrome";
+import { LiveHostsPanel, ProbeButton } from "@/components/site/probe";
 import { domainsPageQuery, platformsQuery, timeAgo, PAGE_SIZE } from "@/lib/chaos-data";
 import { addDomains } from "@/lib/chaos.functions";
 
@@ -204,7 +205,6 @@ function ProgramDetail() {
           </span>
           <div className="flex gap-2">
             <button
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
               className="label-mono inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 transition-colors hover:bg-accent disabled:opacity-40"
             >
