@@ -19,9 +19,19 @@ export const Route = createFileRoute("/api/public/hooks/probe")({
         const url = new URL(request.url);
         const budgetMs = Math.min(Number(url.searchParams.get("budgetMs") ?? 50000), 55000);
 
-        const { processProbeJobs } = await import("@/lib/probe.server");
-        const result = await processProbeJobs(budgetMs);
-        return Response.json({ ok: true, ...result });
+        const workers = Math.min(Math.max(Number(url.searchParams.get("workers") ?? 3), 1), 6);
+        const { processProbeJobs, ensureAutoProbeJob } = await import("@/lib/probe.server");
+        await ensureAutoProbeJob();
+        const results = await Promise.all(
+          Array.from({ length: workers }, () => processProbeJobs(budgetMs)),
+        );
+        const probed = results.reduce((sum, r) => sum + r.probed, 0);
+        return Response.json({
+          ok: true,
+          workers,
+          probed,
+          jobs: results.map((r) => r.jobId).filter(Boolean),
+        });
       },
     },
   },

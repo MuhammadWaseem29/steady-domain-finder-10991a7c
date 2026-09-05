@@ -353,7 +353,7 @@ async function fetchHostBatch(
 
   if (job.domain_id) {
     q = q.eq("domain_id", job.domain_id);
-  } else {
+  } else if (job.platform_slug) {
     const { data: plat } = await supabaseAdmin
       .from("platforms")
       .select("id")
@@ -387,4 +387,38 @@ export async function probeJobTargets(job: { domain_id: string | null; platform_
     if (total > 500_000) break;
   }
   return total;
+}
+
+/**
+ * Keeps a rolling "new subdomains -> is it live?" job in flight so freshly
+ * discovered hosts land in the live list without anyone pressing a button.
+ */
+export async function ensureAutoProbeJob(): Promise<string | null> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: open } = await supabaseAdmin
+    .from("probe_jobs")
+    .select("id")
+    .in("status", ["queued", "running"])
+    .limit(1);
+  if (open && open.length) return null;
+
+  const { data: recent } = await supabaseAdmin
+    .from("probe_jobs")
+    .select("id")
+    .is("domain_id", null)
+    .is("platform_slug", null)
+    .gte("created_at", new Date(Date.now() - 20 * 60_000).toISOString())
+    .limit(1);
+  if (recent && recent.length) return null;
+
+  const { data, error } = await supabaseAdmin
+    .from("probe_jobs")
+    .insert({ scope: "new", status: "queued" })
+    .select("id")
+    .single();
+  if (error) {
+    console.error("ensureAutoProbeJob failed:", error.message);
+    return null;
+  }
+  return data?.id ?? null;
 }
