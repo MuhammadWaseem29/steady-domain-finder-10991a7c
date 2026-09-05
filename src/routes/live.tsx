@@ -88,11 +88,7 @@ function LivePage() {
               )}
             </div>
             <div className="mt-4">
-              <LiveHostsPanel
-                target={
-                  target ?? (current.domain_id ? { domain: undefined } : {}) // resolved below
-                }
-              />
+              <LiveHostsPanel target={target ?? {}} />
             </div>
           </div>
         )}
