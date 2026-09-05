@@ -115,7 +115,7 @@ const livePageSchema = z.object({
   platformSlug: z.string().trim().toLowerCase().optional(),
   program: z.string().trim().toLowerCase().optional(),
   search: z.string().trim().max(200).optional(),
-  preset: z.enum(["all", "ok", "redirect", "auth", "interesting"]).default("all"),
+  preset: z.enum(["all", "ok", "redirect", "auth", "interesting", "takeover"]).default("all"),
   limit: z.number().int().min(1).max(500).default(100),
   offset: z.number().int().min(0).default(0),
 });
@@ -146,12 +146,16 @@ export const liveHostsPage = createServerFn({ method: "GET" })
     let q = sb
       .from("probe_results")
       .select(
-        "host, url, final_url, status_code, title, content_length, response_time_ms, webserver, technologies, cdn, ip, asn, probed_at",
+        "host, url, final_url, status_code, title, content_length, response_time_ms, webserver, technologies, cdn, ip, asn, cname, takeover_risk, takeover_service, takeover_evidence, probed_at",
         { count: "exact" },
       )
-      .eq("failed", false)
       .order("probed_at", { ascending: false })
       .range(data.offset, data.offset + data.limit - 1);
+
+    // Dangling takeover candidates often don't answer at all, so that view
+    // must not be restricted to hosts that responded.
+    if (data.preset === "takeover") q = q.eq("takeover_risk", true);
+    else q = q.eq("failed", false);
 
     if (domainIds) {
       if (!domainIds.length) return { rows: [], total: 0 };

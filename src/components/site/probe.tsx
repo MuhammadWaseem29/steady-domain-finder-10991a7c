@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Activity, BellRing, Copy, ExternalLink, Loader2, Play } from "lucide-react";
+import { Activity, BellRing, Copy, ExternalLink, Loader2, Play, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { createProbeJob, liveHostsPage, probeJobStatus } from "@/lib/probe.functions";
 import { createLiveAlert, FREQUENCIES, FREQUENCY_LABELS, type Frequency } from "@/lib/alerts.functions";
@@ -183,6 +183,10 @@ type LiveRow = {
   cdn: string | null;
   ip: string | null;
   asn: string | null;
+  cname: string | null;
+  takeover_risk: boolean;
+  takeover_service: string | null;
+  takeover_evidence: string | null;
   probed_at: string;
 };
 
@@ -192,6 +196,7 @@ const PRESETS = [
   ["redirect", "Redirects"],
   ["auth", "401/403"],
   ["interesting", "Interesting"],
+  ["takeover", "Takeover risk"],
 ] as const;
 
 export function LiveHostsPanel({ target }: { target: Target }) {
@@ -259,7 +264,7 @@ export function LiveHostsPanel({ target }: { target: Target }) {
 
       <p className="text-xs text-muted-foreground">
         {isFetching ? "refreshing… " : ""}
-        {total.toLocaleString()} live hosts
+        {total.toLocaleString()} {preset === "takeover" ? "possible takeovers" : "live hosts"}
       </p>
 
       <div className="overflow-hidden rounded-lg border border-border">
@@ -269,12 +274,14 @@ export function LiveHostsPanel({ target }: { target: Target }) {
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Host</th>
               <th className="px-3 py-2">Title</th>
+              <th className="px-3 py-2">Points to</th>
               <th className="px-3 py-2">Server / CDN</th>
               <th className="px-3 py-2">Tech</th>
               <th className="px-3 py-2">IP</th>
               <th className="px-3 py-2 text-right">ms</th>
             </tr>
           </thead>
+
           <tbody className="font-mono text-xs">
             {rows.map((r) => (
               <tr key={r.url} className="border-t border-border hover:bg-accent/40">
@@ -301,9 +308,23 @@ export function LiveHostsPanel({ target }: { target: Target }) {
                     {r.host}
                     <ExternalLink className="size-3 opacity-50" />
                   </a>
+                  {r.takeover_risk && (
+                    <span
+                      title={r.takeover_evidence ?? "Possible subdomain takeover"}
+                      className="ml-2 inline-flex items-center gap-1 rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] text-red-400"
+                    >
+                      <ShieldAlert className="size-3" /> takeover?
+                    </span>
+                  )}
                 </td>
                 <td className="max-w-56 truncate px-3 py-1.5 text-muted-foreground">
                   {r.title ?? ""}
+                </td>
+                <td
+                  className="max-w-48 truncate px-3 py-1.5 text-muted-foreground"
+                  title={r.takeover_evidence ?? r.cname ?? ""}
+                >
+                  {r.takeover_service ?? r.cname ?? ""}
                 </td>
                 <td className="px-3 py-1.5 text-muted-foreground">
                   {[r.webserver, r.cdn].filter(Boolean).join(" · ")}
@@ -319,9 +340,12 @@ export function LiveHostsPanel({ target }: { target: Target }) {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
-                  No live hosts yet — run a probe to check which hosts answer.
+                <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
+                  {preset === "takeover"
+                    ? "No takeover candidates found in the hosts probed so far."
+                    : "No live hosts yet — run a probe to check which hosts answer."}
                 </td>
+
               </tr>
             )}
           </tbody>
