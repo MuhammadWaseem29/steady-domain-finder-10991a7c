@@ -134,6 +134,26 @@ while True:
 print(len(hosts), "hosts")`,
   },
   {
+    id: "platform-full-dump",
+    title: "Collect every subdomain on a platform (all programs)",
+    intro:
+      "Walk one platform program by program with the cursor until it returns null. There is no rate limit, so you can run it as fast as your network allows.",
+    language: "bash",
+    code: `# every host tracked on bugcrowd, in one file
+BASE="https://chaos.thescope.top/api/v1"
+CURSOR=""
+: > bugcrowd-all.txt
+while :; do
+  URL="$BASE/platforms/bugcrowd/subdomains?limit=10000"
+  [ -n "$CURSOR" ] && URL="$URL&cursor=$CURSOR"
+  BODY=$(curl -s "$URL" -H "Authorization: Bearer $CHAOS_TOKEN")
+  echo "$BODY" | jq -r '.data[].host' >> bugcrowd-all.txt
+  CURSOR=$(echo "$BODY" | jq -r '.meta.next_cursor // empty')
+  [ -z "$CURSOR" ] && break
+done
+wc -l bugcrowd-all.txt`,
+  },
+  {
     id: "bulk-export",
     title: "Export 100k+ hosts for a whole program",
     intro: "The export endpoint streams, so memory stays flat no matter how large the program is.",
