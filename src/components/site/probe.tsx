@@ -264,7 +264,7 @@ export function LiveHostsPanel({ target }: { target: Target }) {
 
       <p className="text-xs text-muted-foreground">
         {isFetching ? "refreshing… " : ""}
-        {total.toLocaleString()} live hosts
+        {total.toLocaleString()} {preset === "takeover" ? "possible takeovers" : "live hosts"}
       </p>
 
       <div className="overflow-hidden rounded-lg border border-border">
@@ -274,12 +274,14 @@ export function LiveHostsPanel({ target }: { target: Target }) {
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Host</th>
               <th className="px-3 py-2">Title</th>
+              <th className="px-3 py-2">Points to</th>
               <th className="px-3 py-2">Server / CDN</th>
               <th className="px-3 py-2">Tech</th>
               <th className="px-3 py-2">IP</th>
               <th className="px-3 py-2 text-right">ms</th>
             </tr>
           </thead>
+
           <tbody className="font-mono text-xs">
             {rows.map((r) => (
               <tr key={r.url} className="border-t border-border hover:bg-accent/40">
