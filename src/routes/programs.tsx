@@ -256,7 +256,7 @@ function Programs() {
                 </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-3 gap-3 text-sm">
+              <div className="mt-5 grid grid-cols-3 gap-3 text-sm sm:grid-cols-5">
                 <div>
                   <p className="label-mono text-muted-foreground">Domains</p>
                   <p className="mt-1 text-lg font-bold tabular-nums">
@@ -273,6 +273,24 @@ function Programs() {
                   <p className="label-mono text-muted-foreground">New 24h</p>
                   <p className="mt-1 text-lg font-bold tabular-nums text-success">
                     +<CountUp value={Number(p.new_24h)} />
+                  </p>
+                </div>
+                <div>
+                  <p className="label-mono text-muted-foreground">Live hosts</p>
+                  <p className="mt-1 text-lg font-bold tabular-nums text-emerald-400">
+                    <CountUp value={Number(liveByPlatform.get(p.platform_id)?.live_hosts ?? 0)} />
+                  </p>
+                </div>
+                <div>
+                  <p className="label-mono text-muted-foreground">Takeover</p>
+                  <p
+                    className={`mt-1 text-lg font-bold tabular-nums ${
+                      Number(liveByPlatform.get(p.platform_id)?.takeover_count ?? 0) > 0
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    <CountUp value={Number(liveByPlatform.get(p.platform_id)?.takeover_count ?? 0)} />
                   </p>
                 </div>
               </div>
