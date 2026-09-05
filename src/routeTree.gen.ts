@@ -38,6 +38,7 @@ import { Route as DocsApiErrorsRouteImport } from './routes/docs/api.errors'
 import { Route as DocsApiGuidesRouteImport } from './routes/docs/api.guides'
 import { Route as DocsApiPaginationRouteImport } from './routes/docs/api.pagination'
 import { Route as DocsApiQuickstartRouteImport } from './routes/docs/api.quickstart'
+import { Route as DocsApiRawRouteImport } from './routes/docs/api.raw'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
 import { Route as ApiPublicRawSplatRouteImport } from './routes/api/public/raw/$'
 import { Route as ApiPublicV1SplatRouteImport } from './routes/api/public/v1/$'
@@ -189,6 +190,11 @@ const DocsApiQuickstartRoute = DocsApiQuickstartRouteImport.update({
   path: '/quickstart',
   getParentRoute: () => DocsApiRoute,
 } as any)
+const DocsApiRawRoute = DocsApiRawRouteImport.update({
+  id: '/raw',
+  path: '/raw',
+  getParentRoute: () => DocsApiRoute,
+} as any)
 const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
   id: '/api/public/hooks/scan',
   path: '/api/public/hooks/scan',
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/raw/$': typeof ApiPublicRawSplatRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/raw/$': typeof ApiPublicRawSplatRoute
@@ -318,6 +326,7 @@ export interface FileRoutesById {
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/raw': typeof DocsApiRawRoute
   '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/raw/$': typeof ApiPublicRawSplatRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
     | '/docs/api/guides'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
+    | '/docs/api/raw'
     | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/raw/$'
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/docs/api/guides'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
+    | '/docs/api/raw'
     | '/docs/api'
     | '/api/public/hooks/scan'
     | '/api/public/raw/$'
@@ -427,6 +438,7 @@ export interface FileRouteTypes {
     | '/docs/api/guides'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
+    | '/docs/api/raw'
     | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/raw/$'
@@ -669,6 +681,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsApiQuickstartRouteImport
       parentRoute: typeof DocsApiRoute
     }
+    '/docs/api/raw': {
+      id: '/docs/api/raw'
+      path: '/raw'
+      fullPath: '/docs/api/raw'
+      preLoaderRoute: typeof DocsApiRawRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/api/public/hooks/scan': {
       id: '/api/public/hooks/scan'
       path: '/api/public/hooks/scan'
@@ -714,6 +733,7 @@ interface DocsApiRouteChildren {
   DocsApiGuidesRoute: typeof DocsApiGuidesRoute
   DocsApiPaginationRoute: typeof DocsApiPaginationRoute
   DocsApiQuickstartRoute: typeof DocsApiQuickstartRoute
+  DocsApiRawRoute: typeof DocsApiRawRoute
   DocsApiIndexRoute: typeof DocsApiIndexRoute
   DocsApiReferenceEndpointRoute: typeof DocsApiReferenceEndpointRoute
 }
@@ -725,6 +745,7 @@ const DocsApiRouteChildren: DocsApiRouteChildren = {
   DocsApiGuidesRoute: DocsApiGuidesRoute,
   DocsApiPaginationRoute: DocsApiPaginationRoute,
   DocsApiQuickstartRoute: DocsApiQuickstartRoute,
+  DocsApiRawRoute: DocsApiRawRoute,
   DocsApiIndexRoute: DocsApiIndexRoute,
   DocsApiReferenceEndpointRoute: DocsApiReferenceEndpointRoute,
 }
