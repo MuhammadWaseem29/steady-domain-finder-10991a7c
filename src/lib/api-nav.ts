@@ -44,6 +44,5 @@ export function neighbours(pathname: string): { prev: NavItem | null; next: NavI
 
 /** Absolute API base for the running origin (SSR falls back to the public site). */
 export function apiBase(): string {
-  const origin = typeof window === "undefined" ? SITE_ORIGIN : window.location.origin;
-  return `${origin}/api/v1`;
+  return `${SITE_ORIGIN}/api/v1`;
 }

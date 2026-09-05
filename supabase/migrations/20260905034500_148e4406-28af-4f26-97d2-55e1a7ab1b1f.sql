@@ -1,0 +1,2 @@
+revoke execute on function public.platform_subdomains_page(uuid, uuid, text, int, boolean) from public, anon, authenticated;
+grant execute on function public.platform_subdomains_page(uuid, uuid, text, int, boolean) to service_role;
