@@ -1,6 +1,9 @@
 # Enterprise API Reference with Live Console
 
-Visual styling mirrors the ProjectDiscovery reference docs: quiet sidebar with colored method badges, generous typography, boxed parameter rows, tabbed dark code blocks, and a compact response viewer — adapted to this site's existing colors and fonts so it still feels like one product.
+Replace the current static API page with a full reference site: a three-pane layout with endpoint navigation, rich documentation, and a runnable request console on every endpoint page.
+
+Visual styling mirrors the ProjectDiscovery reference docs — quiet sidebar with colored method badges, generous typography, boxed parameter rows, tabbed dark code blocks, and a compact response viewer — adapted to this site's existing colors and fonts so it still feels like one product.
+
 
 ## What you get
 
