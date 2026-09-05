@@ -12,6 +12,7 @@ import {
   FREQUENCIES,
   FREQUENCY_LABELS,
   type Frequency,
+  LIVE_STATUS_CODES,
   createAlertSubscription,
   deleteAlertSubscription,
   listAlertSubscriptions,
@@ -418,7 +419,12 @@ function AlertsPage() {
                               ? `${s.platform_ids?.length ?? 0} programs`
                               : `${s.domain_ids?.length ?? 0} root domains`}
                           {s.keywords?.length ? ` · keywords: ${s.keywords.join(", ")}` : ""}
-                          {(s as { notify_live?: boolean }).notify_live ? " · live alerts" : ""}
+                          {(s as { notify_live?: boolean }).notify_live
+                            ? ` · live alerts${(() => {
+                                const codes = (s as { live_status_codes?: number[] }).live_status_codes;
+                                return codes?.length ? ` (${codes.join(", ")})` : "";
+                              })()}`
+                            : ""}
                         </p>
                       </div>
                       <div className="text-xs text-muted-foreground">
