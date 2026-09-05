@@ -80,9 +80,10 @@ type LiveRow = {
 
 async function streamLiveHosts(
   supabaseAdmin: Awaited<ReturnType<typeof getAdmin>>,
-  domainIds: string[],
+  domainIds: string[] | null,
   format: Format,
   source: string,
+  sinceIso?: string,
 ): Promise<Response> {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -111,16 +112,22 @@ async function streamLiveHosts(
         }
         emitted += rows.length;
       };
+      const groups: Array<string[] | null> = domainIds
+        ? Array.from({ length: Math.ceil(domainIds.length / 20) }, (_, i) =>
+            domainIds.slice(i * 20, i * 20 + 20),
+          )
+        : [null];
       try {
-        for (let i = 0; i < domainIds.length; i += 20) {
-          const ids = domainIds.slice(i, i + 20);
+        for (const ids of groups) {
           let from = 0;
-          for (let page = 0; page < 5000; page++) {
-            const { data, error } = await supabaseAdmin
+          for (let page = 0; page < 20000; page++) {
+            let q = supabaseAdmin
               .from("probe_results")
               .select("host, url, status_code, title, probed_at")
-              .in("domain_id", ids)
-              .eq("failed", false)
+              .eq("failed", false);
+            if (ids) q = q.in("domain_id", ids);
+            if (sinceIso) q = q.gte("probed_at", sinceIso);
+            const { data, error } = await q
               .order("host", { ascending: true })
               .range(from, from + PAGE - 1);
             if (error) throw new Error(error.message || "database error");
@@ -180,6 +187,8 @@ export async function handleRawExport(request: Request, splat: string): Promise<
         "/raw/{domain}                 all hosts for one root domain",
         "/raw/{domain}/new             hosts first seen in the last 24h (?hours=N)",
         "/raw/{domain}/live            hosts that answered a live probe",
+        "/raw/mainlive.txt             every live host we have ever seen (grows over time)",
+        "/raw/mainlive.txt/new         live hosts probed in the last 24h (?hours=N)",
         "/raw/{platform}               all hosts across a platform",
         "/raw/{platform}/{program}     all hosts for one program on that platform",
         "",
@@ -199,6 +208,19 @@ export async function handleRawExport(request: Request, splat: string): Promise<
 
   const first = segments[0] ?? "";
   const second = segments[1];
+
+  // ---- global live list (mainlive.txt) ------------------------------------
+  if (first === "mainlive" || first === "mainlive.txt" || first === "live") {
+    const { supabaseAdmin: adminAll } = await import("@/integrations/supabase/client.server");
+    const onlyNew = (second ?? url.searchParams.get("scope") ?? "").toLowerCase() === "new";
+    return streamLiveHosts(
+      adminAll,
+      null,
+      format,
+      onlyNew ? "live:all/new" : "live:all",
+      onlyNew ? sinceIso : undefined,
+    );
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const encoder = new TextEncoder();
 
