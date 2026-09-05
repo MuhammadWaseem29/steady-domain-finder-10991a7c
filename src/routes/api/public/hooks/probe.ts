@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/public/hooks/probe")({
         const url = new URL(request.url);
         const budgetMs = Math.min(Number(url.searchParams.get("budgetMs") ?? 50000), 55000);
 
-        const workers = Math.min(Math.max(Number(url.searchParams.get("workers") ?? 3), 1), 6);
+        const workers = Math.min(Math.max(Number(url.searchParams.get("workers") ?? 4), 1), 8);
         const fanout = Math.min(Math.max(Number(url.searchParams.get("fanout") ?? 0), 0), 12);
         const { processProbeJobs, ensureAutoProbeJob } = await import("@/lib/probe.server");
         await ensureAutoProbeJob();
