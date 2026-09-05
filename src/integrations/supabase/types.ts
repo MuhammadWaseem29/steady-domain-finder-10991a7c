@@ -881,6 +881,39 @@ export type Database = {
         Args: { _domain_id: string; _hosts: Json; _stamp: string }
         Returns: number
       }
+      live_ip_points: {
+        Args: { _limit?: number; _platform_slug?: string }
+        Returns: {
+          hosts: number
+          ip: string
+          platform_color: string
+          platform_name: string
+          sample_domain: string
+          sample_host: string
+          takeover_count: number
+        }[]
+      }
+      live_program_stats: {
+        Args: { _limit?: number; _platform_slug?: string }
+        Returns: {
+          auth_count: number
+          domain: string
+          last_probed_at: string
+          live_hosts: number
+          ok_count: number
+          platform_color: string
+          platform_name: string
+          platform_slug: string
+          takeover_count: number
+        }[]
+      }
+      live_status_stats: {
+        Args: { _platform_slug?: string }
+        Returns: {
+          c: number
+          status_code: number
+        }[]
+      }
       mark_all_domains_due: { Args: never; Returns: number }
       new_subdomain_counts: {
         Args: never
