@@ -19,6 +19,20 @@ Visual styling mirrors the ProjectDiscovery reference docs — quiet sidebar wit
 4. **Code samples that track your inputs** — cURL, JavaScript (fetch) and Python (requests) tabs regenerate as you edit parameters, with one-click copy.
 5. **Polish** — overview landing page at `/docs/api` (auth, base URLs, envelope, pagination, rate limits, error table), keyboard-friendly nav, dark/light aware, mobile drawer for the endpoint list, and a link to the machine-readable `/api/v1/openapi.json`.
 
+## Extras I'd add as the owner
+
+- **Quickstart page** — get a token, make your first call, and a "first 5 minutes" walkthrough with copy-paste snippets.
+- **Guides/recipes** — watch a program for new hosts every hour, bulk export 100k+ hosts, keep a local mirror in sync, queue a re-scan and poll the job.
+- **Full error catalogue** with every code, when it happens and how to recover, plus a rate-limit page explaining the `X-RateLimit-*` headers and back-off advice.
+- **Pagination guide** (cursor vs offset) with a working loop example.
+- **Changelog page** so integrators can see what changed and when.
+- **Postman / OpenAPI download buttons** and a "Run in your terminal" one-liner on every endpoint.
+- **Status shown live** — small badge showing the API is up plus current scan-cycle freshness, sourced from existing endpoints.
+- **Docs search** across all pages, and prev/next links at the bottom of each page.
+- **SDK-style snippets** in cURL, JavaScript, Python, Go and PHP.
+- **Signed-in convenience** — pick one of your keys from a dropdown in the console instead of pasting it.
+
+
 ## Technical notes
 
 - `src/lib/api-spec.ts` stays the single source of truth; the new pages, samples and OpenAPI output all read from it. Extend entries with response-schema field lists and per-endpoint error codes where missing.
