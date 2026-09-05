@@ -5,8 +5,8 @@ import { CodeBlock, Callout } from "@/components/site/api/primitives";
 
 const SHAPE = `{
   "error": {
-    "code": "rate_limited",
-    "message": "Rate limit exceeded. Retry after the reset window."
+    "code": "invalid_token",
+    "message": "Unknown API token."
   },
   "request_id": "b2f0c8d1-1f6e-4d0b-9d55-2a9c3b1f77aa"
 }`;

@@ -82,7 +82,7 @@ export async function handleApiV1(request: Request, splat: string): Promise<Resp
   const auth = await authenticateApiRequest(request, requestId);
   if ("error" in auth) return auth.error;
 
-  const meta: ApiResponseMeta = { requestId, rate: auth.caller.rate };
+  const meta: ApiResponseMeta = { requestId };
   const ctx: Ctx = { url, segments, method: request.method, request, caller: auth.caller, meta };
 
   let response: Response;
@@ -136,11 +136,6 @@ async function meRoute(ctx: Ctx): Promise<Response> {
         user_id: ctx.caller.userId,
         profile: profile ?? null,
         key: { id: ctx.caller.keyId, name: ctx.caller.name, scopes: ctx.caller.scopes },
-        rate_limit: {
-          limit: ctx.caller.rate.limit,
-          remaining: ctx.caller.rate.remaining,
-          reset: ctx.caller.rate.reset,
-        },
         usage: mine
           ? {
               requests_1h: mine.requests_1h,

@@ -68,7 +68,7 @@ function ApiOverview() {
       <div className="grid gap-4 sm:grid-cols-3">
         {[
           { label: "Endpoints", value: String(API_ENDPOINTS.length) },
-          { label: "Rate limit", value: "120 / min" },
+          { label: "Rate limit", value: "Unlimited" },
           { label: "Auth", value: "Bearer token" },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-4">
