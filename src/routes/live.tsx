@@ -48,8 +48,8 @@ function LivePage() {
       q.state.data?.status === "finished" || q.state.data?.status === "error" ? false : 3000,
   });
 
-  const target = current?.domain_id
-    ? undefined
+  const target = current?.domain
+    ? { domain: current.domain }
     : current?.platform_slug
       ? { platformSlug: current.platform_slug, program: current.program ?? undefined }
       : undefined;

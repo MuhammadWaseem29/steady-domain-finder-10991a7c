@@ -90,7 +90,13 @@ export const probeJobStatus = createServerFn({ method: "GET" })
       )
       .eq("id", data.jobId)
       .maybeSingle();
-    return job;
+    if (!job) return null;
+    let domain: string | null = null;
+    if (job.domain_id) {
+      const { data: d } = await sb.from("domains").select("domain").eq("id", job.domain_id).maybeSingle();
+      domain = d?.domain ?? null;
+    }
+    return { ...job, domain };
   });
 
 const livePageSchema = z.object({
