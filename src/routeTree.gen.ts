@@ -35,6 +35,7 @@ import { Route as DocsApiErrorsRouteImport } from './routes/docs/api.errors'
 import { Route as DocsApiGuidesRouteImport } from './routes/docs/api.guides'
 import { Route as DocsApiPaginationRouteImport } from './routes/docs/api.pagination'
 import { Route as DocsApiQuickstartRouteImport } from './routes/docs/api.quickstart'
+import { Route as DocsApiRateLimitsRouteImport } from './routes/docs/api.rate-limits'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
 import { Route as ApiPublicV1SplatRouteImport } from './routes/api/public/v1/$'
 import { Route as DocsApiReferenceEndpointRouteImport } from './routes/docs/api.reference.$endpoint'
@@ -170,6 +171,11 @@ const DocsApiQuickstartRoute = DocsApiQuickstartRouteImport.update({
   path: '/quickstart',
   getParentRoute: () => DocsApiRoute,
 } as any)
+const DocsApiRateLimitsRoute = DocsApiRateLimitsRouteImport.update({
+  id: '/rate-limits',
+  path: '/rate-limits',
+  getParentRoute: () => DocsApiRoute,
+} as any)
 const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
   id: '/api/public/hooks/scan',
   path: '/api/public/hooks/scan',
@@ -219,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/rate-limits': typeof DocsApiRateLimitsRoute
   '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/rate-limits': typeof DocsApiRateLimitsRoute
   '/docs/api': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -283,6 +291,7 @@ export interface FileRoutesById {
   '/docs/api/guides': typeof DocsApiGuidesRoute
   '/docs/api/pagination': typeof DocsApiPaginationRoute
   '/docs/api/quickstart': typeof DocsApiQuickstartRoute
+  '/docs/api/rate-limits': typeof DocsApiRateLimitsRoute
   '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -317,6 +326,7 @@ export interface FileRouteTypes {
     | '/docs/api/guides'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
+    | '/docs/api/rate-limits'
     | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
@@ -348,6 +358,7 @@ export interface FileRouteTypes {
     | '/docs/api/guides'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
+    | '/docs/api/rate-limits'
     | '/docs/api'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
@@ -380,6 +391,7 @@ export interface FileRouteTypes {
     | '/docs/api/guides'
     | '/docs/api/pagination'
     | '/docs/api/quickstart'
+    | '/docs/api/rate-limits'
     | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
@@ -598,6 +610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsApiQuickstartRouteImport
       parentRoute: typeof DocsApiRoute
     }
+    '/docs/api/rate-limits': {
+      id: '/docs/api/rate-limits'
+      path: '/rate-limits'
+      fullPath: '/docs/api/rate-limits'
+      preLoaderRoute: typeof DocsApiRateLimitsRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/api/public/hooks/scan': {
       id: '/api/public/hooks/scan'
       path: '/api/public/hooks/scan'
@@ -634,6 +653,7 @@ interface DocsApiRouteChildren {
   DocsApiGuidesRoute: typeof DocsApiGuidesRoute
   DocsApiPaginationRoute: typeof DocsApiPaginationRoute
   DocsApiQuickstartRoute: typeof DocsApiQuickstartRoute
+  DocsApiRateLimitsRoute: typeof DocsApiRateLimitsRoute
   DocsApiIndexRoute: typeof DocsApiIndexRoute
   DocsApiReferenceEndpointRoute: typeof DocsApiReferenceEndpointRoute
 }
@@ -643,6 +663,7 @@ const DocsApiRouteChildren: DocsApiRouteChildren = {
   DocsApiGuidesRoute: DocsApiGuidesRoute,
   DocsApiPaginationRoute: DocsApiPaginationRoute,
   DocsApiQuickstartRoute: DocsApiQuickstartRoute,
+  DocsApiRateLimitsRoute: DocsApiRateLimitsRoute,
   DocsApiIndexRoute: DocsApiIndexRoute,
   DocsApiReferenceEndpointRoute: DocsApiReferenceEndpointRoute,
 }
