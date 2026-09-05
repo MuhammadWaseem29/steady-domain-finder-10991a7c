@@ -32,6 +32,7 @@ import { Route as ApiPublicExportRouteImport } from './routes/api/public/export'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
 import { Route as DocsApiIndexRouteImport } from './routes/docs/api.index'
 import { Route as DocsApiErrorsRouteImport } from './routes/docs/api.errors'
+import { Route as DocsApiQuickstartRouteImport } from './routes/docs/api.quickstart'
 import { Route as ApiPublicHooksScanRouteImport } from './routes/api/public/hooks/scan'
 import { Route as ApiPublicV1SplatRouteImport } from './routes/api/public/v1/$'
 import { Route as DocsApiReferenceEndpointRouteImport } from './routes/docs/api.reference.$endpoint'
@@ -152,6 +153,11 @@ const DocsApiErrorsRoute = DocsApiErrorsRouteImport.update({
   path: '/errors',
   getParentRoute: () => DocsApiRoute,
 } as any)
+const DocsApiQuickstartRoute = DocsApiQuickstartRouteImport.update({
+  id: '/quickstart',
+  path: '/quickstart',
+  getParentRoute: () => DocsApiRoute,
+} as any)
 const ApiPublicHooksScanRoute = ApiPublicHooksScanRouteImport.update({
   id: '/api/public/hooks/scan',
   path: '/api/public/hooks/scan',
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
+  '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
+  '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/api/public/export': typeof ApiPublicExportRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/docs/api/errors': typeof DocsApiErrorsRoute
+  '/docs/api/quickstart': typeof DocsApiQuickstartRoute
   '/docs/api/': typeof DocsApiIndexRoute
   '/api/public/hooks/scan': typeof ApiPublicHooksScanRoute
   '/api/public/v1/$': typeof ApiPublicV1SplatRoute
@@ -287,6 +296,7 @@ export interface FileRouteTypes {
     | '/api/public/export'
     | '/api/v1/$'
     | '/docs/api/errors'
+    | '/docs/api/quickstart'
     | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
@@ -315,6 +325,7 @@ export interface FileRouteTypes {
     | '/api/public/export'
     | '/api/v1/$'
     | '/docs/api/errors'
+    | '/docs/api/quickstart'
     | '/docs/api'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/api/public/export'
     | '/api/v1/$'
     | '/docs/api/errors'
+    | '/docs/api/quickstart'
     | '/docs/api/'
     | '/api/public/hooks/scan'
     | '/api/public/v1/$'
@@ -541,6 +553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsApiErrorsRouteImport
       parentRoute: typeof DocsApiRoute
     }
+    '/docs/api/quickstart': {
+      id: '/docs/api/quickstart'
+      path: '/quickstart'
+      fullPath: '/docs/api/quickstart'
+      preLoaderRoute: typeof DocsApiQuickstartRouteImport
+      parentRoute: typeof DocsApiRoute
+    }
     '/api/public/hooks/scan': {
       id: '/api/public/hooks/scan'
       path: '/api/public/hooks/scan'
@@ -574,12 +593,14 @@ declare module '@tanstack/react-router' {
 
 interface DocsApiRouteChildren {
   DocsApiErrorsRoute: typeof DocsApiErrorsRoute
+  DocsApiQuickstartRoute: typeof DocsApiQuickstartRoute
   DocsApiIndexRoute: typeof DocsApiIndexRoute
   DocsApiReferenceEndpointRoute: typeof DocsApiReferenceEndpointRoute
 }
 
 const DocsApiRouteChildren: DocsApiRouteChildren = {
   DocsApiErrorsRoute: DocsApiErrorsRoute,
+  DocsApiQuickstartRoute: DocsApiQuickstartRoute,
   DocsApiIndexRoute: DocsApiIndexRoute,
   DocsApiReferenceEndpointRoute: DocsApiReferenceEndpointRoute,
 }
