@@ -196,9 +196,16 @@ export async function handleRawExport(request: Request, splat: string): Promise<
             ...(afterDomain ? { _after_domain: afterDomain, _after_host: afterHost } : {}),
           });
           if (error) throw new Error(error.message || "database error");
-          const rows = (data ?? []) as Array<Row & { domain_id: string }>;
+          const rows = (data ?? []) as Array<Row & { domain_id: string; domain: string }>;
           if (rows.length === 0) break;
-          w.write(rows);
+          w.write(
+            rows.map((r) => ({
+              host: r.host,
+              first_seen_at: r.first_seen_at,
+              last_seen_at: r.last_seen_at,
+              is_active: r.is_active,
+            })),
+          );
           if (rows.length < PLATFORM_PAGE) break;
           const last = rows[rows.length - 1]!;
           afterDomain = last.domain_id;
