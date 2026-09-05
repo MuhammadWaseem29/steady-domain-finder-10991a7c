@@ -100,7 +100,7 @@ async function lookupDns(host: string): Promise<{ ip: string | null; cname: stri
 
 function extractTitle(html: string): string | null {
   const m = /<title[^>]*>([^<]{0,300})<\/title>/i.exec(html);
-  return m ? m[1].trim().replace(/\s+/g, " ").slice(0, 200) : null;
+  return m && m[1] ? m[1].trim().replace(/\s+/g, " ").slice(0, 200) : null;
 }
 
 function detectTech(headers: Headers, body: string): string[] {
@@ -108,7 +108,7 @@ function detectTech(headers: Headers, body: string): string[] {
   const found = new Set<string>();
   for (const [re, name] of TECH_HINTS) if (re.test(hay)) found.add(name);
   const powered = headers.get("x-powered-by");
-  if (powered) found.add(powered.split("/")[0].trim());
+  if (powered?.split("/")[0]) found.add(powered.split("/")[0]!.trim());
   return [...found].slice(0, 12);
 }
 
@@ -252,7 +252,7 @@ export async function processProbeJobs(budgetMs: number): Promise<{ jobId: strin
     const { error } = await supabaseAdmin.rpc("record_probe_batch", {
       _job_id: j.id,
       _results: results,
-      _cursor_host: hosts[hosts.length - 1].host,
+      _cursor_host: hosts[hosts.length - 1]!.host,
       _done: done,
     });
     if (error) throw new Error(error.message);
@@ -315,7 +315,7 @@ export async function probeJobTargets(job: { domain_id: string | null; platform_
     const batch = await fetchHostBatch(supabaseAdmin, probe as never, 1000);
     if (!batch.length) break;
     total += batch.length;
-    (probe as { cursor_host: string }).cursor_host = batch[batch.length - 1].host;
+    (probe as { cursor_host: string }).cursor_host = batch[batch.length - 1]!.host;
     if (total > 500_000) break;
   }
   return total;
