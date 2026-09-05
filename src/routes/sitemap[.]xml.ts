@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { API_ENDPOINTS } from "@/lib/api-spec";
 
 const BASE_URL = "https://chaos.thescope.top";
 
