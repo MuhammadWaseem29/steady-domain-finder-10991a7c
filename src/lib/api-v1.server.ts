@@ -369,8 +369,8 @@ async function platformsRoute(ctx: Ctx): Promise<Response> {
     }
     const { data, error } = await db.rpc("platform_subdomains_page", {
       _platform_id: platform.id,
-      _after_domain: afterDomain,
-      _after_host: afterHost,
+      _after_domain: afterDomain ?? undefined,
+      _after_host: afterHost ?? undefined,
       _lim: limit,
       _active_only: activeOnly,
     });
