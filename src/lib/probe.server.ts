@@ -69,35 +69,45 @@ async function sha256Hex(data: Uint8Array): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function doh(name: string, type: string): Promise<Array<{ data: string }>> {
+async function doh(name: string, type: string, timeoutMs = DNS_TIMEOUT_MS): Promise<Array<{ data: string; type?: number }>> {
   try {
     const res = await fetch(
       `https://1.1.1.1/dns-query?name=${encodeURIComponent(name)}&type=${type}`,
-      { headers: { accept: "application/dns-json" }, signal: AbortSignal.timeout(4000) },
+      { headers: { accept: "application/dns-json" }, signal: AbortSignal.timeout(timeoutMs) },
     );
     if (!res.ok) return [];
-    const json = (await res.json()) as { Answer?: Array<{ data: string }> };
+    const json = (await res.json()) as { Answer?: Array<{ data: string; type?: number }> };
     return json.Answer ?? [];
   } catch {
     return [];
   }
 }
 
-async function lookupDns(host: string): Promise<{ ip: string | null; cname: string | null; asn: string | null }> {
-  const [a, cname] = await Promise.all([doh(host, "A"), doh(host, "CNAME")]);
-  const ip = a.find((r) => /^\d+\.\d+\.\d+\.\d+$/.test(r.data))?.data ?? null;
-  const cnameVal = cname[0]?.data?.replace(/\.$/, "") ?? null;
+const asnCache = new Map<string, string | null>();
+
+async function lookupAsn(ip: string): Promise<string | null> {
+  const key = ip.split(".").slice(0, 3).join(".");
+  if (asnCache.has(key)) return asnCache.get(key) ?? null;
+  const rev = ip.split(".").reverse().join(".");
+  const txt = await doh(`${rev}.origin.asn.cymru.com`, "TXT", 2000);
+  const raw = txt[0]?.data?.replace(/"/g, "");
   let asn: string | null = null;
-  if (ip) {
-    const rev = ip.split(".").reverse().join(".");
-    const txt = await doh(`${rev}.origin.asn.cymru.com`, "TXT");
-    const raw = txt[0]?.data?.replace(/"/g, "");
-    if (raw) {
-      const [num, , , , desc] = raw.split(" | ");
-      asn = desc ? `AS${num} ${desc}` : `AS${num}`;
-    }
+  if (raw) {
+    const [num, , , , desc] = raw.split(" | ");
+    asn = desc ? `AS${num} ${desc}` : `AS${num}`;
   }
-  return { ip, cname: cnameVal, asn };
+  if (asnCache.size < 20000) asnCache.set(key, asn);
+  return asn;
+}
+
+// A single A query already returns any CNAME records in the answer chain,
+// so one round trip is enough to resolve both.
+async function lookupDns(host: string): Promise<{ ip: string | null; cname: string | null }> {
+  const answers = await doh(host, "A");
+  const ip = answers.find((r) => /^\d+\.\d+\.\d+\.\d+$/.test(r.data))?.data ?? null;
+  const cname =
+    answers.find((r) => r.type === 5 || /^[a-z0-9.-]+\.$/i.test(r.data))?.data?.replace(/\.$/, "") ?? null;
+  return { ip, cname };
 }
 
 function extractTitle(html: string): string | null {
