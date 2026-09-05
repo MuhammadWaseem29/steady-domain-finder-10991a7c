@@ -330,20 +330,13 @@ export const recentLiveAnalytics = createServerFn({ method: "GET" })
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
-    const inRange = previous > 0 ? (await Promise.resolve(null), null) : null;
-    void inRange;
-    // current-window count comes from the day/hour buckets the caller picked;
-    // delta uses the window before that.
-    const currentCount = sample?.length ?? 0;
-    const prevCount = previous - currentCount >= 0 ? previous - currentCount : 0;
-
     return {
       total,
       windows: { hour, day, week, month },
-      perHour: data.hours > 0 ? Math.round(((sample?.length ?? 0) / data.hours) * 10) / 10 : 0,
+      perHour: data.hours > 0 ? Math.round((current / data.hours) * 10) / 10 : 0,
       latestAt: latest,
-      current: currentCount,
-      previous: prevCount,
+      current,
+      previous: Math.max(doubleWindow - current, 0),
       series,
       status,
       platforms,
