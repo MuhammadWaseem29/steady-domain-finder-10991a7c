@@ -146,12 +146,16 @@ export const liveHostsPage = createServerFn({ method: "GET" })
     let q = sb
       .from("probe_results")
       .select(
-        "host, url, final_url, status_code, title, content_length, response_time_ms, webserver, technologies, cdn, ip, asn, probed_at",
+        "host, url, final_url, status_code, title, content_length, response_time_ms, webserver, technologies, cdn, ip, asn, cname, takeover_risk, takeover_service, takeover_evidence, probed_at",
         { count: "exact" },
       )
-      .eq("failed", false)
       .order("probed_at", { ascending: false })
       .range(data.offset, data.offset + data.limit - 1);
+
+    // Dangling takeover candidates often don't answer at all, so that view
+    // must not be restricted to hosts that responded.
+    if (data.preset === "takeover") q = q.eq("takeover_risk", true);
+    else q = q.eq("failed", false);
 
     if (domainIds) {
       if (!domainIds.length) return { rows: [], total: 0 };
