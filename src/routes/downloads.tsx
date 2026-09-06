@@ -27,7 +27,7 @@ export const Route = createFileRoute("/downloads")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: DownloadsPage;
+  component: DownloadsPage,
 });
 
 const FORMATS = ["txt", "csv", "json"] as const;
