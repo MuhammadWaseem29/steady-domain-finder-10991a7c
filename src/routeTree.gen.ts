@@ -15,6 +15,7 @@ import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as Chaos_updatesRouteImport } from './routes/chaos_updates'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DownloadsRouteImport } from './routes/downloads'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as LivemapRouteImport } from './routes/livemap'
 import { Route as LivesubsRouteImport } from './routes/livesubs'
@@ -33,6 +34,7 @@ import { Route as DomainDomainRouteImport } from './routes/domain.$domain'
 import { Route as ProgramSlugRouteImport } from './routes/program.$slug'
 import { Route as RawSplatRouteImport } from './routes/raw.$'
 import { Route as ApiPublicExportRouteImport } from './routes/api/public/export'
+import { Route as ApiPublicRootsRouteImport } from './routes/api/public/roots'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
 import { Route as DocsApiIndexRouteImport } from './routes/docs/api.index'
 import { Route as DocsApiAuthenticationRouteImport } from './routes/docs/api.authentication'
@@ -78,6 +80,11 @@ const Chaos_updatesRoute = Chaos_updatesRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadsRoute = DownloadsRouteImport.update({
+  id: '/downloads',
+  path: '/downloads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LiveRoute = LiveRouteImport.update({
@@ -170,6 +177,11 @@ const ApiPublicExportRoute = ApiPublicExportRouteImport.update({
   path: '/api/public/export',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRootsRoute = ApiPublicRootsRouteImport.update({
+  id: '/api/public/roots',
+  path: '/api/public/roots',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1SplatRoute = ApiV1SplatRouteImport.update({
   id: '/api/v1/$',
   path: '/api/v1/$',
@@ -260,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
+  '/downloads': typeof DownloadsRoute
   '/live': typeof LiveRoute
   '/livemap': typeof LivemapRoute
   '/livesubs': typeof LivesubsRoute
@@ -278,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/program/$slug': typeof ProgramSlugRoute
   '/raw/$': typeof RawSplatRoute
   '/api/public/export': typeof ApiPublicExportRoute
+  '/api/public/roots': typeof ApiPublicRootsRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/docs/api/authentication': typeof DocsApiAuthenticationRoute
   '/docs/api/changelog': typeof DocsApiChangelogRoute
@@ -302,6 +316,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
+  '/downloads': typeof DownloadsRoute
   '/live': typeof LiveRoute
   '/livemap': typeof LivemapRoute
   '/livesubs': typeof LivesubsRoute
@@ -319,6 +334,7 @@ export interface FileRoutesByTo {
   '/program/$slug': typeof ProgramSlugRoute
   '/raw/$': typeof RawSplatRoute
   '/api/public/export': typeof ApiPublicExportRoute
+  '/api/public/roots': typeof ApiPublicRootsRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/docs/api/authentication': typeof DocsApiAuthenticationRoute
   '/docs/api/changelog': typeof DocsApiChangelogRoute
@@ -344,6 +360,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/chaos_updates': typeof Chaos_updatesRoute
   '/dashboard': typeof DashboardRoute
+  '/downloads': typeof DownloadsRoute
   '/live': typeof LiveRoute
   '/livemap': typeof LivemapRoute
   '/livesubs': typeof LivesubsRoute
@@ -362,6 +379,7 @@ export interface FileRoutesById {
   '/program/$slug': typeof ProgramSlugRoute
   '/raw/$': typeof RawSplatRoute
   '/api/public/export': typeof ApiPublicExportRoute
+  '/api/public/roots': typeof ApiPublicRootsRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/docs/api/authentication': typeof DocsApiAuthenticationRoute
   '/docs/api/changelog': typeof DocsApiChangelogRoute
@@ -388,6 +406,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chaos_updates'
     | '/dashboard'
+    | '/downloads'
     | '/live'
     | '/livemap'
     | '/livesubs'
@@ -406,6 +425,7 @@ export interface FileRouteTypes {
     | '/program/$slug'
     | '/raw/$'
     | '/api/public/export'
+    | '/api/public/roots'
     | '/api/v1/$'
     | '/docs/api/authentication'
     | '/docs/api/changelog'
@@ -430,6 +450,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chaos_updates'
     | '/dashboard'
+    | '/downloads'
     | '/live'
     | '/livemap'
     | '/livesubs'
@@ -447,6 +468,7 @@ export interface FileRouteTypes {
     | '/program/$slug'
     | '/raw/$'
     | '/api/public/export'
+    | '/api/public/roots'
     | '/api/v1/$'
     | '/docs/api/authentication'
     | '/docs/api/changelog'
@@ -471,6 +493,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chaos_updates'
     | '/dashboard'
+    | '/downloads'
     | '/live'
     | '/livemap'
     | '/livesubs'
@@ -489,6 +512,7 @@ export interface FileRouteTypes {
     | '/program/$slug'
     | '/raw/$'
     | '/api/public/export'
+    | '/api/public/roots'
     | '/api/v1/$'
     | '/docs/api/authentication'
     | '/docs/api/changelog'
@@ -514,6 +538,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   Chaos_updatesRoute: typeof Chaos_updatesRoute
   DashboardRoute: typeof DashboardRoute
+  DownloadsRoute: typeof DownloadsRoute
   LiveRoute: typeof LiveRoute
   LivemapRoute: typeof LivemapRoute
   LivesubsRoute: typeof LivesubsRoute
@@ -532,6 +557,7 @@ export interface RootRouteChildren {
   ProgramSlugRoute: typeof ProgramSlugRoute
   RawSplatRoute: typeof RawSplatRoute
   ApiPublicExportRoute: typeof ApiPublicExportRoute
+  ApiPublicRootsRoute: typeof ApiPublicRootsRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiPublicHooksProbeRoute: typeof ApiPublicHooksProbeRoute
   ApiPublicHooksScanRoute: typeof ApiPublicHooksScanRoute
@@ -582,6 +608,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/downloads': {
+      id: '/downloads'
+      path: '/downloads'
+      fullPath: '/downloads'
+      preLoaderRoute: typeof DownloadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/live': {
@@ -708,6 +741,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/export'
       fullPath: '/api/public/export'
       preLoaderRoute: typeof ApiPublicExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/roots': {
+      id: '/api/public/roots'
+      path: '/api/public/roots'
+      fullPath: '/api/public/roots'
+      preLoaderRoute: typeof ApiPublicRootsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/$': {
@@ -861,6 +901,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   Chaos_updatesRoute: Chaos_updatesRoute,
   DashboardRoute: DashboardRoute,
+  DownloadsRoute: DownloadsRoute,
   LiveRoute: LiveRoute,
   LivemapRoute: LivemapRoute,
   LivesubsRoute: LivesubsRoute,
@@ -879,6 +920,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProgramSlugRoute: ProgramSlugRoute,
   RawSplatRoute: RawSplatRoute,
   ApiPublicExportRoute: ApiPublicExportRoute,
+  ApiPublicRootsRoute: ApiPublicRootsRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiPublicHooksProbeRoute: ApiPublicHooksProbeRoute,
   ApiPublicHooksScanRoute: ApiPublicHooksScanRoute,
