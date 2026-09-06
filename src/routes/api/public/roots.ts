@@ -52,7 +52,7 @@ export const Route = createFileRoute("/api/public/roots")({
               for (let page = 0; page < 5000; page++) {
                 let q = supabaseAdmin
                   .from("domains")
-                  .select("domain, subdomain_count")
+                  .select("domain, total_subdomains")
                   .order("domain", { ascending: true })
                   .range(from, from + PAGE - 1);
                 if (platformId) q = q.eq("platform_id", platformId);
@@ -65,7 +65,7 @@ export const Route = createFileRoute("/api/public/roots")({
                   controller.enqueue(
                     encoder.encode(
                       data
-                        .map((r) => `${r.domain},${platformSlug},${r.subdomain_count ?? 0}`)
+                        .map((r) => `${r.domain},${platformSlug},${r.total_subdomains ?? 0}`)
                         .join("\n") + "\n",
                     ),
                   );
@@ -75,7 +75,7 @@ export const Route = createFileRoute("/api/public/roots")({
                       JSON.stringify({
                         domain: r.domain,
                         platform: platformSlug,
-                        subdomain_count: r.subdomain_count ?? 0,
+                        subdomain_count: r.total_subdomains ?? 0,
                       }),
                     )
                     .join(",\n");
