@@ -22,7 +22,9 @@ const NAV = [
   { to: "/livesubs", label: "Recent live" },
   { to: "/new", label: "New subs" },
 
+  { to: "/downloads", label: "Downloads" },
   { to: "/stats", label: "Stats" },
+
   { to: "/notes", label: "Notes" },
   { to: "/alerts", label: "Alerts" },
   { to: "/queue", label: "Queue" },
