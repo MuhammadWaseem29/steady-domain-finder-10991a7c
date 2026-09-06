@@ -178,15 +178,8 @@ function RootCard({ p }: { p: PlatformStat | null }) {
   return (
     <CardShell
       title={p?.name ?? "All platforms"}
-      subtitle={
-        p ? (
-          <>
-            <CountUp value={Number(p.domain_count)} /> root domains
-          </>
-        ) : (
-          "every tracked root domain"
-        ) as unknown as string
-      }
+      subtitle={p ? `${fmt(Number(p.domain_count))} root domains` : "every tracked root domain"}
+
       color={p?.color ?? null}
     >
       <div className="mt-4">
