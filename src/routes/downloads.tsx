@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Copy, Download } from "lucide-react";
 import { toast } from "sonner";
 import { SiteShell } from "@/components/site/chrome";
-import { CountUp, EASE_SIGNATURE, Spotlight } from "@/components/site/motion";
+import { EASE_SIGNATURE, Spotlight } from "@/components/site/motion";
 import { platformsQuery, type PlatformStat } from "@/lib/chaos-data";
 
 export const Route = createFileRoute("/downloads")({
